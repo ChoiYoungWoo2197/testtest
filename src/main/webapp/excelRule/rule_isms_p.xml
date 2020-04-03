@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<rule name="ISMS-P">
+  <ruleStyle id="style01" startRow="6" startCell="2" finishCell="8">
+    <cell order="2" type="String">
+      <regex>[\d]+\.[\d]+</regex>
+      <title>분야</title>
+    </cell>
+    <cell order="3" type="String">
+      <title>분야</title>
+    </cell>
+    <cell order="4" >
+      <regex>[\d]+\.[\d]+\.[\d]+</regex>
+      <title>항목</title>
+    </cell>
+    <cell order="5" >
+      <title>항목</title>
+    </cell>
+    <cell order="6" >
+      <title>상세내용</title>
+    </cell>
+    <cell order="7">
+      <title>주요 확인사항</title>
+    </cell>
+    <cell order="8">
+      <title>설명</title>
+    </cell>
+  </ruleStyle>
+
+  <sheets>
+    <sheet ruleStyle="style01" />
+    <sheet ruleStyle="style01" />
+    <sheet ruleStyle="style01" />
+  </sheets>
+</rule>

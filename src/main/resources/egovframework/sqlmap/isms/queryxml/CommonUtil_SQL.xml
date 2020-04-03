@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="commonUtil">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="com.uwo.isms.domain.SearchVO"/>
+	<typeAlias  alias="fileVO" type="com.uwo.isms.domain.FileVO"/>
+
+	<select id="QR_GET_FILENAME" parameterClass="String" resultClass="fileVO">
+		SELECT UMF_CON_FNM,UMF_SVR_FNM, umf_svr_pth FROM UWO_MNG_FLE WHERE UMF_FLE_KEY = #key#
+	</select>
+
+	<insert id="QR_INSERT_ALARM" parameterClass="Map">
+		INSERT INTO UWO_EVT_ARM
+		  (UEA_ARM_KEY,
+		   UEA_EVT_COD,
+		   UEA_SYS_GBN,
+		   UEA_SND_ID,
+		   UEA_RCV_ID,
+		   UEA_SND_DAT,
+		   UEA_SND_TIT,
+		   UEA_SND_CON,
+		   UEA_DEL_YN,
+		   UEA_RGT_ID,
+		   UEA_RGT_MDH)
+		VALUES
+		  (SEQ_ARM_KEY.NEXTVAL,
+		  #evtCode#,
+		  #sysGbn#,
+		  #key#,
+		  #userKey#,
+		  SYSDATE,
+		  #tit#,
+		  <![CDATA[ '■ 메일발송 <br /> ■ 제목 : '||#tit#|| '<br /> ■ 보낸사람 : '||F_GET_USR_NAME(#key#)|| '<br /> ■ 받는사람 : '||F_GET_USR_NAME(#userKey#), ]]>
+		  'N',
+		  #key#,
+		  SYSDATE)
+	</insert>
+	<select id="QR_GET_SENDUSER" parameterClass="String" resultClass="egovMap">
+		SELECT UUM_USR_NAM, UUM_MAL_ADS FROM UWO_USR_MTR WHERE UUM_USR_KEY = #key#
+	</select>
+	<select id="QR_GET_RECVUSER" parameterClass="String" resultClass="egovMap">
+		SELECT UUM_MAL_ADS, uum_usr_id, uum_usr_nam FROM UWO_USR_MTR WHERE UUM_USR_KEY = #userKey#
+	</select>
+
+	<select id="QR_GET_RECVUSER_LIST" resultClass="String" parameterClass="String">
+		   SELECT UTW_WRK_ID
+             FROM UWO_TRC_WRK
+            WHERE UTW_WRK_STA = '10'
+              AND UTW_WRK_ID IS NOT NULL
+              AND UTW_PRD_COD = #manCyl#
+            GROUP BY UTW_WRK_ID
+	</select>
+
+	<select id="QR_GET_DIVUSER_LIST" resultClass="String" parameterClass="Map">
+		   SELECT UUM_USR_KEY
+             FROM UWO_USR_MTR
+            WHERE UUM_DIV_COD = #division#
+            <isEqual property="sekAuth" compareValue="1">
+            <!-- AND UUM_ATH_GBN = 'A' -->
+            </isEqual>
+            <isEqual  property="sekAuth" compareValue="2">
+            <!-- AND UUM_ATH_GBN IN ('A','V') -->
+            </isEqual>
+	</select>
+
+	<select id="QR_GET_USER_LIST" parameterClass="searchVO" resultClass="egovMap">
+		SELECT  UUM_USR_KEY,
+		        UUM_USR_ID,
+		        UUM_USR_NAM,
+		        UUM_DIV_COD,
+		        F_GET_USR_INFO('01', UUM_USR_KEY) division,
+		        UUM_SVC_COD,
+		        F_GET_COMMON_NAME(UUM_SVC_COD,'SERVICE') service,
+		        UUM_DEP_COD,
+		        (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR UDM WHERE UDM.UDM_DEP_COD = UUM_DEP_COD) AS dept,
+		        UUM_POS_COD,
+		        F_GET_COMMON_NAME(UUM_POS_COD,'POS') pos,
+		        CASE WHEN UUM_USE_YN = 'Y' THEN '사용'
+		             ELSE '사용불가'
+		        END UUM_USE_YN
+		  FROM UWO_USR_MTR
+		 WHERE UUM_USE_YN = 'Y'
+		<isNotEmpty property="popService" >
+			AND UUM_SVC_COD = #popService#
+		</isNotEmpty>
+		<isNotEmpty property="service" >
+			AND UUM_DIV_COD = #service#
+		</isNotEmpty>
+		<isNotEmpty property="workerName" >
+			AND UUM_USR_NAM LIKE '%' || #workerName# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="dept" >
+			AND UUM_DEP_COD = #dept#
+		</isNotEmpty>
+	</select>
+
+	<select id="QR_GET_USER_LIST_BY_KEYWORD" parameterClass="String" resultClass="egovMap">
+		SELECT
+			USR.UUM_USR_KEY,
+			USR.UUM_USR_ID,
+			USR.UUM_USR_NAM,
+			USR.UUM_DIV_COD,
+			DEP.UDM_DEP_NAM DIVISION,
+			USR.UUM_SVC_COD,
+			F_GET_COMMON_NAME(USR.UUM_SVC_COD,'SERVICE') SERVICE,
+			USR.UUM_DEP_COD,
+			DEP.UDM_DEP_NAM,
+			USR.UUM_POS_COD,
+			F_GET_COMMON_NAME(UUM_POS_COD,'POS') POS
+		FROM
+			UWO_USR_MTR USR LEFT JOIN UWO_DEP_MTR DEP ON USR.UUM_DEP_COD = DEP.UDM_DEP_COD
+		WHERE
+			USR.UUM_USE_YN = 'Y' AND
+			(USR.UUM_USR_NAM LIKE '%'||#keyword#||'%'
+			OR USR.UUM_USR_ID LIKE '%'||#keyword#||'%'
+			OR DEP.UDM_DEP_NAM LIKE '%'||#keyword#||'%')
+	</select>
+
+	<select id="QR_GET_USER_LIST_BY_IN_USERKEYS" parameterClass="list" resultClass="egovMap">
+		SELECT
+			USR.UUM_USR_KEY,
+			USR.UUM_USR_ID,
+			USR.UUM_USR_NAM,
+			USR.UUM_DIV_COD,
+			F_GET_USR_INFO('01', USR.UUM_USR_KEY) DIVISION,
+			USR.UUM_SVC_COD,
+			F_GET_COMMON_NAME(USR.UUM_SVC_COD,'SERVICE') SERVICE,
+			USR.UUM_DEP_COD,
+			DEP.UDM_DEP_NAM,
+			USR.UUM_POS_COD,
+			F_GET_COMMON_NAME(UUM_POS_COD,'POS') POS
+		FROM
+			UWO_USR_MTR USR LEFT JOIN UWO_DEP_MTR DEP ON USR.UUM_DEP_COD = DEP.UDM_DEP_COD
+		WHERE
+			USR.UUM_USE_YN = 'Y' AND USR.UUM_USR_KEY IN
+		<iterate open="(" close=")" conjunction=",">
+			#[]#
+		</iterate>
+	</select>
+
+	<select id="QR_GET_COC_COD_SEQ" resultClass="String">
+		SELECT SEQ_COC_COD.NEXTVAL SEQ FROM DUAL
+	</select>
+
+	<select id="QR_GET_ASS_COD_SEQ" resultClass="String">
+		SELECT SEQ_ASS_COD.NEXTVAL SEQ FROM DUAL
+	</select>
+
+	<select id="QR_GET_GRP_COD_SEQ" resultClass="String">
+		SELECT seq_uag_grp_key.NEXTVAL SEQ FROM DUAL
+	</select>
+
+	<select id="QR_GET_SRO_COD_SEQ" resultClass="String">
+		SELECT SEQ_SRO_COD.NEXTVAL SEQ FROM DUAL
+	</select>
+
+	<select id="QR_GET_FLT_COD_SEQ" resultClass="String">
+		SELECT SEQ_FLT_COD.NEXTVAL SEQ FROM DUAL
+	</select>
+
+	<insert id="QR_INSERT_POLARIS_CONVERT" parameterClass="String">
+		INSERT INTO CONVERT
+		(
+			CONVERT_ID,
+			FILENAME,
+			ORIGINALNAME,
+			FILEPATH,
+			TYPE,
+			STATUS,
+			PROGRESS,
+			TOTAL,
+			CREATE_DATE,
+			START_DATE,
+			COMPLETE_DATE,
+			FILE_NO
+		)
+		SELECT
+			CONVERT_SEQ.NEXTVAL,
+			UMF_SVR_FNM,
+			UMF_CON_FNM,
+			UMF_SVR_PTH || '/dec',
+			'PNG',
+			'Q',
+			0,
+			0,
+			SYSDATE,
+			SYSDATE,
+			SYSDATE,
+			UMF_FLE_KEY
+		FROM UWO_MNG_FLE
+		WHERE UMF_CON_KEY = #key#
+			AND umf_svr_fnm IS NOT NULL
+			AND NOT EXISTS (
+				SELECT * FROM CONVERT C
+				WHERE C.FILE_NO = UMF_FLE_KEY
+			)
+	</insert>
+
+	<select id="QR_GET_POLARIS_CONVERT_ID" parameterClass="String" resultClass="String">
+		SELECT CONVERT_ID
+		FROM CONVERT
+		WHERE FILE_NO = #key#
+			AND status = 'S'
+	</select>
+
+	<!-- 2016-11-01, 통제항목과 부서명으로 wrkKey 가져옴 -->
+	<select id="getWrkKeyByCtrAndDep" parameterClass="Map" resultClass="String">
+		SELECT
+			utw.utw_wrk_key
+		FROM
+			uwo_trc_wrk utw
+			INNER JOIN uwo_trc_doc utd ON utw.utw_trc_key = utd.utd_trc_key
+			INNER JOIN uwo_trc_ctr utc ON utd.utd_trc_key = utc.utc_trc_key
+			INNER JOIN uwo_ctr_mtr ucm ON utc.utc_ctr_key = ucm.ucm_ctr_key
+			INNER JOIN uwo_usr_mtr uum on utw.utw_wrk_id = uum.uum_usr_key
+			INNER JOIN uwo_dep_mtr udm on uum.uum_dep_cod = udm.udm_dep_cod
+		WHERE
+			  utw.utw_del_yn = 'N'
+			  AND ucm.ucm_gol_no = #golNo#
+			<isNotEmpty property="depNam">
+			  AND udm.udm_dep_nam = #depNam#
+			</isNotEmpty>
+			  AND rownum = 1
+			ORDER BY utw_wrk_key
+	</select>
+
+	<!-- 2017-09-11 -->
+	<select id="getUccComCodeInfo" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			c.ucc_fir_cod
+			,c.ucc_fir_nam
+			,c.ucc_snd_cod
+			,c.ucc_snd_nam
+			,c.ucc_use_yn
+			,c.ucc_etc
+			,(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UCC_RGT_ID) AS UUM_USR_NAM
+			,TO_CHAR(c.ucc_rgt_mdh, 'YYYY.MM.DD') AS ucc_rgt_mdh
+		FROM
+			uwo_com_cod c
+		WHERE
+			1=1
+			AND ucc_fir_cod = #uccFirCod#
+			AND ucc_snd_cod = #uccSndCod#
+	</select>
+
+
+	<!-- 2017-09-25 -->
+	<select id="QR_GET_ADMIN_LIST" resultClass="String" parameterClass="Map">
+		   SELECT UUM_USR_KEY
+             FROM UWO_USR_MTR
+            WHERE uum_auh_key = 1
+	</select>
+</sqlMap>

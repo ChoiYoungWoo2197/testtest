@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="protectionMeasure">
+
+    <typeAlias alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+    <typeAlias alias="fileVO" type="com.uwo.isms.domain.FileVO"/>
+    <typeAlias alias="protectionMeasureVO" type="com.uwo.isms.domain.ProtectionMeasureVO"/>
+    <typeAlias alias="protectionMeasureTaskVO" type="com.uwo.isms.domain.ProtectionMeasureTaskVO"/>
+    <typeAlias alias="protectionMeasureTaskWorkerVO" type="com.uwo.isms.domain.ProtectionMeasureTaskWorkerVO"/>
+
+    <resultMap id="protectionMeasureBasicResult" class="ProtectionMeasureVO">
+        <result property="id" column="ID" nullValue="0"/>
+        <result property="season" column="SEASON" nullValue="0"/>
+        <result property="title" column="TITLE"/>
+        <result property="status" column="STATUS"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+    </resultMap>
+
+    <resultMap id="protectionMeasureTaskBasicResult" class="protectionMeasureTaskVO">
+        <result property="id" column="ID" nullValue="0"/>
+        <result property="protectionMeasureId" column="PROTECTION_MEASURE_ID" nullValue="0"/>
+        <result property="parentNodeId" column="PARENT_NODE_ID" nullValue="0"/>
+        <result property="nodeType" column="NODE_TYPE"/>
+        <result property="title" column="TITLE"/>
+        <result property="taskContent" column="TASK_CONTENT"/>
+        <result property="startedAt" column="STARTED_AT"/>
+        <result property="endedAt" column="ENDED_AT"/>
+        <result property="purpose" column="PURPOSE"/>
+        <result property="evaluationIndex" column="EVALUATION_INDEX"/>
+        <result property="budget" column="BUDGET"/>
+        <result property="targetFacility" column="TARGET_FACILITY"/>
+        <result property="status" column="STATUS"/>
+        <result property="userKey" column="USER_KEY" nullValue="0"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+        <result property="deletedAt" column="DELETED_AT"/>
+    </resultMap>
+
+    <resultMap id="protectionMeasureTaskWorkerBasicResult" class="protectionMeasureTaskWorkerVO">
+        <result property="id" column="ID" nullValue="0"/>
+        <result property="taskId" column="TASK_ID" nullValue="0"/>
+        <result property="userKey" column="USER_KEY" nullValue="0"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+    </resultMap>
+
+    <resultMap id="protectionMeasureTaskForTreeNodeResult" class="protectionMeasureTaskVO" extends="protectionMeasureTaskBasicResult">
+        <result property="category1NodeId" column="CATEGORY1_NODE_ID" nullValue="0"/>
+        <result property="taskNodeId" column="TASK_NODE_ID" nullValue="0"/>
+        <result property="microTaskNodeId" column="MICRO_TASK_NODE_ID" nullValue="0"/>
+        <result property="nodeTreeIds" column="NODE_TREE_IDS" nullValue="0"/>
+        <result property="parentIds" column="PARENT_IDS" nullValue="0"/>
+        <result property="childrenIds" column="CHILDREN_IDS"/>
+        <result property="workerKeys" column="WORKER_KEYS"/>
+        <result property="workerKeysCascade" column="WORKER_KEYS_CASCADE"/>
+    </resultMap>
+
+
+
+    <!--[ 보호대책 ]-->
+
+    <select id="getSeasonListOfWorker" parameterClass="int" resultClass="java.util.HashMap">
+        SELECT PTM.SEASON
+        FROM UWO_PTM_MAP MAP
+            LEFT JOIN UWO_PTM_TSK TSK ON MAP.TASK_ID = TSK.ID
+            LEFT JOIN UWO_PTM_MTR PTM ON TSK.PROTECTION_MEASURE_ID = PTM.ID
+        WHERE MAP.USER_KEY = #value# GROUP BY PTM.SEASON
+    </select>
+
+    <select id="getProtectionMeasureList" parameterClass="protectionMeasureVO" resultMap="protectionMeasureBasicResult">
+        SELECT *
+        FROM UWO_PTM_MTR
+        <dynamic prepend="WHERE">
+            <isNotEqual property="id" compareValue="0" prepend="AND">
+                ID = #id#
+            </isNotEqual>
+            <isNotEqual property="season" compareValue="0" prepend="AND">
+                SEASON = #season#
+            </isNotEqual>
+            <isNotNull property="title" prepend="AND">
+                TITLE  = #title#
+            </isNotNull>
+            <isNotNull property="status" prepend="AND">
+                STATUS = #status#
+            </isNotNull>
+        </dynamic>
+    </select>
+
+    <insert id="storeProtectionMeasure" parameterClass="protectionMeasureVO">
+        <selectKey resultClass="int" type="pre" keyProperty="id">
+            SELECT SEQ_UWO_PTM_MTR.NEXTVAL AS ID FROM DUAL
+        </selectKey>
+        INSERT INTO UWO_PTM_MTR (ID, SEASON, TITLE, STATUS, CREATED_AT, UPDATED_AT)
+        VALUES (#id#, #season#, #title#, #status#, sysdate, sysdate)
+    </insert>
+
+    <update id="updateProtectionMeasureById" parameterClass="protectionMeasureVO">
+        UPDATE UWO_PTM_MTR
+        SET
+        <isNotEqual property="season" compareValue="0">
+            SEASON = #season#,
+        </isNotEqual>
+        <isNotNull property="title">
+            TITLE  = #title#,
+        </isNotNull>
+        <isNotNull property="status">
+            STATUS = #status#,
+        </isNotNull>
+            UPDATED_AT = sysdate
+        WHERE ID = #id#
+    </update>
+
+    <delete id="deleteProtectionMeasureById" parameterClass="int">
+        DELETE UWO_PTM_MTR WHERE ID = #value#
+    </delete>
+
+    <!--[ 보호대책 중점과제 ]-->
+
+    <select id="getSimpleProtectionMeasureTaskList" parameterClass="int" resultMap="protectionMeasureTaskBasicResult">
+        SELECT *
+        FROM UWO_PTM_TSK
+        WHERE PROTECTION_MEASURE_ID = #protectionMeasureId#
+            AND DELETED_AT IS NULL AND NODE_TYPE != 'MICRO_TASK'
+        ORDER BY CASE
+            WHEN NODE_TYPE = 'CATEGORY1' THEN 1
+            WHEN NODE_TYPE = 'TASK' THEN 2
+            WHEN NODE_TYPE = 'MICRO_TASK' THEN 3
+            END, CREATED_AT ASC
+    </select>
+
+    <select id="getProtectionMeasureTaskList" parameterClass="protectionMeasureTaskVO" resultMap="protectionMeasureTaskForTreeNodeResult">
+        SELECT CASE
+                WHEN TSK2.ID IS NULL AND TSK3.ID IS NULL THEN TSK1.ID
+                WHEN TSK2.ID IS NOT NULL AND TSK3.ID IS NULL THEN TSK2.ID
+                ELSE TSK3.ID END                                                AS CATEGORY1_NODE_ID,
+            CASE
+                WHEN TSK2.ID IS NULL AND TSK3.ID IS NULL THEN NULL
+                WHEN TSK2.ID IS NOT NULL AND TSK3.ID IS NULL THEN TSK1.ID
+                ELSE TSK2.ID END                                                AS TASK_NODE_ID,
+            CASE
+                WHEN TSK2.ID IS NULL AND TSK3.ID IS NULL THEN NULL
+                WHEN TSK2.ID IS NOT NULL AND TSK3.ID IS NULL THEN NULL
+                ELSE TSK1.ID END                                                AS MICRO_TASK_NODE_ID,
+            LTRIM(CONCAT(TSK3.ID || ',', CONCAT(TSK2.ID || ',', TSK1.ID)), ',') AS NODE_TREE_IDS,
+            LTRIM(CONCAT(TSK3.ID || ',', TSK2.ID), ',')                         AS PARENT_IDS,
+            (
+                SELECT LISTAGG(ID, ',') WITHIN GROUP ( ORDER BY ID )
+                FROM UWO_PTM_TSK
+                WHERE TSK1.NODE_TYPE = 'TASK' AND PARENT_NODE_ID = TSK1.ID
+                OR (TSK1.NODE_TYPE = 'CATEGORY1' AND (PARENT_NODE_ID = TSK1.ID OR PARENT_NODE_ID IN
+                (SELECT ID FROM UWO_PTM_TSK WHERE PARENT_NODE_ID = TSK1.ID)))
+            )                                                                   AS CHILDREN_IDS,
+            (
+                SELECT LISTAGG(USER_KEY, ',') WITHIN GROUP ( ORDER BY ID )
+                FROM UWO_PTM_MAP
+                WHERE TASK_ID = TSK1.ID
+            )                                                                   AS WORKER_KEYS,
+            (
+                SELECT LISTAGG(USER_KEY, ',') WITHIN GROUP ( ORDER BY ID )
+                FROM UWO_PTM_MAP
+                WHERE TASK_ID = CASE WHEN TSK1.NODE_TYPE = 'TASK' THEN TSK1.PARENT_NODE_ID ELSE TSK1.ID END
+                OR TASK_ID = CASE WHEN TSK1.NODE_TYPE = 'MICRO_TASK' THEN TSK3.ID ELSE -1 END
+            )                                                                   AS WORKER_KEYS_CASCADE,
+            TSK1.*
+        FROM UWO_PTM_TSK TSK1
+            LEFT JOIN UWO_PTM_TSK TSK2 ON TSK1.PARENT_NODE_ID = TSK2.ID
+            LEFT JOIN UWO_PTM_TSK TSK3 ON TSK2.PARENT_NODE_ID = TSK3.ID
+        WHERE TSK1.DELETED_AT IS NULL AND TSK1.NODE_TYPE != 'MICRO_TASK'
+        <dynamic prepend="">
+            <isNotEqual property="id" compareValue="0" prepend="AND">
+                TSK1.ID = #id#
+            </isNotEqual>
+            <isNotEqual property="protectionMeasureId" compareValue="0" prepend="AND">
+                TSK1.PROTECTION_MEASURE_ID = #protectionMeasureId#
+            </isNotEqual>
+            <isNotEqual property="parentNodeId" compareValue="0" prepend="AND">
+                TSK1.PARENT_NODE_ID = #parentNodeId#
+            </isNotEqual>
+            <isNotNull property="nodeType" prepend="AND">
+                TSK1.NODE_TYPE  = #nodeType#
+            </isNotNull>
+            <isNotNull property="title" prepend="AND">
+                TSK1.TITLE LIKE '%'||#title#||'%'
+            </isNotNull>
+            <isNotNull property="taskContent" prepend="AND">
+                TSK1.TASK_CONTENT LIKE '%'||#taskContent#||'%'
+            </isNotNull>
+            <isNotNull property="status" prepend="AND">
+                TSK1.STATUS = #status#
+            </isNotNull>
+            <isNotEqual property="userKey" compareValue="0" prepend="AND">
+                TSK1.USER_KEY = #userKey#
+            </isNotEqual>
+        </dynamic>
+        ORDER BY CASE
+            WHEN TSK1.NODE_TYPE = 'CATEGORY1' THEN 1
+            WHEN TSK1.NODE_TYPE = 'TASK' THEN 2
+            WHEN TSK1.NODE_TYPE = 'MICRO_TASK' THEN 3
+            END DESC, TSK1.TITLE
+    </select>
+
+    <select id="getProtectionMeasureTaskFileList" parameterClass="int" resultClass="fileVO">
+        SELECT FLE.*, F_GET_USR_NAME(FLE.UMF_RGT_ID) AS wrk_name
+        FROM UWO_MNG_FLE FLE
+        WHERE FLE.UMF_TBL_GBN = 'PTM'
+            AND FLE.UMF_CON_GBN = 12
+            AND FLE.UMF_CON_KEY IN (SELECT ID FROM UWO_PTM_TSK WHERE PROTECTION_MEASURE_ID = #protectionMeasureId#)
+        ORDER BY FLE.UMF_RGT_MDH ASC
+    </select>
+
+    <insert id="storeProtectionMeasureTask" parameterClass="protectionMeasureTaskVO">
+        <selectKey resultClass="int" type="pre" keyProperty="id">
+            SELECT SEQ_UWO_PTM_TSK.NEXTVAL AS ID FROM DUAL
+        </selectKey>
+        INSERT INTO UWO_PTM_TSK
+        (ID, PROTECTION_MEASURE_ID, PARENT_NODE_ID, NODE_TYPE, TITLE, TASK_CONTENT, STARTED_AT,
+        ENDED_AT, PURPOSE, EVALUATION_INDEX, BUDGET, TARGET_FACILITY, STATUS, USER_KEY, CREATED_AT,
+        UPDATED_AT)
+        VALUES (#id#, #protectionMeasureId#, #parentNodeId#, #nodeType#, #title#, #taskContent#,
+        TO_DATE(#startedAt#, 'YYYY-MM-DD'), TO_DATE(#endedAt#, 'YYYY-MM-DD'), #purpose#, #evaluationIndex#, #budget#,
+        #targetFacility#, #status#, #userKey#, sysdate, sysdate)
+    </insert>
+
+    <update id="updateProtectionMeasureTaskById" parameterClass="protectionMeasureTaskVO">
+        UPDATE UWO_PTM_TSK SET
+        <isNotEqual property="protectionMeasureId" compareValue="0">
+            PROTECTION_MEASURE_ID = #protectionMeasureId#,
+        </isNotEqual>
+        <isNotEqual property="parentNodeId" compareValue="0">
+            PARENT_NODE_ID = #parentNodeId#,
+        </isNotEqual>
+        <isNotNull property="nodeType">
+            NODE_TYPE  = #nodeType#,
+        </isNotNull>
+        <isNotNull property="title">
+            TITLE = #title#,
+        </isNotNull>
+        <isNotNull property="taskContent">
+            TASK_CONTENT = #taskContent#,
+        </isNotNull>
+        <isNotNull property="startedAt">
+            STARTED_AT = TO_DATE(#startedAt#, 'YYYY-MM-DD HH24:MI:SS'),
+        </isNotNull>
+        <isNotNull property="endedAt">
+            ENDED_AT = TO_DATE(#endedAt#, 'YYYY-MM-DD HH24:MI:SS'),
+        </isNotNull>
+        <isNotNull property="purpose">
+            PURPOSE = #purpose#,
+        </isNotNull>
+        <isNotNull property="evaluationIndex">
+            EVALUATION_INDEX = #evaluationIndex#,
+        </isNotNull>
+        <isNotNull property="budget">
+            BUDGET = #budget#,
+        </isNotNull>
+        <isNotNull property="targetFacility">
+            TARGET_FACILITY = #targetFacility#,
+        </isNotNull>
+        <isNotNull property="status">
+            STATUS = #status#,
+        </isNotNull>
+        <isNotEqual property="userKey" compareValue="0">
+            USER_KEY = #userKey#,
+        </isNotEqual>
+        UPDATED_AT = sysdate
+        WHERE ID = #id#
+    </update>
+
+    <delete id="deleteProtectionMeasureTaskById" parameterClass="int">
+        UPDATE UWO_PTM_TSK SET DELETED_AT = sysdate WHERE ID = #value#
+    </delete>
+
+    <select id="getCategoryListOfUser" parameterClass="Map" resultClass="egovMap">
+        SELECT PTM_TSK.ID AS TASK_ID, PTM_TSK.TITLE AS TASK_TITLE, PTM_TSK.CREATED_AT
+        FROM UWO_PTM_MTR PTM_MTR
+            LEFT JOIN UWO_PTM_TSK PTM_TSK ON PTM_MTR.ID = PTM_TSK.PROTECTION_MEASURE_ID
+            LEFT JOIN UWO_PTM_TSK PTM_TSK2 ON PTM_TSK.ID = PTM_TSK2.PARENT_NODE_ID
+            LEFT JOIN UWO_PTM_MAP PTM_MAP ON PTM_TSK2.ID = PTM_MAP.TASK_ID
+        WHERE PTM_MTR.SEASON = #manCyl#
+            AND PTM_TSK.NODE_TYPE = 'CATEGORY1'
+            AND PTM_TSK.DELETED_AT IS NULL
+            AND PTM_MAP.USER_KEY = #userKey#
+        ORDER BY PTM_TSK.TITLE
+    </select>
+
+    <select id="getTaskListOfUser" parameterClass="Map" resultClass="egovMap">
+        SELECT PTM_MTR.SEASON, PTM_TSK.*
+        FROM UWO_PTM_MTR PTM_MTR
+            LEFT JOIN UWO_PTM_TSK PTM_TSK ON PTM_MTR.ID = PTM_TSK.PROTECTION_MEASURE_ID
+            LEFT JOIN UWO_PTM_MAP PTM_MAP ON PTM_TSK.ID = PTM_MAP.TASK_ID
+        WHERE PTM_MTR.SEASON = #manCyl#
+            AND PTM_TSK.NODE_TYPE = 'TASK'
+            AND PTM_TSK.PARENT_NODE_ID = #categoryId#
+            AND PTM_TSK.DELETED_AT IS NULL
+            AND PTM_MAP.USER_KEY = #userKey#
+        ORDER BY PTM_TSK.TITLE
+    </select>
+
+    <!--[ 보호대책 중점과제 담당자 ]-->
+    
+    <select id="getTaskListOfWorkerBySeason" parameterClass="egovMap" resultMap="protectionMeasureTaskWorkerBasicResult">
+        SELECT
+            PTM.SEASON, TSK.TITLE, MAP.*
+        FROM UWO_PTM_MAP MAP
+            LEFT JOIN UWO_PTM_TSK TSK ON MAP.TASK_ID = TSK.ID
+            LEFT JOIN UWO_PTM_MTR PTM ON TSK.PROTECTION_MEASURE_ID = PTM.ID
+        WHERE
+            MAP.USER_KEY = #userKey#
+            AND PTM.SEASON = #season#
+    </select>
+
+    <select id="getProtectionMeasureTaskWorkerList" parameterClass="protectionMeasureTaskWorkerVO" resultClass="egovMap">
+        SELECT
+            PTM.*,
+            USR.UUM_USR_KEY,
+            USR.UUM_USR_ID,
+            USR.UUM_USR_NAM,
+            USR.UUM_DIV_COD,
+            F_GET_USR_INFO('01', USR.UUM_USR_KEY) DIVISION,
+            USR.UUM_SVC_COD,
+            F_GET_COMMON_NAME(USR.UUM_SVC_COD,'SERVICE') SERVICE,
+            USR.UUM_DEP_COD,
+            DEP.UDM_DEP_NAM,
+            USR.UUM_POS_COD,
+            F_GET_COMMON_NAME(UUM_POS_COD,'POS') POS
+        FROM UWO_PTM_MAP PTM
+            LEFT JOIN UWO_USR_MTR USR ON PTM.USER_KEY = USR.UUM_USR_KEY
+            LEFT JOIN UWO_DEP_MTR DEP ON USR.UUM_DEP_COD = DEP.UDM_DEP_COD
+        <dynamic prepend="WHERE">
+            <isNotEqual property="id" compareValue="0" prepend="AND">
+                PTM.ID = #id#
+            </isNotEqual>
+            <isNotEqual property="taskId" compareValue="0" prepend="AND">
+                PTM.TASK_ID = #taskId#
+            </isNotEqual>
+            <isNotEqual property="userKey" compareValue="0" prepend="AND">
+                PTM.USER_KEY = #userKey#
+            </isNotEqual>
+        </dynamic>
+    </select>
+
+    <select id="getProtectionMeasureTaskWorkerById" parameterClass="int" resultMap="protectionMeasureTaskWorkerBasicResult">
+        SELECT *
+        FROM UWO_PTM_MAP
+        WHERE ID = #value#
+    </select>
+
+    <insert id="storeProtectionMeasureTaskWorker" parameterClass="protectionMeasureTaskWorkerVO">
+        <selectKey resultClass="int" type="pre" keyProperty="id">
+            SELECT SEQ_UWO_PTM_MAP.NEXTVAL AS ID FROM DUAL
+        </selectKey>
+        INSERT INTO UWO_PTM_MAP (ID, TASK_ID, USER_KEY, CREATED_AT, UPDATED_AT)
+        VALUES (#id#, #taskId#, #userKey#, sysdate, sysdate)
+    </insert>
+
+    <update id="updateProtectionMeasureTaskWorkerById" parameterClass="protectionMeasureTaskWorkerVO">
+        UPDATE UWO_PTM_MAP
+        SET
+        <isNotEqual property="taskId" compareValue="0">
+            TASK_ID = #taskId#,
+        </isNotEqual>
+        <isNotEqual property="userKey" compareValue="0">
+            USER_KEY = #userKey#,
+        </isNotEqual>
+        UPDATED_AT = sysdate
+        WHERE ID = #id#
+    </update>
+
+    <delete id="deleteProtectionMeasureTaskWorkerById" parameterClass="int">
+        DELETE UWO_PTM_MAP WHERE ID = #value#
+    </delete>
+
+    <delete id="deleteProtectionMeasureTaskWorker" parameterClass="protectionMeasureTaskWorkerVO">
+        DELETE UWO_PTM_MAP
+        <dynamic prepend="WHERE">
+            <isNotEqual property="id" compareValue="0" prepend="AND">
+                ID = #id#
+            </isNotEqual>
+            <isNotEqual property="taskId" compareValue="0" prepend="AND">
+                TASK_ID = #taskId#
+            </isNotEqual>
+            <isNotEqual property="userKey" compareValue="0" prepend="AND">
+                USER_KEY = #userKey#
+            </isNotEqual>
+        </dynamic>
+    </delete>
+
+    <select id="getLastProtectionMeasure" resultMap="protectionMeasureBasicResult">
+	 	SELECT *
+		FROM (SELECT * FROM UWO_PTM_MTR ORDER BY SEASON DESC)
+		WHERE ROWNUM <![CDATA[<]]>= 1
+    </select>
+</sqlMap>

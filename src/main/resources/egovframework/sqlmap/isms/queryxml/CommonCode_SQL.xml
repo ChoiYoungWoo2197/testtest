@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="commonCode">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="com.uwo.isms.domain.SearchVO"/>
+
+	<select id="QR_COMMONCODE_LIST" parameterClass="String" resultClass="egovMap">
+		SELECT UCC_SND_COD CODE, UCC_SND_NAM NAME
+		  FROM UWO_COM_COD
+		 WHERE UCC_FIR_COD = #code#
+		   AND UCC_USE_YN = 'Y'
+		 ORDER BY UCC_SND_NAM <!-- ucc_cod_ord -->
+	</select>
+
+	<select id="QR_DIVCODE_LIST" parameterClass="String" resultClass="egovMap">
+		SELECT UOM_DIV_COD CODE, UOM_DIV_NAM NAME
+		  FROM UWO_ORG_MTR
+		 GROUP BY UOM_DIV_COD, UOM_DIV_NAM
+		 ORDER by UOM_DIV_COD
+	</select>
+
+	<select id="QR_SVCCODE_LIST" parameterClass="String" resultClass="egovMap">
+		SELECT
+			svc_cod AS code,
+			svc_nam AS name
+		FROM uwo_svc_mtr
+		WHERE use_yn = 'Y'
+		ORDER BY sort
+	</select>
+
+	<select id="QR_DEPCODE_LIST" parameterClass="String" resultClass="egovMap">
+		 SELECT UCC_SND_COD AS CODE, UCC_SND_NAM AS NAME
+		 FROM UWO_COM_COD
+		 WHERE UCC_FIR_COD = 'DEPT'
+		 AND UCC_USE_YN = 'Y'
+	</select>
+
+	<select id="QR_DEPCODE_LIST_B" parameterClass="String" resultClass="egovMap">
+		 SELECT UDM_DEP_COD AS CODE, UDM_DEP_NAM AS NAME
+		 FROM UWO_DEP_MTR
+	</select>
+
+	<select id="QR_SVCCODE_AUTH_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			svc_sub_cod AS code,
+			svc_sub_nam AS name
+		FROM uwo_svc_sub
+		WHERE use_yn = 'Y'
+		<!-- 2018-09-17 s, SK 스토아 관리자만 -->
+<!--		<isNotEqual property="sesAuthKey" compareValue="A">-->
+<!--		   AND svc_cod &lt;&gt; 'SC008'-->
+<!--		</isNotEqual>-->
+		ORDER BY sort
+	</select>
+
+	<select id="QR_SVCCODE_AUTH_LIST_N" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			svc_cod AS code,
+			svc_nam AS name
+		FROM uwo_svc_mtr
+		WHERE use_yn = 'Y'
+		<!-- 2018-09-17 s, SK 스토아 관리자만 -->
+<!--		<isNotEqual property="sesAuthKey" compareValue="A">-->
+<!--		   AND svc_cod &lt;&gt; 'SC008'-->
+<!--		</isNotEqual>-->
+		ORDER BY sort
+	</select>
+
+	<select id="QR_SVCCODE_AUTH_LIST_CAT" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			uac_cat_key code,
+			uac_cat_nam name
+		FROM uwo_ass_cat
+		WHERE
+			uac_cat_typ = 'A'
+			AND uac_use_yn = 'Y'
+		ORDER BY uac_cat_key
+	</select>
+
+
+	<select id="QR_COMMONCODE_AUTH_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			M.ucc_snd_cod code,
+			M.ucc_snd_nam name,
+			DECODE(S.ucc_snd_cod, NULL, 'N', 'Y') USR_COD_YN
+		FROM
+			uwo_com_cod M,
+			(
+				SELECT  ucc_snd_cod, ucc_snd_nam
+				FROM uwo_com_cod
+				WHERE  ucc_snd_cod = #userCode#
+			) S
+         WHERE M.ucc_snd_cod = S.ucc_snd_cod(+)
+           AND M.ucc_fir_cod = #code#
+           AND ucc_use_yn = 'Y'
+	</select>
+
+	<select id="QR_AUTH_LIST" resultClass="egovMap">
+		SELECT
+			uat_auh_key,
+			uat_auh_nam
+		FROM uwo_auh_mtr
+		WHERE uat_use_yn = 'Y'
+		ORDER BY uat_auh_key DESC
+	</select>
+
+
+	<select id="QR_DEPCODE_AUTH_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT ucc_snd_cod code, ucc_snd_nam name
+		  FROM uwo_com_cod
+		 WHERE ucc_fir_cod = 'DEPT'
+		   AND ucc_use_yn = 'Y'
+		<isEqual property="sesAuthKey" compareValue="P">
+		   AND ucc_snd_cod = #sesDeptKey#
+		</isEqual>
+		ORDER BY ucc_snd_nam
+	</select>
+
+	<select id="QR_TERMNonCYCLE_LIST" parameterClass="String" resultClass="egovMap">
+		SELECT UNC_NTR_COD CODE, UNC_NTR_NAM NAME
+		  FROM UWO_NTR_COM
+		 WHERE UNC_USE_YN = 'Y'
+		   AND UNC_BCY_COD = #manCyl#
+	</select>
+
+	<select id="QR_WORKER_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT UUM_USR_KEY CODE, UUM_USR_NAM NAME
+		  FROM UWO_USR_MTR
+		 WHERE
+		 	UUM_USE_YN = 'Y'
+			AND UUM_DEP_COD = #code#
+		 <isEqual property="auth" compareValue="P">
+			AND UUM_USR_KEY = #userKey#
+		 </isEqual>
+	</select>
+
+	<select id="QR_OPRUSR_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT UUM_USR_ID CODE, UUM_USR_NAM NAME
+		  FROM UWO_USR_MTR
+		 WHERE
+		 	UUM_USE_YN = 'Y'
+			AND UUM_DEP_COD = #code#
+		 <isEqual property="auth" compareValue="P">
+			AND UUM_USR_KEY = #userKey#
+		 </isEqual>
+	</select>
+
+	<select id="QR_WORKER_ALL_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT UUM_USR_KEY CODE, UUM_USR_NAM NAME
+		  FROM UWO_USR_MTR
+		 WHERE
+		 	UUM_USE_YN = 'Y'
+			AND UUM_DEP_COD = #code#
+	</select>
+
+	<select id="QR_POSITION_LIST" parameterClass="String" resultClass="egovMap">
+		SELECT UCC_SND_NAM , UCC_SND_COD
+		FROM UWO_COM_COD
+		WHERE UCC_FIR_COD = 'POS'
+		AND UCC_USE_YN = 'Y'
+		ORDER BY UCC_SND_COD ASC
+	</select>
+
+	<select id="QR_MANCYCLE_LIST" parameterClass="String" resultClass="egovMap">
+		SELECT UMM_MAN_CYL CODE
+			   , TO_CHAR(UMM_STD_DAT, 'YYYY.MM.DD') || '~' || TO_CHAR(UMM_END_DAT, 'YYYY.MM.DD') NAME
+  		FROM UWO_MCY_MTR
+		ORDER BY UMM_MAN_CYL
+	</select>
+
+	<select id="QR_MAILNAME_SELECT" parameterClass="String"  resultClass="String">
+		SELECT UUM_USR_NAM
+		  FROM UWO_USR_MTR
+		 WHERE UUM_USR_KEY = #key#
+	</select>
+
+	<select id="QR_ASSCAT_LIST"  resultClass="egovMap">
+		SELECT UAC_CAT_KEY KEY
+			,UAC_CAT_COD CODE
+			,UAC_CAT_NAM NAME
+		  FROM UWO_ASS_CAT
+		 WHERE UAC_USE_YN = 'Y'
+	</select>
+
+	<select id="QR_ASSCAT_TYPE_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT UAC_CAT_KEY KEY
+			,UAC_CAT_COD CODE
+			,UAC_CAT_NAM NAME
+		  FROM UWO_ASS_CAT
+		 WHERE UAC_USE_YN = 'Y'
+		<isNotEmpty property="upType">
+		   AND UAC_CAT_TYP = #upType#
+		</isNotEmpty>
+		ORDER BY UAC_CAT_KEY
+	</select>
+
+	<!-- 2017-04-07, 자산유형구분 제외 및 ucc_etc 추가 -->
+	<select id="QR_VLB_LIST" resultClass="egovMap">
+		SELECT ucc_snd_cod code
+			<!-- , RTRIM(REPLACE(UCC_ETC, '자산유형구분', '')) || '_' || ucc_snd_nam name -->
+			, ucc_snd_nam name
+      		, ucc_etc AS category
+		  FROM uwo_com_cod
+		 WHERE ucc_fir_cod = 'VLBTYPE'
+		   AND ucc_use_yn = 'Y'
+		 ORDER BY name
+	</select>
+
+	<select id="QR_VLB_IMP_LIST" resultClass="egovMap">
+		SELECT ucc_snd_cod code ,
+		       ucc_snd_nam name
+		  FROM uwo_com_cod
+		 WHERE ucc_fir_cod = 'VLBGRD'
+		   AND ucc_use_yn = 'Y'
+	</select>
+
+	<select id="QR_ASSGBN_LIST" resultClass="egovMap">
+		SELECT ucc_snd_cod AS code,
+			   ucc_snd_nam AS name,
+			   uac.uac_cat_cod AS category,
+        	   uac.uac_cat_key AS category_key
+		  FROM uwo_com_cod ucc
+      	 INNER JOIN uwo_ass_cat uac ON SUBSTR(ucc_fir_cod, 5, LENGTH(ucc_fir_cod)) = uac.uac_cat_cod
+		 WHERE ucc_fir_cod LIKE 'CAT\_%' ESCAPE '\'
+		   AND ucc_use_yn = 'Y'
+		 ORDER BY ucc_fir_cod, ucc_snd_cod
+	</select>
+
+	<select id="QR_SENARIO_LIST" resultClass="egovMap">
+		SELECT
+			USM_SRO_KEY,
+			USM_SRO_COD,
+			USM_SRO_DES
+		  FROM UWO_SRO_MTR
+		 WHERE USM_USE_YN = 'Y'
+		 <isNotEmpty property="usmSroCod">
+		 	AND USM_SRO_COD LIKE #usmSroCod# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="usmSroDes">
+		 	AND USM_SRO_DES LIKE '%' || #usmSroDes# || '%'
+		 </isNotEmpty>
+	</select>
+
+	<select id="QR_RISKCOC_LIST" parameterClass="String" resultClass="egovMap">
+		SELECT
+			USO_ASS_CAT AS CAT_CODE,
+			USO_COC_KEY AS KEY,
+			USO_COC_COD AS CODE,
+			USO_COC_NAM AS NAME
+ 		FROM UWO_RSK_COC
+		WHERE USO_USE_YN = 'Y'
+			AND USO_ASS_CAT = #assCat#
+	</select>
+
+	<select id="QR_DEPT_LIST" resultClass="egovMap">
+		SELECT
+			UDM_DEP_COD,
+			UDM_DEP_NAM
+		FROM UWO_DEP_MTR
+		WHERE 1=1
+		<isNotEmpty property="udmDep1lv">
+			AND UDM_DEP_1LV = #udmDep1lv#
+			AND UDM_DEP_LVL	= 2
+		</isNotEmpty>
+		<isNotEmpty property="udmDep2lv">
+			AND UDM_DEP_2LV = #udmDep2lv#
+			AND UDM_DEP_LVL	= 3
+		</isNotEmpty>
+		<isNotEmpty property="udmDep0lv">
+			AND UDM_DEP_LVL	= 1
+		</isNotEmpty>
+		ORDER BY UDM_DEP_1LV, UDM_DEP_2LV, UDM_DEP_3LV
+	</select>
+
+	<select id="QR_DEPT_CODE_LIST" resultClass="egovMap">
+		SELECT
+			udm_dep_cod AS code,
+			udm_dep_nam AS name,
+			CASE WHEN udm_dep_lvl = 3 THEN udm_dep_2lv
+				 WHEN udm_dep_lvl = 2 THEN udm_dep_1lv
+				 ELSE ''
+			END class_name
+		FROM uwo_dep_mtr
+		WHERE udm_dep_lvl = #udmDepLvl#
+		<!-- ORDER BY udm_dep_1lv, udm_dep_2lv, udm_dep_3lv -->
+		ORDER BY udm_dep_nam
+	</select>
+
+	<select id="QR_DEPART_LIST" resultClass="egovMap">
+		SELECT
+			UDM_DEP_COD,
+			UDM_DEP_NAM
+		FROM UWO_DEP_MTR
+		WHERE 1=1
+		<isNotEmpty property="udmDep1lv">
+			AND UDM_DEP_1LV = #udmDep1lv#
+			AND UDM_DEP_LVL	= 2
+		</isNotEmpty>
+		<isNotEmpty property="udmDep2lv">
+			AND UDM_DEP_2LV = #udmDep2lv#
+			AND UDM_DEP_LVL	= 3
+		</isNotEmpty>
+		<isNotEmpty property="udmDep0lv">
+			AND UDM_DEP_LVL	= 1
+		</isNotEmpty>
+		ORDER BY UDM_DEP_1LV, UDM_DEP_2LV, UDM_DEP_3LV
+	</select>
+
+	<select id="QR_OPRT_LIST" resultClass="egovMap">
+		SELECT
+			UDM_DEP_COD,
+			UDM_DEP_NAM
+		FROM UWO_DEP_MTR
+		WHERE 1=1
+		<isNotEmpty property="udmDep1lv">
+			AND UDM_DEP_1LV = #udmDep1lv#
+			AND UDM_DEP_LVL	= 2
+		</isNotEmpty>
+		<isNotEmpty property="udmDep2lv">
+			AND UDM_DEP_2LV = #udmDep2lv#
+			AND UDM_DEP_LVL	= 3
+		</isNotEmpty>
+		<isNotEmpty property="udmDep0lv">
+			AND UDM_DEP_LVL	= 1
+		</isNotEmpty>
+		ORDER BY UDM_DEP_1LV, UDM_DEP_2LV, UDM_DEP_3LV
+	</select>
+
+	<select id="QR_DOA_LIST" resultClass="egovMap">
+		SELECT UCC_FIR_COD,
+			   UCC_SND_COD,
+			   UCC_SND_NAM,
+			   UCC_ETC
+		  FROM UWO_COM_COD
+		 WHERE UCC_USE_YN = 'Y'
+		   AND UCC_FIR_COD = 'DOA'
+		 ORDER BY UCC_SND_COD
+	</select>
+
+	<select id="QR_DOA" resultClass="egovMap">
+		SELECT UCC_FIR_COD,
+			   UCC_SND_COD,
+			   UCC_SND_NAM,
+			   UCC_ETC
+		  FROM UWO_COM_COD
+		 WHERE UCC_USE_YN = 'Y'
+		   AND UCC_FIR_COD = 'DOA'
+		   AND UCC_ETC = 'Y'
+	</select>
+</sqlMap>

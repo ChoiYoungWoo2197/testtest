@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+
+	<Properties>
+		<Property name="env">production</Property>
+ 		<Property name="logPath">C:/isms/skb/logs</Property>
+	</Properties>
+
+    <Appenders>
+	    <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d %5p [%c] %m%n" />
+        </Console>
+		<RollingRandomAccessFile name="rollingFile" fileName="${logPath}/isms3.log"
+		 	filePattern="${logPath}/isms3_1-%d{yyyy-MM-dd}-%i.log.gz">
+
+			<ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+			<PatternLayout>
+				<Pattern>%X{tid} %d %-5p %c{1.} (%t) %m%n</Pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+				<SizeBasedTriggeringPolicy size="250 MB"/>
+			</Policies>
+		</RollingRandomAccessFile>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="egovframework" level="error" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+	    <logger name="org.springframework" level="error" additivity="false">
+	        <AppenderRef ref="console" />
+	    </logger>
+	    <logger name="org.apache" level="error" additivity="false">
+	    	<AppenderRef ref="console" />
+	    </logger>
+
+	    <!-- log SQL with timing information, post execution -->
+	    <logger name="jdbc.sqltiming" level="error" additivity="false">
+	        <AppenderRef ref="console" />
+	    </logger>
+	    <logger name="jdbc.audit" level="fatal" additivity="false">
+			<AppenderRef ref="console" />
+		</logger>
+		<logger name="jdbc.connection" level="fatal" additivity="false">
+			<AppenderRef ref="console" />
+		</logger>
+		<logger name="jdbc.resultset" level="error" additivity="false">
+			<AppenderRef ref="console" />
+		</logger>
+		<logger name="jdbc.sqlonly" level="debug" additivity="false">
+			<AppenderRef ref="console" />
+		</logger>
+		<logger name="jdbc.resultsettable" level="info" additivity="false">
+			<AppenderRef ref="console" />
+		</logger>
+
+		<logger name="log4jdbc.debug" level="warn" additivity="false">
+			<AppenderRef ref="console" />
+		</logger>
+		<logger name="org.mybatis.spring.SqlSessionFactoryBean" level="warn" additivity="false">
+			<AppenderRef ref="console" />
+		</logger>
+		<logger name="org.springmodules.validation.commons.DefaultValidatorFactory" level="warn" additivity="false">
+			<AppenderRef ref="console" />
+		</logger>
+		<logger name="org.mybatis.spring.SqlSessionUtils" level="warn" additivity="false">
+			<AppenderRef ref="console" />
+		</logger>
+		<logger name="net.sf.jasperreports.engine" level="warn" additivity="false">
+			<AppenderRef ref="console" />
+		</logger>
+		<logger name="net.sf.jasperreports.engine.component.ComponentsEnvironment" level="error" additivity="false">
+			<AppenderRef ref="console" />
+		</logger>
+		<logger name="org.springframework.beans.GenericTypeAwarePropertyDescriptor" level="error" additivity="false">
+			<AppenderRef ref="console" />
+		</logger>
+
+		<logger name="org.springframework.jdbc.datasource.DataSourceTransactionManager" level="debug" additivity="false">
+			<AppenderRef ref="console" />
+		</logger>
+
+        <Root level="error">
+            <AppenderRef ref="console" />
+        </Root>
+    </Loggers>
+</Configuration>

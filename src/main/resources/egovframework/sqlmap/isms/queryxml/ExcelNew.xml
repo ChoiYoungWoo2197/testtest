@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="excelNew">
+
+    <select id="QR_COMP_STND_KIND" parameterClass="String" resultClass="String">
+        SELECT KIND STND_KIND
+        FROM UWO_COM_COD_EXP_STND_KIND
+        WHERE SND_COD = #code#
+    </select>
+
+    <select id="QR_COMP_STND_NAME" parameterClass="String" resultClass="String">
+        SELECT UCC_SND_NAM NAME
+        FROM UWO_COM_COD
+        WHERE
+        UCC_FIR_COD='STND' AND UCC_SND_COD=#code#
+    </select>
+
+    <select id="QR_COMP_LIST" resultClass="egovMap">
+        SELECT COD.UCC_SND_COD CODE, COD.UCC_SND_NAM NAME
+            , EXP.KIND
+        FROM UWO_COM_COD COD
+            LEFT JOIN UWO_COM_COD_EXP_STND_KIND EXP ON EXP.SND_COD = COD.UCC_SND_COD
+        WHERE UCC_FIR_COD = 'STND' AND UCC_USE_YN = 'Y'
+        ORDER BY UCC_COD_ORD ASC
+    </select>
+
+    <select id="QR_COMPLIANCE" parameterClass="String" resultClass="egovMap">
+        SELECT COD.UCC_SND_COD CODE, COD.UCC_SND_NAM NAME
+        , EXP.KIND
+        FROM UWO_COM_COD COD
+        LEFT JOIN UWO_COM_COD_EXP_STND_KIND EXP ON EXP.SND_COD = COD.UCC_SND_COD
+        WHERE UCC_FIR_COD = 'STND' AND KIND=#comp# AND UCC_USE_YN = 'Y'
+        ORDER BY UCC_COD_ORD ASC
+    </select>
+
+    <select id="QR_COMPS003_ISMS" parameterClass="Map" resultClass="egovMap">
+        SELECT
+            UCM_CTR_COD, UCM_GOL_NO
+            , UCM_1LV_COD, UCM_1LV_NAM, UCM_1LD_YN
+            , UCM_2LV_COD, UCM_2LV_NAM, UCM_2LV_DTL, UCM_2LD_YN
+            , UCM_3LV_COD, UCM_3LV_NAM, UCM_3LV_DTL, UCM_3LD_YN
+        FROM UWO_CTR_MTR
+        WHERE
+            UCM_BCY_COD = #ucmBcyCod# AND UCM_CTR_GBN = #ucmCtrGbn#
+        ORDER BY UCM_CTR_COD,
+            CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.' )), '.', '' ), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.')), '.', ''))
+                ELSE ASCII(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.')), '.', ''))
+                END,
+            CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''))
+                ELSE ASCII(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''))
+                END,
+            CASE WHEN REGEXP_INSTR(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.'),''), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.' ), ''))
+                ELSE ASCII(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.'), ''))
+                END,
+            CASE WHEN REGEXP_INSTR(REPLACE(UCM_3LV_COD, CONCAT(UCM_2LV_COD, '.'),''), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(UCM_3LV_COD, CONCAT(UCM_2LV_COD, '.'),''))
+                ELSE ASCII(REPLACE(UCM_3LV_COD, CONCAT(UCM_2LV_COD, '.'),''))
+                END ASC
+    </select>
+
+    <select id="QR_COMPS003_INFRA_MP" parameterClass="Map" resultClass="egovMap">
+        SELECT
+            UCM.UCM_CTR_COD, UCM.UCM_GOL_NO
+            , UCM.UCM_1LV_COD, UCM.UCM_1LV_NAM
+            , UCM.UCM_2LV_COD, UCM.UCM_2LV_NAM
+            , UCM.UCM_3LV_COD, UCM.UCM_3LV_NAM
+            , IMP.REF_NO, IMP.GRADE, IMP.POINT
+            , UIR.UIR_ASW_ID ASW_MARK, UIR.UIR_ASW_VAL ASW_VAL
+        FROM UWO_CTR_MTR UCM
+            LEFT JOIN UWO_CTR_MTR_EXP_INFRA_MP IMP
+                ON IMP.CTR_KEY = UCM.UCM_CTR_KEY AND IMP.LVL_COD = UCM.UCM_GOL_NO
+            LEFT JOIN UWO_IST_RST UIR
+                ON UIR.UIR_CTR_KEY = UCM.UCM_CTR_KEY
+        WHERE UCM.UCM_BCY_COD=#ucmBcyCod# AND UCM.UCM_CTR_GBN=#ucmCtrGbn#
+        <isNotEmpty property="service">
+            AND (SELECT COUNT(UCM_SVC_COD) FROM UWO_CTR_MAP WHERE UCM_CTR_KEY = UCM.UCM_CTR_KEY AND UCM_SVC_COD = #service#) > 0
+        </isNotEmpty>
+        ORDER BY UCM.UCM_CTR_COD,
+            CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.' )), '.', '' ), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+                ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+                END,
+            CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+                ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+                END,
+            CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'),''), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.' ), ''))
+                ELSE ASCII(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'), ''))
+                END,
+            CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+                ELSE ASCII(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+                END ASC
+    </select>
+
+    <select id="QR_COMPS003_MSIT" parameterClass="Map" resultClass="egovMap">
+        SELECT
+            UCM.UCM_CTR_COD, UCM.UCM_CTR_KEY, UCM.UCM_GOL_NO
+            , UCM.UCM_1LV_COD, UCM.UCM_1LV_NAM
+            , UCM.UCM_2LV_COD, UCM.UCM_2LV_NAM, UCM.UCM_2LV_DTL
+            , UCM.UCM_3LV_COD, UCM.UCM_3LV_NAM, UCM.UCM_3LV_DTL
+            , EXP.SEQ, EXP.TITLE, EXP.POINT
+            , MSIT1.QST_CNT, MSIT2.POINT AS MAX_POINT, MSIT3.NUM, UIR.UIR_ASW_VAL
+        FROM
+            UWO_CTR_MTR UCM
+            LEFT JOIN UWO_CTR_MTR_EXP_MSIT_QST EXP ON EXP.CTR_KEY = UCM.UCM_CTR_KEY AND EXP.LVL_COD = UCM.UCM_GOL_NO
+            LEFT JOIN UWO_IST_RST UIR ON UIR.UIR_CTR_KEY = UCM.UCM_CTR_KEY
+            LEFT JOIN (
+                SELECT CTR_KEY, COUNT(*) QST_CNT
+                FROM UWO_CTR_MTR_EXP_MSIT_QST
+                GROUP BY CTR_KEY
+            ) MSIT1 ON MSIT1.CTR_KEY = UCM.UCM_CTR_KEY
+            LEFT JOIN (
+                SELECT CTR_KEY, MAX( POINT ) POINT
+                FROM UWO_CTR_MTR_EXP_MSIT_QST
+                WHERE POINT != 'N/A'
+                GROUP BY CTR_KEY
+            ) MSIT2 ON MSIT2.CTR_KEY = UCM.UCM_CTR_KEY
+            LEFT JOIN (
+                SELECT MQ_ID, SEQ NUM
+                FROM UWO_CTR_MTR_EXP_MSIT_QST
+            ) MSIT3 ON MSIT3.MQ_ID = UIR_ASW_ID
+        WHERE
+            UCM.UCM_BCY_COD=#ucmBcyCod# AND UCM.UCM_CTR_GBN=#ucmCtrGbn#
+            <isNotEmpty property="service">
+                AND (SELECT COUNT(UCM_SVC_COD) FROM UWO_CTR_MAP WHERE UCM_CTR_KEY = UCM.UCM_CTR_KEY AND UCM_SVC_COD = #service#) > 0
+            </isNotEmpty>
+        ORDER BY
+            CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.' )), '.', '' ), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+                ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+                END,
+            CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+                ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+                END,
+            CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'),''), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.' ), ''))
+                ELSE ASCII(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'), ''))
+                END,
+            CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+                ELSE ASCII(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+                END,
+            EXP.SEQ ASC
+    </select>
+
+    <select id="QR_COMPS003_INFRA_LA" parameterClass="Map" resultClass="egovMap">
+        SELECT
+            UCM.UCM_CTR_COD, UCM.UCM_GOL_NO
+            , UCM.UCM_1LV_COD, UCM.UCM_1LV_NAM
+            , UCM.UCM_2LV_COD, UCM.UCM_2LV_NAM, UCM.UCM_2LV_DTL
+            , UCM.UCM_3LV_COD, UCM.UCM_3LV_NAM
+            , ILA.SEQ, ILA.TITLE, ILA.NOTE, ILA.IL_ID
+            , UIR.UIR_ASW_ID, UIR.UIR_ASW_VAL
+        FROM UWO_CTR_MTR UCM
+            LEFT JOIN UWO_CTR_MTR_EXP_INFRA_LA ILA ON ILA.CTR_KEY = UCM.UCM_CTR_KEY AND ILA.LVL_COD = UCM.UCM_GOL_NO
+            LEFT JOIN UWO_IST_RST UIR ON UIR.UIR_CTR_KEY = UCM.UCM_CTR_KEY AND UIR.UIR_SVC_COD=#service#
+        WHERE UCM.UCM_BCY_COD=#ucmBcyCod# AND UCM.UCM_CTR_GBN=#ucmCtrGbn#
+        <isNotEmpty property="service">
+            AND (SELECT COUNT(UCM_SVC_COD) FROM UWO_CTR_MAP WHERE UCM_CTR_KEY = UCM.UCM_CTR_KEY AND UCM_SVC_COD = #service#) > 0
+        </isNotEmpty>
+        ORDER BY UCM.UCM_CTR_COD,
+            CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.' )), '.', '' ), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+                ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+                END,
+            CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+                ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+                END,
+            CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'),''), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.' ), ''))
+                ELSE ASCII(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'), ''))
+                END,
+            CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''), '[^0-9]') = 0
+                THEN TO_NUMBER(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+                ELSE ASCII(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+                END,
+            ILA.SEQ ASC
+    </select>
+
+    <select id="QR_INSPT004_COUNT" parameterClass="Map" resultClass="int">
+        SELECT COUNT(*) CNT
+        FROM UWO_CTR_MAP UCMAP, UWO_CTR_MTR UCMTR
+        WHERE UCMAP.UCM_CTR_KEY = UCMTR.UCM_CTR_KEY
+            AND UCMTR.UCM_CTR_GBN=#UCM_CTR_GBN#
+            AND UCMAP.UCM_SVC_COD=#UCM_SVC_COD#
+            AND UCMTR.UCM_BCY_COD=#UCM_BCY_COD#
+            AND UCMTR.UCM_3LV_COD=#UCM_3LV_COD#
+    </select>
+
+    <update id="QR_INSPT004_UPDATE" parameterClass="Map">
+        UPDATE UWO_CTR_MAP UCMAP
+        SET UCMAP.UCM_MSR_DTL=#UCM_MSR_DTL#
+        WHERE
+            UCMAP.UCM_CTR_KEY=(
+                SELECT UCM_CTR_KEY
+                FROM UWO_CTR_MTR
+                WHERE UCM_CTR_GBN=#UCM_CTR_GBN# AND UCM_BCY_COD=#UCM_BCY_COD# AND UCM_3LV_COD=#UCM_3LV_COD# )
+            AND UCMAP.UCM_SVC_COD=#UCM_SVC_COD#
+    </update>
+</sqlMap>

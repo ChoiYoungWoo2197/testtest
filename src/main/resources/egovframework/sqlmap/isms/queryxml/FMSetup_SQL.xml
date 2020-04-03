@@ -1,0 +1,2522 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="fmSetup">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="com.uwo.isms.domain.SearchVO"/>
+	<typeAlias  alias="boardVO" type="com.uwo.isms.domain.BoardVO"/>
+	<typeAlias  alias="userVO" type="com.uwo.isms.domain.UserVO"/>
+	<typeAlias	alias="sampleDocVO" type="com.uwo.isms.domain.SampleDocVO"/>
+	<typeAlias	alias="sampleDocMapVO" type="com.uwo.isms.domain.SampleDocMapVO"/>
+	<typeAlias	alias="fileVO" type="com.uwo.isms.domain.FileVO"/>
+	<typeAlias  alias="cycleVO" type="com.uwo.isms.domain.CycleVO"/>
+	<typeAlias	alias="cntrVO" type="com.uwo.isms.domain.CntrVO"/>
+
+	<select id="TESTAJAX" parameterClass="String" resultClass="egovMap">
+		select uum_emp_id, uum_usr_pwd from uwo_usr_mtr where uum_emp_id = #ID#
+	</select>
+
+	<select id="TEST_GRID" resultClass="egovMap">
+		SELECT
+			UBM_BRD_KEY,
+			(SELECT UOM_DIV_NAM FROM UWO_ORG_MTR WHERE UOM_DIV_COD = UBM_DIV_COD AND ROWNUM =1) AS UOM_DIV_NAM,
+			UBM_BRD_TLE,
+			TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH,
+			(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID
+		FROM UWO_BRD_MTR
+		WHERE 1=1
+		AND UBM_DEL_YN = 'N'
+		ORDER BY UBM_BRD_KEY ASC
+	</select>
+
+	<select id="QR_SETUP001_A" resultClass="egovMap" parameterClass="searchVO">
+	SELECT  *
+	FROM  (
+		SELECT ROWNUM RNUM, ALL_LIST.*
+		FROM  (
+			SELECT
+			UBM_BRD_KEY,
+			(SELECT UOM_DIV_NAM FROM UWO_ORG_MTR WHERE UOM_DIV_COD = UBM_DIV_COD AND ROWNUM =1) AS UOM_DIV_NAM,
+			UBM_BRD_TLE,
+			TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH,
+			(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID
+		FROM UWO_BRD_MTR
+		WHERE 1=1
+		AND UBM_BRD_GBN = '3'
+		AND UBM_DEL_YN = 'N'
+		<isEqual property="sekAth" compareValue="A">
+			AND UBM_SEK_ATH IN ('1','2','3')
+		</isEqual>
+		<isEqual property="sekAth" compareValue="P">
+			AND UBM_SEK_ATH IN ('2','3')
+		</isEqual>
+		<isEqual property="sekAth" compareValue="N">
+			AND UBM_SEK_ATH = '3'
+		</isEqual>
+		<isNotEmpty prepend="AND" property="division">
+			UBM_DIV_COD = #division#
+		</isNotEmpty>
+		<isEqual prepend="AND" property="searchCondition" compareValue="0">
+			<![CDATA[(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="1">
+			<![CDATA[UBM_BRD_TLE LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="2">
+			<![CDATA[UBM_BRD_CTS LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		ORDER BY UBM_BRD_KEY DESC
+			) ALL_LIST
+				    )
+			<![CDATA[
+			 WHERE  RNUM  > #firstIndex#
+			   AND  RNUM <= #firstIndex# + #recordCountPerPage#
+			]]>
+	</select>
+	<select id="QR_SETUP001_B" parameterClass="searchVO" resultClass="int">
+		SELECT count(*) totcnt
+		FROM UWO_BRD_MTR
+		WHERE 1=1
+		AND UBM_DEL_YN = 'N'
+		AND UBM_BRD_GBN = '3'
+		<isNotEmpty prepend="AND" property="division">
+			UBM_DIV_COD = #division#
+		</isNotEmpty>
+		<isEqual prepend="AND" property="searchCondition" compareValue="0">
+			<![CDATA[(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="1">
+			<![CDATA[UBM_BRD_TLE LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+	</select>
+
+	<insert id="QR_SETUP001_C" parameterClass="boardVO">
+		INSERT INTO UWO_BRD_MTR(UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS, UBM_NTC_YN, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH, UBM_RGT_ID, UBM_RGT_MDH)
+		VALUES(
+			#ubm_brd_key#
+			,'3'
+			,0
+			,#ubm_brd_tle#
+			,#ubm_brd_cts#
+			<isEmpty prepend="," property="ubm_ntc_yn">
+				'N'
+			</isEmpty>
+			<isNotEmpty prepend="," property="ubm_ntc_yn">
+				#ubm_ntc_yn#
+			</isNotEmpty>
+      		,'N'
+			,#ubm_div_cod#
+			,#ubm_sek_ath#
+			,#ubm_dwn_ath#
+			,#ubm_rgt_id#
+			,SYSDATE
+		)
+	</insert>
+
+	<select id="QR_SETUP001_D" parameterClass="boardVO" resultClass="boardVO">
+		SELECT
+			UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS,
+			UBM_NTC_YN, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH,
+            (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID
+           ,TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH
+		FROM UWO_BRD_MTR
+		WHERE UBM_BRD_GBN = '3'
+		AND UBM_BRD_KEY=#ubm_brd_key#
+
+
+	</select>
+
+	<update id="QR_SETUP001_E" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET
+			UBM_BRD_TLE = #ubm_brd_tle#
+			,UBM_BRD_CTS = #ubm_brd_cts#
+			,UBM_NTC_YN =
+			<isEmpty property="ubm_ntc_yn">
+				'N'
+			</isEmpty>
+			<isNotEmpty property="ubm_ntc_yn">
+				#ubm_ntc_yn#
+			</isNotEmpty>
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '3'
+	</update>
+
+	<update id="QR_SETUP001_F" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_DEL_YN = 'Y'
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '3'
+	</update>
+
+	<update id="QR_SETUP001_G" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_VST_CNT = (SELECT UBM_VST_CNT+1 FROM UWO_BRD_MTR  WHERE UBM_BRD_KEY = #ubm_brd_key#)
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '3'
+	</update>
+
+	<select id="QR_SETUP001_H" resultClass="Integer">
+		SELECT NVL(MAX(UBM_BRD_KEY)+1,1) FROM UWO_BRD_MTR
+	</select>
+
+	<select id="QR_SETUP002_A" resultClass="egovMap" parameterClass="searchVO">
+	SELECT  *
+	FROM  (
+		SELECT ROWNUM RNUM, ALL_LIST.*
+		FROM  (
+			SELECT
+			UBM_BRD_KEY,
+			(SELECT UOM_DIV_NAM FROM UWO_ORG_MTR WHERE UOM_DIV_COD = UBM_DIV_COD AND ROWNUM =1) AS UOM_DIV_NAM,
+			UBM_BRD_TLE,
+			TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH,
+			(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID
+		FROM UWO_BRD_MTR
+		WHERE 1=1
+		AND UBM_BRD_GBN = '4'
+		AND UBM_DEL_YN = 'N'
+		<isEqual property="sekAth" compareValue="A">
+			AND UBM_SEK_ATH IN ('1','2','3')
+		</isEqual>
+		<isEqual property="sekAth" compareValue="P">
+			AND UBM_SEK_ATH IN ('2','3')
+		</isEqual>
+		<isEqual property="sekAth" compareValue="N">
+			AND UBM_SEK_ATH = '3'
+		</isEqual>
+		<isNotEmpty prepend="AND" property="division">
+			UBM_DIV_COD = #division#
+		</isNotEmpty>
+		<isEqual prepend="AND" property="searchCondition" compareValue="0">
+			<![CDATA[(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="1">
+			<![CDATA[UBM_BRD_TLE LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="2">
+			<![CDATA[UBM_BRD_CTS LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		ORDER BY UBM_BRD_KEY DESC
+			) ALL_LIST
+				    )
+			<![CDATA[
+			 WHERE  RNUM  > #firstIndex#
+			   AND  RNUM <= #firstIndex# + #recordCountPerPage#
+			]]>
+	</select>
+
+	<select id="QR_GET_USR_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT uum_usr_key                                 AS uum_usr_key,
+		       uum_usr_id                                  AS uum_usr_id,
+		       uum_usr_nam                                 AS uum_usr_nam,
+		       usr.uum_dep_cod                             AS uum_dep_cod,
+		       (SELECT udm_dep_nam
+		          FROM UWO_DEP_MTR dep
+		         WHERE dep.udm_dep_cod = usr.uum_dep_cod ) AS uag_dep_nam,
+		       F_GET_COMMON_NAME(UUM_SVC_COD, 'SERVICE') AS UUM_SVC_NAM,
+    	       F_GET_COMMON_NAME(UUM_POS_COD, 'POS') AS UUM_POS_NAM
+		  FROM uwo_usr_mtr usr
+		  LEFT OUTER JOIN UWO_DEP_MTR UDM ON UDM.UDM_DEP_COD = usr.UUM_DEP_COD
+		 WHERE uum_use_yn = 'Y'
+		 <isNotEmpty property="uumUsrId">
+		   AND uum_usr_id like '%' || #uumUsrId# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="uumUsrNam">
+		   AND uum_usr_nam like '%' || #uumUsrNam# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="stOrg" prepend="AND">
+		   UDM.UDM_DEP_1LV = #stOrg#
+		 </isNotEmpty>
+		 <isNotEmpty property="hqOrg" prepend="AND">
+		   UDM.UDM_DEP_2LV = #hqOrg#
+		 </isNotEmpty>
+		 <isNotEmpty property="gpOrg" prepend="AND">
+		   UDM.UDM_DEP_3LV = #gpOrg#
+		 </isNotEmpty>
+		 <isNotEmpty property="service" prepend="AND">
+		   USR.UUM_SVC_COD = #service#
+		 </isNotEmpty>
+	</select>
+
+	<select id="QR_SETUP002_B" parameterClass="searchVO" resultClass="int">
+		SELECT count(*) totcnt
+		FROM UWO_BRD_MTR
+		WHERE 1=1
+		AND UBM_DEL_YN = 'N'
+		AND UBM_BRD_GBN = '4'
+		<isNotEmpty prepend="AND" property="division">
+			UBM_DIV_COD = #division#
+		</isNotEmpty>
+		<isEqual prepend="AND" property="searchCondition" compareValue="0">
+			<![CDATA[(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="1">
+			<![CDATA[UBM_BRD_TLE LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+	</select>
+
+	<insert id="QR_SETUP002_C" parameterClass="boardVO">
+		INSERT INTO UWO_BRD_MTR(UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS, UBM_NTC_YN, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH, UBM_RGT_ID, UBM_RGT_MDH)
+		VALUES(
+			#ubm_brd_key#
+			,'4'
+			,0
+			,#ubm_brd_tle#
+			,#ubm_brd_cts#
+			<isEmpty prepend="," property="ubm_ntc_yn">
+				'N'
+			</isEmpty>
+			<isNotEmpty prepend="," property="ubm_ntc_yn">
+				#ubm_ntc_yn#
+			</isNotEmpty>
+      		,'N'
+			,#ubm_div_cod#
+			,#ubm_sek_ath#
+			,#ubm_dwn_ath#
+			,#ubm_rgt_id#
+			,SYSDATE
+		)
+	</insert>
+
+	<select id="QR_SETUP002_D" parameterClass="boardVO" resultClass="boardVO">
+		SELECT
+			UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS,
+			UBM_NTC_YN, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH,
+            (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID
+           ,TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH
+		FROM UWO_BRD_MTR
+		WHERE UBM_BRD_GBN = '4'
+		AND UBM_BRD_KEY=#ubm_brd_key#
+
+
+	</select>
+
+	<update id="QR_SETUP002_E" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET
+			UBM_BRD_TLE = #ubm_brd_tle#
+			,UBM_BRD_CTS = #ubm_brd_cts#
+			,UBM_NTC_YN =
+			<isEmpty property="ubm_ntc_yn">
+				'N'
+			</isEmpty>
+			<isNotEmpty property="ubm_ntc_yn">
+				#ubm_ntc_yn#
+			</isNotEmpty>
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '4'
+	</update>
+
+	<update id="QR_SETUP002_F" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_DEL_YN = 'Y'
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '4'
+	</update>
+
+	<update id="QR_SETUP002_G" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_VST_CNT = (SELECT UBM_VST_CNT+1 FROM UWO_BRD_MTR  WHERE UBM_BRD_KEY = #ubm_brd_key#)
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '4'
+	</update>
+
+	<select id="QR_SETUP002_H" resultClass="Integer">
+		SELECT NVL(MAX(UBM_BRD_KEY)+1,1) FROM UWO_BRD_MTR
+	</select>
+
+	<select id="QR_SETUP003_A" resultClass="egovMap" parameterClass="searchVO">
+	SELECT  *
+	FROM  (
+		SELECT ROWNUM RNUM, ALL_LIST.*
+		FROM  (
+			SELECT
+			UMM_MAN_CYL,f_get_usr_name(UMM_CRE_ID) AS UMM_CRE_ID,UMM_MAN_TLE
+		FROM UWO_MCY_MTR
+		WHERE 1=1
+		ORDER BY UMM_MAN_CYL DESC
+			) ALL_LIST
+				    )
+			<![CDATA[
+			 WHERE  RNUM  > #firstIndex#
+			   AND  RNUM <= #firstIndex# + #recordCountPerPage#
+			]]>
+	</select>
+	<select id="QR_SETUP003_B" parameterClass="searchVO" resultClass="int">
+		SELECT count(*) totcnt
+		FROM UWO_MCY_MTR
+		WHERE 1=1
+	</select>
+
+	<select id="QR_SETUP003_C" parameterClass="cycleVO" resultClass="cycleVO">
+		Select UMM_MAN_CYL,to_char(UMM_STD_DAT,'YYYY.MM.DD') as UMM_STD_DAT,to_char(UMM_END_DAT,'YYYY.MM.DD') as UMM_END_DAT,UMM_MAN_TLE,UMM_MAN_CON,UMM_CFM_YN,UMM_CFM_GBN
+		FROM UWO_MCY_MTR
+		WHERE UMM_MAN_CYL = #umm_man_cyl#
+	</select>
+
+	<insert id="QR_SETUP003_D" parameterClass="cycleVO">
+		INSERT INTO UWO_MCY_MTR(UMM_MAN_CYL,UMM_STD_DAT,UMM_END_DAT,UMM_CRE_DAT,UMM_CRE_ID
+								,UMM_MAN_TLE,UMM_MAN_CON,UMM_CFM_YN,UMM_CFM_GBN)
+		VALUES(
+			(SELECT NVL(MAX(UMM_MAN_CYL),0)+1 FROM UWO_MCY_MTR)
+			,#umm_std_dat#
+			,#umm_end_dat#
+			,SYSDATE
+			,#umm_cre_id#
+			,#umm_man_tle#
+			,#umm_man_con#
+			,#umm_cfm_yn#
+			,#umm_cfm_gbn#
+		)
+	</insert>
+
+	<update id="QR_SETUP003_E" parameterClass="cycleVO">
+		UPDATE UWO_MCY_MTR
+		SET
+			UMM_MAN_TLE = #umm_man_tle#,
+			UMM_MAN_CON = #umm_man_con#,
+			UMM_CFM_YN = #umm_cfm_yn#,
+			UMM_CFM_GBN = #umm_cfm_gbn#
+		WHERE UMM_MAN_CYL = #umm_man_cyl#
+	</update>
+
+	<procedure id="QR_SETUP003_F">
+		{call make_cycle_start.MAIN()}
+	</procedure>
+
+
+	<!-- 시스템설정 - 증적양식 설정 - 메인 list테이블 쿼리 -->
+	<!-- 시스템설정 - 증적양식 설정 - 메인 list테이블 쿼리 -->
+	<select id="QR_SETUP006_A" parameterClass="searchVO" resultClass="egovMap">
+		SELECT DOC.UTD_TRC_KEY UTD_TRC_KEY,
+		       DOC.UTD_DIV_COD UTD_DLV_COD,
+		       DOC.UTD_SVC_COD UTD_SVC_COD,
+		       DOC.UTD_DOC_GBN UTD_DOC_GBN,
+		       DECODE(DOC.UTD_UPT_ID, '', DOC.UTD_RGT_ID, DOC.UTD_UPT_ID) UTD_UPT_ID,
+		       F_GET_COMMON_NAME(DOC.UTD_SVC_COD, 'SERVICE') SERVICE,
+		       F_GET_COMMON_NAME(DOC.UTD_DOC_GBN, 'DGBN') DOC_GBN_NM,
+		       UTD_DOC_NAM,
+		       DOC.UTD_TRM_GBN UTD_TRM_GBN,
+		       DECODE(LENGTH(DOC.UTD_TRM_GBN), '1',
+		              (F_GET_COMMON_NAME(DOC.UTD_TRM_GBN, 'TERM')),
+		              (F_GET_NTR_NAME(SUBSTR(DOC.UTD_TRM_GBN, 2)))) WORK_TERM,
+		       NVL(CTR_LIST, '매핑항목없음') CTR_LIST,
+		       NVL(WORKER_LIST, '담당자없음') WORKER_LIST,
+		       DECODE(UTD_APR_YN, 'Y', '승인', '자가') UTD_APR_YN,
+		       TO_CHAR(DOC.UTD_STR_DAT, 'YYYY.MM.DD') UTD_STR_DAT,
+		       TO_CHAR(DOC.UTD_END_DAT, 'YYYY.MM.DD') UTD_END_DAT,
+		       <!-- DOC.UTD_DOC_ETC UTD_DOC_ETC, -->
+		       UTD_DEL_YN,
+		       DECODE(DOC.UTD_DEL_YN, 'N', '사용', '미사용') DEL_YN,
+		       DECODE(DOC.UTD_UPT_ID, '',
+		              F_GET_USR_NAME(DOC.UTD_RGT_ID),
+		              F_GET_USR_NAME(DOC.UTD_UPT_ID)) UTD_UPT_NM,
+		       TO_CHAR(DECODE(DOC.UTD_UPT_MDH, '', DOC.UTD_RGT_MDH, DOC.UTD_UPT_MDH),
+		               'YYYY.MM.DD') UTD_UPT_MDH,
+		       TRC_KEY
+		  FROM (SELECT UTD_TRC_KEY TRC_KEY,
+		               LISTAGG(F_GET_USR_NAME(UTM_WRK_ID), ',') WITHIN GROUP(ORDER BY UTD_TRC_KEY) WORKER_LIST
+		          FROM UWO_TRC_DOC,
+		               UWO_TRC_MAP
+		         WHERE UTD_TRC_KEY = UTM_TRC_KEY
+		           AND UTM_DEL_YN = 'N'
+		         GROUP BY UTD_TRC_KEY),
+		       ( SELECT UTC_TRC_KEY TRC_CTR_KEY,
+			                LISTAGG(UCM_3LV_COD, ',') WITHIN GROUP(ORDER BY UTC_TRC_KEY) CTR_LIST
+			       FROM UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR
+			      WHERE UTD_TRC_KEY = UTC_TRC_KEY
+			        AND UTC_CTR_KEY = UCM_CTR_KEY
+			        AND UTC_DEL_YN = 'N'
+			      GROUP BY UTC_TRC_KEY),
+		       UWO_TRC_DOC DOC
+		 WHERE UTD_TRC_KEY = TRC_KEY(+)
+		   AND TRC_CTR_KEY(+) = UTD_TRC_KEY
+		   AND UTD_BCY_COD = #manCyl#
+		   AND UTD_DEL_YN = 'N'
+		<isNotEqual property="division" compareValue="A">
+		   AND UTD_DIV_COD = #division#
+		</isNotEqual>
+		<isNotEqual property="service" compareValue="A">
+		   AND UTD_SVC_COD = #service#
+		</isNotEqual>
+		<isNotEmpty property="sampleCode">
+			<isNotEqual property="sampleCode" compareValue="A">
+				AND UTD_DOC_GBN = #sampleCode#
+			</isNotEqual>
+		</isNotEmpty>
+		<isNotEmpty property="approval">
+			<isNotEqual property="approval" compareValue="A">
+				AND UTD_APR_YN = #approval#
+			</isNotEqual>
+		</isNotEmpty>
+		<isEqual property="workTerm" compareValue="Y">
+			<isEqual property="workCycleTerm" compareValue="A">
+				AND UTD_TRM_GBN IN ('D','W','M','T','Q','H','Y')
+			</isEqual>
+			<isNotEqual property="workCycleTerm" compareValue="A">
+				<![CDATA[AND UTD_TRM_GBN LIKE #workCycleTerm# || '%']]>
+			</isNotEqual>
+		</isEqual>
+		<isEqual property="workTerm" compareValue="N">
+			<isEqual property="workCycleTerm" compareValue="A">
+				AND UTD_TRM_GBN NOT IN ('D','W','M','T','Q','H','Y')
+			</isEqual>
+			<isNotEqual property="workCycleTerm" compareValue="A">
+				<![CDATA[AND UTD_TRM_GBN LIKE #workCycleTerm# || '%']]>
+			</isNotEqual>
+		</isEqual>
+		<isNotEmpty property="workName">
+		 	<![CDATA[AND UTD_DOC_NAM LIKE '%' || #workName# || '%']]>
+		</isNotEmpty>
+		<isNotEmpty property="workMemo">
+			<![CDATA[AND UTD_DOC_ETC LIKE '%' || #workMemo# || '%']]>
+		</isNotEmpty>
+		 ORDER BY UTD_TRC_KEY
+	</select>
+
+	<!-- 시스템설정 - 증적양식 설정 - 팝업 - 업무담당자 그리드 테이블 리스트 쿼리 -->
+	<select id="QR_SETUP006_B" parameterClass="searchVO" resultClass="egovMap">
+		SELECT  UR.UUM_USR_KEY,
+		        UR.UUM_USR_ID,
+		        UR.UUM_USR_NAM,
+		        UR.UUM_DIV_COD,
+		        F_FIND_NAME('21', UR.UUM_DEP_COD, #company#) DIVISION,
+		        UR.UUM_SVC_COD,
+		        F_FIND_NAME('22', UR.UUM_DEP_COD, #company#) SERVICE,
+		        UR.UUM_DEP_COD,
+		        F_FIND_NAME('23', UR.UUM_DEP_COD, #company#) DEPT,
+		        UR.UUM_POS_COD,
+		        '' POS,
+		       <!--  CASE WHEN UR.UUM_ATH_GBN = 'A' THEN '통합관리자'
+		             WHEN UR.UUM_ATH_GBN = 'P' THEN '결재관리자'
+		             WHEN UR.UUM_ATH_GBN = 'N' THEN '업무담당자'
+		        END UUM_ATH_GBN, -->
+		        CASE WHEN UR.UUM_USE_YN = 'Y' THEN '사용'
+		             ELSE '사용불가'
+		        END UUM_USE_YN
+		  FROM UWO_USR_MTR UR, UWO_TRC_MAP TM
+		 WHERE TM.UTM_WRK_ID = UR.UUM_USR_KEY
+		   AND TM.UTM_TRC_KEY = #docCode#
+		   AND TM.UTM_DEL_YN = 'N'
+	</select>
+
+	<!-- 시스템설정 - 증적양식 설정 - 팝업 - 담당자 그리드 테이블 리스트 쿼리 -->
+	<select id="QR_SETUP006_C" parameterClass="searchVO" resultClass="egovMap">
+		SELECT  UUM_USR_KEY,
+		        UUM_USR_ID,
+		        UUM_USR_NAM,
+		        UUM_DIV_COD,
+		        F_GET_USR_INFO('01', UUM_USR_KEY) division,
+		        UUM_SVC_COD,
+		        F_GET_USR_INFO('02', UUM_USR_KEY) service,
+		        UUM_DEP_COD,
+		        F_GET_USR_INFO('03', UUM_USR_KEY) dept,
+		        UUM_POS_COD,
+		        F_GET_USR_INFO('04', UUM_USR_KEY) pos,
+		        <!-- CASE WHEN UUM_ATH_GBN = 'A' THEN '통합관리자'
+		             WHEN UUM_ATH_GBN = 'P' THEN '결재관리자'
+		             WHEN UUM_ATH_GBN = 'N' THEN '업무담당자'
+		        END UUM_ATH_GBN, -->
+		        CASE WHEN UUM_USE_YN = 'Y' THEN '사용'
+		             ELSE '사용불가'
+		        END UUM_USE_YN
+		  FROM UWO_USR_MTR
+		 WHERE UUM_USE_YN = 'Y'
+<!-- 		 <isNotEqual property="auth" compareValue="A"> -->
+<!-- 		 	AND UUM_DIV_COD = #division#	 -->
+<!-- 		 </isNotEqual> -->
+	</select>
+
+	<!-- 시스템설정 - 증적양식 설정 - 팝업 - 증적양식 추가 - sequence nextval select  -->
+	<select id="QR_SETUP006_SEQ" resultClass="String">
+<!-- 		SELECT SEQ_DOC_NUM.NEXTVAL FROM DUAL -->
+		SELECT NVL(MAX(UTD_TRC_KEY), 0)+1 FROM UWO_TRC_DOC
+	</select>
+
+	<!-- 시스템설정 - 증적양식 설정 - 팝업 - 증적양식 추가 -->
+	<insert id="QR_SETUP006_D" parameterClass="sampleDocVO">
+		INSERT INTO UWO_TRC_DOC
+		(
+		      UTD_TRC_KEY
+		    , UTD_BCY_COD
+		    , UTD_DOC_NAM
+		    , UTD_DOC_GBN
+		    , UTD_TRM_GBN
+		    , UTD_DIV_COD
+		    , UTD_SVC_COD
+		    , UTD_DEL_YN
+		    , UTD_APR_YN
+		    , UTD_APP_LEV
+		    , UTD_STR_DAT
+		    , UTD_END_DAT
+		    , UTD_WRK_END
+		    , UTD_DOC_ETC
+		    , UTD_SDM_YN
+		    , UTD_RGT_ID
+		    , UTD_RGT_MDH
+		)
+		VALUES
+		(
+		      #utdTrcKey#
+		    , #utdBcyCod#
+		    , #utdDocNam#
+		    , #utdDocGbn#
+		    , #utdTrmGbn#
+		    , #utdDivCod#
+		    , #utdSvcCod#
+		    , #utdDelYn#
+		    , #utdAprYn#
+		    , #utdAppLev#
+		    , #utdStrDat#
+		    , #utdEndDat#
+		    , #utdWrkEnd#
+		    , #utdDocEtc#
+		    , #utdSdmYn#
+		    , #utdRgtId#
+		    , SYSDATE
+		)
+	</insert>
+
+	<!-- 시스템설정 - 증적양식 설정 - 팝업 - 증적양식 업무담당자 추가 -->
+	<insert id="QR_SETUP006_E" parameterClass="sampleDocMapVO">
+		INSERT INTO UWO_TRC_MAP
+		(
+		      UTM_MAP_KEY
+		    , UTM_TRC_KEY
+		    , UTM_BCY_COD
+		    , UTM_WRK_ID
+		    , UTM_DWN_YN
+		    , UTM_DEL_YN
+		    , UTM_RGT_ID
+		    , UTM_RGT_MDH
+		)
+		VALUES
+		(
+		    (SELECT NVL(MAX(UTM_MAP_KEY),0)+1 FROM UWO_TRC_MAP)
+		    , #utmTrcKey#
+		    , #UtmBcyCod#
+		    , #utmWrkId#
+		    , #utmDwnYn#
+		    , #utmDelYn#
+		    , #utmRgtId#
+		    , SYSDATE
+		)
+	</insert>
+
+	<!-- 시스템설정 - 증적양식 설정 - 팝업 - trcKey에 해당하는 증적양식 정보 갖고오기 -->
+	<select id="QR_SETUP006_F" parameterClass="searchVO" resultClass="sampleDocVO">
+        SELECT UTD_TRC_KEY utdTrcKey,
+               UTD_DIV_COD utdDivCod,
+               UTD_SVC_COD utdSvcCod,
+               UTD_DOC_GBN utdDocGbn,
+               UTD_DOC_NAM utdDocNam,
+               DECODE(LENGTH(UTD_TRM_GBN), '1', 'Y', 'N') workTerm,
+               DECODE(LENGTH(UTD_TRM_GBN), '1', UTD_TRM_GBN, SUBSTR(UTD_TRM_GBN, 2))  utdTrmGbn,
+               UTD_APR_YN utdAprYn,
+               UTD_APP_LEV utdAppLev,
+               UTD_APP_LEV aprlevOld,
+               UTD_SDM_YN utdSdmYn,
+               UTD_DEL_YN utdDelYn,
+               TO_CHAR(UTD_STR_DAT, 'YYYY.MM.DD') utdStrDat,
+               TO_CHAR(UTD_END_DAT, 'YYYY.MM.DD') utdEndDat,
+               UTD_DOC_ETC utdDocEtc
+        FROM UWO_TRC_DOC
+        WHERE UTD_TRC_KEY = #docCode#
+	</select>
+
+	<!-- 시스템설정 - 증적양식 설정 - 팝업 - 증적양식 업무담당자 삭제 -->
+	<update id="QR_SETUP006_G" parameterClass="sampleDocMapVO">
+		UPDATE UWO_TRC_MAP
+		   SET UTM_DEL_YN = 'Y'
+		 WHERE UTM_TRC_KEY = #utmTrcKey#
+		 <isNotEmpty property="utmWrkId">
+		 	AND UTM_WRK_ID = #utmWrkId#
+		 </isNotEmpty>
+	</update>
+
+	<!-- 시스템설정 - 증적양식 설정 - 팝업 - 증적양식 수정 -->
+	<update id="QR_SETUP006_H" parameterClass="sampleDocVO">
+		UPDATE UWO_TRC_DOC
+		   SET 	UTD_DOC_NAM 	= #utdDocNam#
+				, UTD_DOC_GBN	= #utdDocGbn#
+				, UTD_TRM_GBN	= #utdTrmGbn#
+				, UTD_DIV_COD	= #utdDivCod#
+				, UTD_SVC_COD	= #utdSvcCod#
+				, UTD_DEL_YN	= #utdDelYn#
+				, UTD_APR_YN	= #utdAprYn#
+				, UTD_APP_LEV	= #utdAppLev#
+				, UTD_STR_DAT	= #utdStrDat#
+				, UTD_END_DAT	= #utdEndDat#
+				, UTD_WRK_END	= #utdWrkEnd#
+				, UTD_DOC_ETC	= #utdDocEtc#
+				, UTD_SDM_YN	= #utdSdmYn#
+				, UTD_UPT_ID	= #utdUptId#
+				, UTD_UPT_MDH	= SYSDATE
+		 WHERE  UTD_TRC_KEY		= #utdTrcKey#
+	</update>
+
+	<!-- 시스템설정 - 증적양식 설정 - 로그용 select -->
+	<select id="QR_SETUP006_I" parameterClass="String" resultClass="sampleDocVO">
+		SELECT UTD_TRC_KEY utdTrcKey
+		       , UTD_BCY_COD utdBcyCod
+		       , UTD_DOC_NAM utdDocNam
+		       , UTD_DOC_GBN utdDocGbn
+		       , UTD_TRM_GBN utdTrmGbn
+		       , UTD_DIV_COD utdDivCod
+		       , UTD_SVC_COD utdSvcCod
+		       , UTD_DEL_YN utdDelYn
+		       , UTD_APR_YN utdAprYn
+		       , UTD_APP_LEV utdAppLev
+		       , UTD_WRK_END utdWrkEnd
+		       , to_char(UTD_STR_DAT, 'YYYY.MM.DD') utdStrDat
+		       , to_char(UTD_END_DAT, 'YYYY.MM.DD') utdEndDat
+		       , UTD_DOC_ETC utdDocEtc
+		       , UTD_SDM_YN utdSdmYn
+		  FROM UWO_TRC_DOC
+		 WHERE UTD_TRC_KEY = #docKey#
+	</select>
+
+	<!-- 시스템설정 - 증적양식 설정 - 로그 insert -->
+	<insert id="QR_SETUP006_J" parameterClass="sampleDocVO">
+		INSERT INTO UWO_TRC_LOG
+		(
+		    UTL_MTR_KEY
+		    , UTL_TRC_KEY
+		    , UTL_BCY_COD
+		    , UTL_DOC_NAM
+		    , UTL_DOC_GBN
+		    , UTL_TRM_GBN
+		    , UTL_DIV_COD
+		    , UTL_SVC_COD
+		    , UTL_DEL_YN
+		    , UTL_APR_YN
+		    , UTL_APP_LEV
+		    , UTL_WRK_END
+		    , UTL_STR_DAT
+		    , UTL_END_DAT
+		    , UTL_DOC_ETC
+		    , UTL_SDM_YN
+		    , UTL_RGT_ID
+		    , UTL_RGT_MDH
+		)
+		VALUES
+		(
+		    (SELECT NVL(MAX(UTL_MTR_KEY),0)+1 FROM UWO_TRC_LOG)
+		    , #utdTrcKey#
+		    , #utdBcyCod#
+		    , #utdDocNam#
+		    , #utdDocGbn#
+		    , #utdTrmGbn#
+		    , #utdDivCod#
+		    , #utdSvcCod#
+		    , #utdDelYn#
+		    , #utdAprYn#
+		    , #utdAppLev#
+		    , #utdWrkEnd#
+		    , #utdStrDat#
+		    , #utdEndDat#
+		    , #utdDocEtc#
+		    , #utdSdmYn#
+		    , #utdRgtId#
+		    , SYSDATE
+		)
+	</insert>
+
+	<select id="QR_SETUP006_K" parameterClass="searchVO" resultClass="egovMap">
+		SELECT A.*
+		FROM UWO_CTR_MTR A, UWO_TRC_CTR, UWO_TRC_DOC
+		WHERE UCM_CTR_KEY = UTC_CTR_KEY(+)
+		AND UTC_TRC_KEY = UTD_TRC_KEY(+)
+		AND UTD_TRC_KEY = #docCode#
+	</select>
+
+	<select id="QR_SETUP006_L" parameterClass="searchVO" resultClass="egovMap" remapResults="true">
+		<isEqual property="code" compareValue="0">
+			SELECT UCC_SND_COD AS CODE, UCC_SND_NAM AS CNAME FROM UWO_COM_COD WHERE UCC_FIR_COD = 'STND'
+		</isEqual>
+		<isEqual property="code" compareValue="1">
+			SELECT DISTINCT UCM_1LV_COD AS CODE, UCM_1LV_NAM AS CNAME
+		</isEqual>
+		<isEqual property="code" compareValue="2">
+			SELECT DISTINCT UCM_2LV_COD AS CODE , UCM_1LV_NAM, UCM_2LV_NAM AS CNAME
+		</isEqual>
+		<isEqual property="code" compareValue="3">
+			SELECT DISTINCT UCM_3LV_COD AS CODE, UCM_2LV_NAM, ' ' AS CNAME
+		</isEqual>
+		<isEqual property="code" compareValue="4">
+			SELECT UCM_CTR_KEY, UCM_2LV_DTL,UCM_3LV_NAM, UCM_3LV_DTL
+		</isEqual>
+		<isNotEqual property="code" compareValue="0">
+		FROM UWO_CTR_MTR
+		WHERE UCM_DIV_COD = #division#
+		AND UCM_BCY_COD = #manCyl#
+		<isEqual property="code" compareValue="1">
+		AND UCM_CTR_GBN = #standard#
+		ORDER BY LENGTH(UCM_1LV_COD), UCM_1LV_COD
+		</isEqual>
+		<isEqual property="code" compareValue="2">
+		AND UCM_CTR_GBN = #standard#
+		AND UCM_1LV_COD = #depth1#
+		ORDER BY UCM_2LV_COD
+		</isEqual>
+		<isEqual property="code" compareValue="3">
+		AND UCM_CTR_GBN = #standard#
+		AND UCM_1LV_COD = #depth1#
+		AND UCM_2LV_COD = #depth2#
+		ORDER BY UCM_3LV_COD
+		</isEqual>
+		<isEqual property="code" compareValue="4">
+		AND UCM_CTR_GBN = #standard#
+		AND UCM_1LV_COD = #depth1#
+		AND UCM_2LV_COD = #depth2#
+		AND UCM_3LV_COD = #depth3#
+		</isEqual>
+		</isNotEqual>
+	</select>
+
+	<!-- 2018-04-19 s, 사용유무/서비스 미지정 조건 추가 -->
+	<select id="QR_SETUP007_A" parameterClass="searchVO" resultClass="egovMap">
+			SELECT  *
+			FROM  (
+				SELECT ROWNUM RNUM, ALL_LIST.*
+				FROM  (
+					SELECT UUM_USR_KEY,
+               			UUM_USR_ID,
+		               UUM_USR_PWD,
+		               UUM_USR_NAM,
+		               UUM_MAL_ADS,
+		               '' AS UUM_DIV_COD,
+		               (SELECT svc_nam FROM uwo_svc_mtr WHERE svc_cod = uum_svc_cod) AS UUM_SVC_COD,
+		               UUM_DEP_COD,
+                       (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) AS UUM_DEP_NAM,
+                       (SELECT UDM_DEP_LVL FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) AS UUM_DEP_LVL,
+                       (SELECT UDM_DEP_1LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) AS UUM_DEP_LV1,
+                       (SELECT UDM_DEP_2LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) AS UUM_DEP_LV2,
+                       (SELECT UDM_DEP_3LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) AS UUM_DEP_LV3,
+		               UUM_POS_COD,
+		               UUM_USR_NUM,
+		               UUM_CEL_NUM,
+		               UUM_TEL_NUM,
+		               UUM_USE_YN,
+		               UUM_CHG_MDH,
+		               UUM_RGT_ID,
+		               UUM_PWD_FAI,
+		               UAT_AUH_NAM,
+		               DECODE(UUM_APV_GBN,'Y','가능','N','불가능') AS UUM_APV_GBN,
+		               F_GET_COMMON_NAME(uum_use_yn, 'USER_STAT') use_yn_nam,
+		               <!-- 2018-05-10 s, 추가 -->
+		               F_GET_COMMON_NAME(uum_pos_cod, 'POS') AS uum_pos_cod_nam,
+		               uum_agn_id,
+		               uum_agn_nam,
+		               TO_CHAR(uum_agn_str,'YYYY-MM-DD') uum_agn_str,
+                       TO_CHAR(uum_agn_end,'YYYY-MM-DD') uum_agn_end,
+		               (SELECT uum_usr_id FROM uwo_usr_mtr uum2 WHERE uum2.uum_usr_key = u.uum_apv_one) AS uum_apv_one,
+		               (SELECT uum_usr_id FROM uwo_usr_mtr uum2 WHERE uum2.uum_usr_key = u.uum_apv_two) AS uum_apv_two,
+		               (SELECT uum_usr_nam FROM uwo_usr_mtr uum2 WHERE uum2.uum_usr_key = u.uum_apv_one) AS uum_apv_one_nam,
+        		       (SELECT uum_usr_nam FROM uwo_usr_mtr uum2 WHERE uum2.uum_usr_key = u.uum_apv_two) AS uum_apv_two_nam,
+		               CASE WHEN uum_tra_gbn = 'Y' THEN '지정' ELSE '미지정' END uum_tra_gbn,
+		               TO_CHAR(uum_rgt_mdh,'yyyy-mm-dd hh24:mi') AS uum_rgt_mdh,
+		               TO_CHAR(uum_upt_mdh,'yyyy-mm-dd hh24:mi') AS uum_upt_mdh
+      				FROM UWO_USR_MTR U, UWO_AUH_MTR A
+      				WHERE 1=1
+      					AND U.UUM_AUH_KEY = TO_CHAR(A.UAT_AUH_KEY)
+					<isNotEmpty property="service">
+						<isEqual property="service" compareValue="0000">
+						AND UUM_SVC_COD IS NULL
+						</isEqual>
+						<isNotEqual property="service" compareValue="0000">
+						AND UUM_SVC_COD = #service#
+						</isNotEqual>
+					</isNotEmpty>
+					<isNotEmpty property="dept">
+						AND UUM_DEP_COD = #dept#
+					</isNotEmpty>
+					<isNotEmpty property="auth">
+						AND UAT_AUH_KEY = #auth#
+					</isNotEmpty>
+					<isEqual prepend="AND" property="searchCondition" compareValue="0">
+						<![CDATA[UUM_USR_ID LIKE '%' || #searchKeyword# || '%']]>
+					</isEqual>
+					<isEqual prepend="AND" property="searchCondition" compareValue="1">
+						<![CDATA[UUM_USR_NAM LIKE '%' || #searchKeyword# || '%']]>
+					</isEqual>
+					<isNotEmpty property="stOrg">
+						AND (SELECT UDM_DEP_1LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) = #stOrg#
+					</isNotEmpty>
+					<isNotEmpty property="hqOrg">
+						AND (SELECT UDM_DEP_2LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) = #hqOrg#
+					</isNotEmpty>
+					<isNotEmpty property="gpOrg">
+						AND (SELECT UDM_DEP_3LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) = #gpOrg#
+					</isNotEmpty>
+					<isNotEmpty property="useYn">
+						AND uum_use_yn = #useYn#
+					</isNotEmpty>
+					<isNotEmpty property="searchExt1">
+						AND uum_apv_gbn = #searchExt1#
+					</isNotEmpty>
+					<isNotEmpty property="searchExt2">
+						AND uum_tra_gbn = #searchExt2#
+					</isNotEmpty>
+					ORDER BY UUM_USR_KEY DESC
+				) ALL_LIST
+		    )
+		<![CDATA[
+			 WHERE  RNUM  > #firstIndex#
+			   AND  RNUM <= #firstIndex# + #recordCountPerPage#
+		]]>
+	</select>
+
+	<!-- 2018-04-19 s, 사용유무/서비스 미지정 조건 추가 -->
+	<select id="QR_SETUP007_B"  resultClass="int" parameterClass="searchVO" >
+		SELECT COUNT(*)
+		FROM UWO_USR_MTR U, UWO_AUH_MTR A
+   		WHERE 1=1
+   			AND U.UUM_AUH_KEY = TO_CHAR(A.UAT_AUH_KEY)
+		<isNotEmpty property="service">
+			<isEqual property="service" compareValue="0000">
+			AND UUM_SVC_COD IS NULL
+			</isEqual>
+			<isNotEqual property="service" compareValue="0000">
+			AND UUM_SVC_COD = #service#
+			</isNotEqual>
+		</isNotEmpty>
+		<isNotEmpty property="dept">
+			AND UUM_DEP_COD = #dept#
+		</isNotEmpty>
+		<isNotEmpty property="auth">
+			AND UAT_AUH_KEY = #auth#
+		</isNotEmpty>
+		<isEqual prepend="AND" property="searchCondition" compareValue="0">
+			<![CDATA[UUM_USR_ID LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="1">
+			<![CDATA[UUM_USR_NAM LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isNotEmpty property="stOrg">
+			AND (SELECT UDM_DEP_1LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) = #stOrg#
+		</isNotEmpty>
+		<isNotEmpty property="hqOrg">
+			AND (SELECT UDM_DEP_2LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) = #hqOrg#
+		</isNotEmpty>
+		<isNotEmpty property="gpOrg">
+			AND (SELECT UDM_DEP_3LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) = #gpOrg#
+		</isNotEmpty>
+		<isNotEmpty property="useYn">
+			AND uum_use_yn = #useYn#
+		</isNotEmpty>
+		<isNotEmpty property="searchExt1">
+			AND uum_apv_gbn = #searchExt1#
+		</isNotEmpty>
+		<isNotEmpty property="searchExt2">
+			AND uum_tra_gbn = #searchExt2#
+		</isNotEmpty>
+	</select>
+
+	<select id="QR_SETUP007_C" resultClass="egovMap" parameterClass="String">
+		SELECT UUM_USR_KEY,
+               UUM_USR_ID,
+               UUM_USR_PWD,
+               UUM_USR_NAM,
+               UUM_MAL_ADS,
+               UUM_DIV_COD,
+               UUM_SVC_COD,
+               UUM_DEP_COD,
+				(SELECT UDM_DEP_LVL FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) AS UUM_DEP_LVL,
+				(SELECT UDM_DEP_1LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) AS UUM_DEP_LV1,
+				(SELECT UDM_DEP_2LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) AS UUM_DEP_LV2,
+				(SELECT UDM_DEP_3LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) AS UUM_DEP_LV3,
+               UUM_POS_COD,
+               UUM_USR_NUM,
+               UUM_CEL_NUM,
+               UUM_TEL_NUM,
+               UUM_USE_YN,
+               UUM_AUH_KEY,
+               UUM_APV_GBN,
+               UUM_USE_YN,
+               UUM_APV_ONE,
+               (SELECT UUM_USR_NAM FROM UWO_USR_MTR UUM2 WHERE UUM2.UUM_USR_KEY = UUM.UUM_APV_ONE) AS UUM_APV_ONE_NAM,
+               UUM_APV_TWO,
+               (SELECT UUM_USR_NAM FROM UWO_USR_MTR UUM2 WHERE UUM2.UUM_USR_KEY = UUM.UUM_APV_TWO) AS UUM_APV_TWO_NAM,
+               UUM_AGN_ID,
+               UUM_AGN_NAM,
+               TO_CHAR(UUM_AGN_STR,'YYYY-MM-DD') UUM_AGN_STR,
+               TO_CHAR(UUM_AGN_END,'YYYY-MM-DD') UUM_AGN_END,
+               NVL(uum_tra_gbn, 'N') AS uum_tra_gbn
+		FROM UWO_USR_MTR UUM
+		WHERE UUM_USR_KEY = #usrKey#
+	</select>
+
+	<update id="QR_SETUP007_D" parameterClass="userVO">
+		UPDATE UWO_USR_MTR
+		SET
+			UUM_USR_NAM = #uumUsrNam#
+		<isNotEmpty property="uumUsrPwd">
+			,UUM_USR_PWD = #uumUsrPwd#
+			,uum_chg_mdh = SYSDATE
+		</isNotEmpty>
+			,UUM_MAL_ADS = #uumMalAds#
+		<isNotEmpty property="uumDivCod">
+			,UUM_DIV_COD = #uumDivCod#
+		</isNotEmpty>
+		<isNotEmpty property="uumSvcCod">
+			,UUM_SVC_COD = #uumSvcCod#
+		</isNotEmpty>
+		<isNotEmpty property="uumDepCod">
+			,UUM_DEP_COD = #uumDepCod#
+		</isNotEmpty>
+			,UUM_USR_NUM = #uumUsrNum#
+			,UUM_POS_COD = #uumPosCod#
+			,UUM_CEL_NUM = #uumCelNum#
+			,UUM_TEL_NUM = #uumTelNum#
+		<!-- 2018-04-19 s, 계정설정에서 가능하도록 주석처리
+			2018-05-11 s, 1,2차 결재자는 사용자가 지정못함 -->
+		<isEqual property="userEditPage" compareValue="setup">
+			,UUM_APV_GBN = #uumApvGbn#
+			,UUM_AUH_KEY = #uumAuhKey#
+			,UUM_USE_YN = #uumUseYn#
+			,uum_tra_gbn = #uumTraGbn#
+			,UUM_APV_ONE = #uumApvOne#
+			,UUM_APV_TWO = #uumApvTwo#
+		</isEqual>
+			,UUM_AGN_ID = #uumAgnId#
+			,UUM_AGN_NAM = #uumAgnNam#
+			,UUM_AGN_STR = #uumAgnStr#
+			,UUM_AGN_END = #uumAgnEnd#
+		WHERE UUM_USR_ID = #uumUsrId#
+	</update>
+	<insert id="QR_SETUP007_E" parameterClass="userVO">
+		INSERT INTO
+		UWO_USR_MTR(UUM_USR_KEY, UUM_USR_ID, UUM_USR_PWD, UUM_USR_NAM, UUM_MAL_ADS, UUM_DIV_COD, UUM_SVC_COD, UUM_DEP_COD,
+		       UUM_POS_COD, UUM_USR_NUM, UUM_CEL_NUM, UUM_TEL_NUM, UUM_USE_YN, UUM_CHG_MDH, UUM_RGT_ID, UUM_RGT_MDH, UUM_AUH_KEY,
+		       UUM_APV_GBN, uum_tra_gbn)
+		VALUES(seq_uwo_usr_mtr.NEXTVAL,#uumUsrId#,#uumUsrPwd#,#uumUsrNam#,#uumMalAds#,#uumDivCod#,#uumSvcCod#,#uumDepCod#,
+		#uumPosCod#,#uumUsrNum#,#uumCelNum#,#uumTelNum#,'Y',NULL,#uumRgtId#,sysdate,#uumAuhKey#,#uumApvGbn#, #uumTraGbn#)
+	</insert>
+
+	<update id="QR_SETUP007_F" parameterClass="Map">
+		UPDATE UWO_USR_MTR
+		SET
+			UUM_PWD_FAI = 0
+			,UUM_USE_YN = 'Y'
+			,UUM_USR_PWD = #newPwd#
+			,uum_chg_mdh = NULL
+		WHERE UUM_USR_KEY = #usrKey#
+	</update>
+
+	<select id="QR_SETUP007_H" parameterClass="Map" resultClass="int">
+		SELECT
+			COUNT(UUM_USR_KEY)
+		FROM
+			UWO_USR_MTR
+		WHERE UUM_USR_KEY = #usrKey#
+			AND UPPER(UUM_USR_PWD) = UPPER(#newPwd#)
+	</select>
+
+	<update id="QR_SETUP007_I" parameterClass="Map">
+		UPDATE UWO_USR_MTR
+		SET
+			UUM_USR_PWD = #newPwd#
+			,uum_chg_mdh = SYSDATE
+		WHERE UUM_USR_KEY = #usrKey#
+	</update>
+
+	<select id="QR_SETUP007_G" parameterClass="String" resultClass="int">
+		SELECT COUNT(*) FROM UWO_USR_MTR WHERE UUM_USR_ID = #uId#
+	</select>
+
+	<select id="QR_SETUP007_AGN" resultClass="egovMap" parameterClass="searchVO">
+		SELECT UUM_USR_KEY CODE, UUM_USR_ID, UUM_USR_NAM NAME,
+				UUM_SVC_COD,
+				F_GET_COMMON_NAME(UUM_SVC_COD, 'SERVICE') AS SERVICE,
+				UUM_DEP_COD,
+				(SELECT UDM_DEP_NAM FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) AS DEPT,
+				UUM_POS_COD,
+				F_GET_COMMON_NAME(UUM_POS_COD, 'POS') AS POS
+		FROM UWO_USR_MTR
+		WHERE
+			UUM_USE_YN = 'Y'
+			<isNotEmpty property="service">
+			AND UUM_SVC_COD = #service#
+			</isNotEmpty>
+			<isNotEmpty property="dept">
+			AND UUM_DEP_COD = #dept#
+			</isNotEmpty>
+			<isNotEmpty property="searchKeyword">
+			<![CDATA[AND UUM_USR_NAM LIKE '%' || #searchKeyword# || '%']]>
+			</isNotEmpty>
+		ORDER BY UUM_SVC_COD, DEPT, UUM_POS_COD ASC
+	</select>
+
+	<!-- 코드관리 : 비주기(total) -->
+	<select id="QR_SETUP008_A" parameterClass="searchVO" resultClass="int">
+		SELECT COUNT(*)
+		  FROM UWO_NTR_COM
+		 WHERE UNC_BCY_COD = #manCyl#
+	</select>
+
+	<!-- 코드관리 : 비주기 -->
+	<select id="QR_SETUP008_B" parameterClass="searchVO" resultClass="egovMap">
+		SELECT * FROM(
+		  SELECT ROWNUM RNUM, R.*
+		  FROM(
+		    SELECT UNC_BCY_COD
+		           , TO_CHAR(UMM_STD_DAT, 'YYYY.MM.DD') STD_DAT
+		           , TO_CHAR(UMM_END_DAT, 'YYYY.MM.DD') END_DAT
+		           , UNC_NTR_COD
+		           , UNC_NTR_NAM
+		           , UNC_USE_YN
+		           , UNC_ETC
+		      FROM UWO_NTR_COM, UWO_MCY_MTR
+		     WHERE UNC_BCY_COD = UMM_MAN_CYL
+		       AND UNC_BCY_COD = #manCyl#
+			<isNotEmpty property="searchCondition">
+		       AND UNC_NTR_NAM LIKE '%' || #searchCondition# || '%'
+		    </isNotEmpty>
+		     ORDER BY UNC_NTR_NAM
+		  ) R
+		)
+		<![CDATA[
+		 WHERE  RNUM  > #firstIndex#
+		   AND  RNUM <= #firstIndex# + #recordCountPerPage#
+		]]>
+	</select>
+
+	<!-- 코드관리 : 팝업(비주기) -->
+	<select id="QR_SETUP008_C" parameterClass="searchVO" resultClass="egovMap">
+		SELECT UNC_BCY_COD
+		           , TO_CHAR(UMM_STD_DAT, 'YYYY.MM.DD') STD_DAT
+		           , TO_CHAR(UMM_END_DAT, 'YYYY.MM.DD') END_DAT
+		           , UNC_NTR_COD
+		           , UNC_NTR_NAM
+		           , UNC_USE_YN
+		           , UNC_ETC
+		      FROM UWO_NTR_COM, UWO_MCY_MTR
+		     WHERE UNC_BCY_COD = UMM_MAN_CYL
+			   AND UNC_NTR_COD = #code#
+		     ORDER BY UNC_NTR_NAM
+	</select>
+
+	<!-- 코드관리 : 팝업(비주기 생성) -->
+	<insert id="QR_SETUP008_D" parameterClass="egovMap">
+		INSERT INTO UWO_NTR_COM
+		(
+			  UNC_BCY_COD
+			  , UNC_NTR_COD
+			  , UNC_NTR_NAM
+			  , UNC_USE_YN
+			  , UNC_ETC
+			  , UNC_RGT_ID
+			  , UNC_RGT_MDH
+		)
+		VALUES
+		(
+			  #bcyCod#
+			  , (SELECT NVL(MAX(UNC_NTR_COD),0)+1 FROM UWO_NTR_COM)
+			  , #codeNam#
+			  , #useYn#
+			  , #codeEtc#
+			  , #rgtId#
+			  , SYSDATE
+		)
+	</insert>
+
+	<!-- 코드관리 : 팝업(비주기 수정) -->
+	<update id="QR_SETUP008_E" parameterClass="egovMap">
+		UPDATE UWO_NTR_COM
+		   SET UNC_NTR_NAM = #codeNam#
+		       , UNC_USE_YN = #useYn#
+		       , UNC_ETC = #codeEtc#
+		 WHERE UNC_BCY_COD = #bcyCod#
+		   AND UNC_NTR_COD = #code#
+	</update>
+
+	<select id="QR_SETUP012_A" parameterClass="Map" resultClass="egovMap">
+	<![CDATA[
+		SELECT uwy_wrk_yn , SUBSTR(uwy_wrk_ymd,7) as uwy_wrk_ymd,uwy_etc,UWY_DAY_WEK
+		FROM UWO_WRK_YMD
+		WHERE uwy_wrk_ymd >= #param1#
+		AND uwy_wrk_ymd <= to_char(last_day(#param2#),'yyyymmdd')
+		]]>
+	</select>
+	<update id="QR_SETUP012_B" parameterClass="Map">
+		UPDATE UWO_WRK_YMD
+		SET
+			UWY_WRK_YN = #yn#,
+			UWY_ETC = #etc#
+		WHERE UWY_WRK_YMD = #uwyWrkYmd#
+	</update>
+	<select id="QR_SETUP012_C" parameterClass="String" resultClass="egovMap">
+		SELECT TO_CHAR(TO_DATE(UWY_WRK_YMD), 'YYYY.MM.DD') AS UWY_WRK_YMD,
+		       UWY_DAY_WEK,
+		       UWY_WRK_YN,
+		       UWY_ETC
+		  FROM UWO_WRK_YMD
+		 WHERE SUBSTR(UWY_WRK_YMD, 0, 4) = #compareDate#
+		 ORDER BY UWY_WRK_YMD
+	</select>
+	<select id="QR_SETUP013_A" parameterClass="String" resultClass="egovMap">
+		SELECT UUM_USR_KEY,UUM_USR_PWD,UUM_MAL_ADS,UUM_TEL_NUM,UUM_CEL_NUM,UUM_APV_ONE,UUM_APV_TWO
+		FROM UWO_USR_MTR
+		WHERE UUM_USR_KEY = #usr_key#
+	</select>
+
+	<select id="QR_SETUP013_B" parameterClass="Map" resultClass="egovMap">
+		SELECT UUM_USR_NAM,UUM_USR_KEY
+		FROM
+		UWO_USR_MTR
+		WHERE UUM_DEP_COD = #usr_dept#
+		<![CDATA[ AND UUM_USR_KEY <> #myId# ]]>
+		AND UUM_APV_GBN = 'Y'
+		AND UUM_USE_YN = 'Y'
+	</select>
+
+	<update id="QR_SETUP013_C" parameterClass="userVO">
+		UPDATE UWO_USR_MTR
+		SET
+			UUM_USR_PWD = #uumUsrPwd#
+			,UUM_MAL_ADS = #uumMalAds#
+			,UUM_TEL_NUM = #uumTelNum#
+			,UUM_CEL_NUM = #uumCelNum#
+			,UUM_APV_ONE = #uumApvOne#
+			,UUM_APV_TWO = #uumApvTwo#
+		WHERE UUM_USR_KEY = #uumUsrKey#
+	</update>
+
+
+
+	<select id="QR_SETUP010_A" parameterClass="searchVO" resultClass="egovMap">
+	SELECT  *
+	FROM
+		(
+			SELECT ROWNUM RNUM, ALL_LIST.*
+			FROM
+				(
+					SELECT
+						(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_ID = ULM_LIN_ID) ULM_LIN_ID,
+					       ULM_LIN_IP,
+					       TO_CHAR(ULM_RGT_MDH, 'YYYY.MM.DD HH24:MI:SS') AS ULM_RGT_MDH
+					FROM
+						UWO_LOG_MTR A,
+						UWO_USR_MTR
+					WHERE
+				  		ULM_LIN_ID = UUM_USR_ID
+				  	<isNotEmpty property="service">
+	       				AND UUM_SVC_COD = #service#
+				  	</isNotEmpty>
+					<isNotEmpty property="dept">
+	       				 AND UUM_DEP_COD = #dept#
+				  	</isNotEmpty>
+				  	<isNotEmpty property="workerName">
+						AND UUM_USR_NAM LIKE '%' || #workerName# || '%'
+				 	</isNotEmpty>
+				 	<isNotEmpty property="stOrg">
+						AND (SELECT UDM_DEP_1LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) = #stOrg#
+					</isNotEmpty>
+					<isNotEmpty property="hqOrg">
+						AND (SELECT UDM_DEP_2LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) = #hqOrg#
+					</isNotEmpty>
+					<isNotEmpty property="gpOrg">
+						AND (SELECT UDM_DEP_3LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) = #gpOrg#
+					</isNotEmpty>
+					<isNotEmpty property="strDat">
+					  	<![CDATA[ AND TO_CHAR(ULM_RGT_MDH, 'YYYY-MM-DD') >= #strDat# ]]>
+					</isNotEmpty>
+					<isNotEmpty property="endDat">
+				      	<![CDATA[ AND TO_CHAR(ULM_RGT_MDH, 'YYYY-MM-DD') <= #endDat# ]]>
+					</isNotEmpty>
+					ORDER BY ULM_RGT_MDH DESC
+				) ALL_LIST
+			)
+			<isEmpty property="code">
+				<![CDATA[
+			 WHERE  RNUM  > #firstIndex#
+			   AND  RNUM <= #firstIndex# + #recordCountPerPage#
+				]]>
+			</isEmpty>
+	</select>
+
+	<select id="QR_SETUP010_B" parameterClass="searchVO" resultClass="int">
+	SELECT  COUNT(*)
+	FROM
+		(
+			SELECT ROWNUM RNUM, ALL_LIST.*
+			FROM
+				(
+					SELECT
+						(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_ID = ULM_LIN_ID) ULM_LIN_ID,
+					       ULM_LIN_IP,
+					       TO_CHAR(ULM_RGT_MDH, 'YYYY.MM.DD HH24:MI:SS') AS ULM_RGT_MDH
+					FROM
+						UWO_LOG_MTR A,
+						UWO_USR_MTR
+					WHERE
+				  		ULM_LIN_ID = UUM_USR_ID
+				  	<isNotEmpty property="service">
+	       				AND UUM_SVC_COD = #service#
+				  	</isNotEmpty>
+					<isNotEmpty property="dept">
+	       				 AND UUM_DEP_COD = #dept#
+				  	</isNotEmpty>
+				  	<isNotEmpty property="workerName">
+						AND UUM_USR_NAM LIKE '%' || #workerName# || '%'
+				 	</isNotEmpty>
+				 	<isNotEmpty property="stOrg">
+						AND (SELECT UDM_DEP_1LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) = #stOrg#
+					</isNotEmpty>
+					<isNotEmpty property="hqOrg">
+						AND (SELECT UDM_DEP_2LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) = #hqOrg#
+					</isNotEmpty>
+					<isNotEmpty property="gpOrg">
+						AND (SELECT UDM_DEP_3LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUM_DEP_COD) = #gpOrg#
+					</isNotEmpty>
+					<isNotEmpty property="strDat">
+					  	<![CDATA[ AND TO_CHAR(ULM_RGT_MDH, 'YYYY-MM-DD') >= #strDat# ]]>
+					</isNotEmpty>
+					<isNotEmpty property="endDat">
+				      	<![CDATA[ AND TO_CHAR(ULM_RGT_MDH, 'YYYY-MM-DD') <= #endDat# ]]>
+					</isNotEmpty>
+					ORDER BY ULM_RGT_MDH DESC
+				) ALL_LIST
+		)
+	</select>
+
+	<select id="QR_SETUP011_A" parameterClass="searchVO" resultClass="egovMap">
+	SELECT  *
+	FROM  (
+		SELECT ROWNUM RNUM, ALL_LIST.*
+		FROM  (
+			SELECT UUL_USR_ID,
+			       UUL_USR_NAM,
+			       (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUL_DEP_COD) AS UUL_DEP_COD,
+			       UUL_MAL_ADS,
+			       F_GET_COMMON_NAME(UUL_POS_COD, 'POS') UUL_POS_COD,
+			       UUL_USR_NUM,
+			       UUL_CEL_NUM,
+			       UUL_TEL_NUM,
+			       UUL_USE_YN,
+			       TO_CHAR(UUL_RGT_MDH, 'YYYY.MM.DD HH24:MI:SS') AS UUL_RGT_MDH
+			  FROM UWO_USR_LOG UUL
+			  WHERE 1=1
+			  <isNotEmpty property="workerName">
+				<isNotEqual property="workerName" compareValue="A">
+					AND UUL_USR_NAM LIKE '%' || #workerName# || '%'
+				</isNotEqual>
+			  </isNotEmpty>
+			  <isNotEmpty property="division">
+				<isNotEqual property="division" compareValue="A">
+		   			AND UUL_DIV_COD = #division#
+			  	</isNotEqual>
+			  </isNotEmpty>
+			  <isNotEmpty property="service">
+				<isNotEqual property="service" compareValue="A">
+					AND UUL_SVC_COD = #service#
+				</isNotEqual>
+			  </isNotEmpty>
+			  <isNotEmpty property="dept">
+				<isNotEqual property="dept" compareValue="A">
+					AND UUL_DEP_COD = #dept#
+				</isNotEqual>
+			  </isNotEmpty>
+			  <isNotEmpty property="strDat">
+			  	<![CDATA[ AND TO_CHAR(UUL_RGT_MDH, 'YYYY.MM.DD') >= #strDat# ]]>
+			  </isNotEmpty>
+			  <isNotEmpty property="endDat">
+		      	<![CDATA[ AND TO_CHAR(UUL_RGT_MDH, 'YYYY.MM.DD') <= #endDat# ]]>
+			  </isNotEmpty>
+			  <isNotEmpty property="stOrg">
+				AND (SELECT UDM_DEP_1LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUL_DEP_COD) = #stOrg#
+			  </isNotEmpty>
+			  <isNotEmpty property="hqOrg">
+				AND (SELECT UDM_DEP_2LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUL_DEP_COD) = #hqOrg#
+			  </isNotEmpty>
+			  <isNotEmpty property="gpOrg">
+				AND (SELECT UDM_DEP_3LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUL_DEP_COD) = #gpOrg#
+			  </isNotEmpty>
+			 ORDER BY UUL_RGT_MDH DESC
+			 ) ALL_LIST
+				    )
+			<isEmpty property="code">
+				<![CDATA[
+			 WHERE  RNUM  > #firstIndex#
+			   AND  RNUM <= #firstIndex# + #recordCountPerPage#
+				]]>
+			</isEmpty>
+	</select>
+
+	<select id="QR_SETUP011_B" parameterClass="searchVO" resultClass="int">
+		SELECT  count(*)
+	FROM  (
+		SELECT ROWNUM RNUM, ALL_LIST.*
+		FROM  (
+			SELECT UUL_USR_ID,
+			       UUL_USR_NAM,
+			       F_GET_COMMON_NAME(UUL_DEP_COD, 'DEPT') UUL_DEP_COD,
+			       UUL_MAL_ADS,
+			       F_GET_COMMON_NAME(UUL_POS_COD, 'POS') UUL_POS_COD,
+			       UUL_USR_NUM,
+			       UUL_CEL_NUM,
+			       UUL_TEL_NUM,
+			       UUL_USE_YN,
+			       TO_CHAR(UUL_RGT_MDH, 'YYYY.MM.DD HH24:MI:SS') AS UUL_RGT_MDH
+			  FROM UWO_USR_LOG
+			  WHERE 1=1
+			  <isNotEmpty property="workerName">
+				<isNotEqual property="workerName" compareValue="A">
+					AND UUL_USR_NAM LIKE '%' || #workerName# || '%'
+				</isNotEqual>
+			  </isNotEmpty>
+			  <isNotEmpty property="division">
+				<isNotEqual property="division" compareValue="A">
+		   			AND UUL_DIV_COD = #division#
+			  	</isNotEqual>
+			  </isNotEmpty>
+			  <isNotEmpty property="service">
+				<isNotEqual property="service" compareValue="A">
+					AND UUL_SVC_COD = #service#
+				</isNotEqual>
+			  </isNotEmpty>
+			  <isNotEmpty property="dept">
+				<isNotEqual property="dept" compareValue="A">
+					AND UUL_DEP_COD = #dept#
+				</isNotEqual>
+			  </isNotEmpty>
+			  <isNotEmpty property="strDat">
+			  	<![CDATA[ AND TO_CHAR(UUL_RGT_MDH, 'YYYY.MM.DD') >= #strDat# ]]>
+			  </isNotEmpty>
+			  <isNotEmpty property="endDat">
+		      	<![CDATA[ AND TO_CHAR(UUL_RGT_MDH, 'YYYY.MM.DD') <= #endDat# ]]>
+			  </isNotEmpty>
+			  <isNotEmpty property="stOrg">
+				AND (SELECT UDM_DEP_1LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUL_DEP_COD) = #stOrg#
+			  </isNotEmpty>
+			  <isNotEmpty property="hqOrg">
+				AND (SELECT UDM_DEP_2LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUL_DEP_COD) = #hqOrg#
+			  </isNotEmpty>
+			  <isNotEmpty property="gpOrg">
+				AND (SELECT UDM_DEP_3LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UUL_DEP_COD) = #gpOrg#
+			  </isNotEmpty>
+			 ORDER BY UUL_RGT_MDH DESC
+			 ) ALL_LIST
+				    )
+	</select>
+
+	<select id="QR_SETUP014_A" parameterClass="searchVO" resultClass="egovMap">
+	SELECT  *
+	FROM  (
+		SELECT ROWNUM RNUM, ALL_LIST.*
+		FROM  (
+			SELECT UCL_CTR_GBN,
+			       UCL_1LV_COD,
+			       UCL_1LV_NAM,
+			       UCL_2LV_COD,
+			       UCL_2LV_NAM,
+			       UCL_2LV_DTL,
+			       UCL_3LV_COD,
+			       UCL_3LV_NAM,
+			       UCL_3LV_DTL,
+			       (SELECT DISTINCT UOM_DIV_NAM FROM UWO_ORG_MTR WHERE UOM_DIV_COD = UCL_DIV_COD) UCL_DIV_COD,
+			       UCL_GOL_NO,
+			       F_GET_USR_NAME(UCL_RGT_ID) UCL_RGT_ID,
+			       TO_CHAR(UCL_RGT_MDH, 'YYYY.MM.DD HH24:MI:SS') AS UCL_RGT_MDH,
+			       F_GET_USR_NAME(UCL_UPD_ID) UCL_UPD_ID,
+			       TO_CHAR(UCL_UPD_MDH, 'YYYY.MM.DD HH24:MI:SS') AS UCL_UPD_MDH,
+			       UCL_1LD_YN,
+			       UCL_2LD_YN,
+			       UCL_3LD_YN
+			  FROM UWO_CTR_LOG
+			  WHERE 1=1
+			  <isNotEmpty property="standard">
+				<isNotEqual property="standard" compareValue="A">
+					AND UCL_CTR_GBN = #standard#
+				</isNotEqual>
+			  </isNotEmpty>
+			  <isNotEmpty property="division">
+				<isNotEqual property="division" compareValue="A">
+					AND UCL_DIV_COD = #division#
+				</isNotEqual>
+			  </isNotEmpty>
+			  <isEqual prepend="AND" property="searchCondition" compareValue="0">
+					UCL_1LV_COD = #searchKeyword#
+				</isEqual>
+				<isEqual prepend="AND" property="searchCondition" compareValue="1">
+					UCL_2LV_COD = #searchKeyword#
+				</isEqual>
+				<isEqual prepend="AND" property="searchCondition" compareValue="2">
+					UCL_3LV_COD = #searchKeyword#
+				</isEqual>
+				<isNotEmpty property="strDat">
+				<![CDATA[ AND TO_CHAR(UCL_RGT_MDH, 'YYYY.MM.DD') >= #strDat# ]]>
+				</isNotEmpty>
+				<isNotEmpty property="endDat">
+				<![CDATA[ AND TO_CHAR(UCL_RGT_MDH, 'YYYY.MM.DD') <= #endDat# ]]>
+				</isNotEmpty>
+			 ORDER BY UCL_RGT_MDH DESC
+			 ) ALL_LIST
+				    )
+	</select>
+
+
+
+	<!-- 메뉴 관리 -->
+	<select id="QR_SETUP016_MNU_LIST" parameterClass="searchVO" resultClass="egovMap">
+		SELECT  *
+		FROM  (
+			SELECT ROWNUM RNUM, ALL_LIST.*
+			FROM  (
+				SELECT
+					m.umm_mnu_key
+					,m.umm_mnu_nam
+					,m.umm_mnu_url
+					,m.umm_mnu_etc
+					,m.umm_mnu_prt
+					,m.umm_odr_num
+					,m.umm_use_yn
+					,m.umm_rgt_id
+					,TO_CHAR(m.umm_rgt_mdh,'YYYY.MM.DD') umm_rgt_mdh
+					,u.uum_usr_nam
+					,m.umm_mnu_spd
+					,m.umm_mnu_lvl
+				FROM
+					uwo_mnu_mtr m,
+					(
+						SELECT
+							uum_usr_key,
+							uum_usr_nam
+						FROM uwo_usr_mtr
+					) u
+				WHERE umm_mnu_prt IS NULL
+				<isNotEmpty property="searchCondition">
+					AND m.umm_mnu_nam LIKE '%' || #searchCondition# || '%'
+				</isNotEmpty>
+					AND m.umm_rgt_id = u.uum_usr_key(+)
+				ORDER BY m.umm_odr_num, m.umm_mnu_key DESC
+				) ALL_LIST
+			)
+		<![CDATA[
+			WHERE  RNUM  > #firstIndex#
+			AND  RNUM <= #firstIndex# + #recordCountPerPage#
+		]]>
+	</select>
+
+	<select id="QR_SETUP016_MNU_CNT" parameterClass="searchVO" resultClass="Integer">
+		SELECT
+			COUNT(*)
+		FROM
+			uwo_mnu_mtr
+		WHERE umm_mnu_prt IS NULL
+			<isNotEmpty property="searchCondition">
+				AND umm_mnu_nam LIKE '%' || #searchCondition# || '%'
+			</isNotEmpty>
+	</select>
+
+	<!-- 하위 메뉴 -->
+	<select id="QR_SETUP016_NODE_LIST" parameterClass="String" resultClass="egovMap">
+		SELECT
+			m.umm_mnu_key
+			,m.umm_mnu_nam
+			,m.umm_mnu_url
+			,m.umm_mnu_etc
+			,m.umm_mnu_prt
+			,m.umm_odr_num
+			,m.umm_use_yn
+			,m.umm_rgt_id
+			,m.umm_mnu_spd
+			,m.umm_mnu_lvl
+			,TO_CHAR(m.umm_rgt_mdh,'YYYY.MM.DD') umm_rgt_mdh
+			,u.uum_usr_nam
+		FROM
+			uwo_mnu_mtr m,
+			(
+				SELECT
+					uum_usr_key,
+					uum_usr_nam
+				FROM uwo_usr_mtr
+			) u
+		WHERE
+			m.umm_mnu_prt = #ummMnuPrt#
+			AND m.umm_rgt_id = u.uum_usr_key(+)
+		ORDER BY m.umm_odr_num, m.umm_mnu_key DESC
+	</select>
+
+
+
+	<select id="QR_SETUP016_MNU_INFO" parameterClass="String" resultClass="egovMap">
+		SELECT
+			m.umm_mnu_key
+			,m.umm_mnu_nam
+			,m.umm_mnu_url
+			,m.umm_mnu_etc
+			,m.umm_mnu_prt
+			,m.umm_odr_num
+			,m.umm_use_yn
+			,m.umm_rgt_id
+			,TO_CHAR(m.umm_rgt_mdh,'YYYY.MM.DD') umm_rgt_mdh
+			,u.uum_usr_nam
+			,m.umm_mnu_spd
+			,m.umm_mnu_lvl
+		FROM
+			uwo_mnu_mtr m,
+			(
+				SELECT
+					uum_usr_key,
+					uum_usr_nam
+				FROM uwo_usr_mtr
+			) u
+		WHERE
+			m.umm_mnu_key = #ummMnuKey#
+			AND m.umm_rgt_id = u.uum_usr_key(+)
+	</select>
+
+	<insert id="QR_SETUP016_MNU_INSERT" parameterClass="Map">
+		INSERT
+			INTO uwo_mnu_mtr (
+				umm_mnu_key
+				,umm_mnu_nam
+				,umm_mnu_url
+				,umm_mnu_etc
+				,umm_mnu_prt
+				,umm_odr_num
+				,umm_use_yn
+				,umm_rgt_id
+				,umm_rgt_mdh
+				,umm_mnu_spd
+				,umm_mnu_lvl
+		) VALUES (
+			seq_uwo_mnu_mtr.NEXTVAL
+			,#ummMnuNam#
+			,#ummMnuUrl#
+			,#ummMnuEtc#
+			,#ummMnuPrt#
+			,#ummOdrNum#
+			,#ummUseYn#
+			,#ummRgtId#
+			,SYSDATE
+			,#ummMnuSpd#
+			,#ummMnuLvl#
+		)
+	</insert>
+
+	<update id="QR_SETUP016_MNU_UPDATE" parameterClass="Map">
+		UPDATE uwo_mnu_mtr
+			SET
+				umm_mnu_nam = #ummMnuNam#
+				,umm_mnu_url = #ummMnuUrl#
+				,umm_mnu_etc = #ummMnuEtc#
+				,umm_odr_num = #ummOdrNum#
+				,umm_use_yn = #ummUseYn#
+				,umm_rgt_id = #ummRgtId#
+				,umm_rgt_mdh = SYSDATE
+				,umm_mnu_spd = #ummMnuSpd#
+				,umm_mnu_lvl = #ummMnuLvl#
+		WHERE
+			umm_mnu_key = #ummMnuKey#
+	</update>
+
+	<select id="QR_SETUP017_AUH_LIST" parameterClass="searchVO" resultClass="egovMap">
+		SELECT  *
+		FROM  (
+			SELECT ROWNUM RNUM, ALL_LIST.*
+			FROM  (
+				SELECT
+					a.uat_auh_key
+					,a.uat_auh_nam
+					,a.uat_auh_etc
+					,a.uat_use_yn
+					,a.uat_rgt_id
+					,TO_CHAR(a.uat_rgt_mdh,'YYYY.MM.DD') uat_rgt_mdh
+					,u.uum_usr_nam
+					,c.ucc_snd_nam AS uat_auh_gbn
+				FROM
+					uwo_auh_mtr a,
+					(
+						SELECT
+							uum_usr_key
+							,uum_usr_nam
+						FROM uwo_usr_mtr
+					) u,
+					(
+						SELECT
+							ucc_snd_cod
+							,ucc_snd_nam
+						FROM uwo_com_cod
+						WHERE ucc_fir_cod = 'AUTH'
+					) c
+				WHERE 1 = 1
+				<isNotEmpty property="searchCondition">
+					AND a.uat_auh_nam LIKE '%' || #searchCondition# || '%'
+				</isNotEmpty>
+					AND a.uat_rgt_id = u.uum_usr_key(+)
+					AND a.uat_auh_gbn = c.ucc_snd_cod
+			) ALL_LIST
+		)
+		order by  uat_rgt_mdh desc
+	</select>
+
+	<select id="QR_SETUP017_AUH_CNT" parameterClass="searchVO" resultClass="int">
+		SELECT
+			COUNT(*)
+		FROM
+			uwo_auh_mtr
+		WHERE 1 = 1
+		<isNotEmpty property="searchCondition">
+			AND uat_auh_nam LIKE '%' || #searchCondition# || '%'
+		</isNotEmpty>
+	</select>
+
+	<select id="QR_SETUP017_AUH_INFO" parameterClass="String" resultClass="egovMap">
+		SELECT
+			a.uat_auh_key
+			,a.uat_auh_nam
+			,a.uat_auh_etc
+			,a.uat_use_yn
+			,a.uat_rgt_id
+			,TO_CHAR(a.uat_rgt_mdh,'YYYY.MM.DD') uat_rgt_mdh
+			,u.uum_usr_nam
+			,a.uat_auh_gbn
+		FROM
+			uwo_auh_mtr a,
+			(
+				SELECT
+					uum_usr_key,
+					uum_usr_nam
+				FROM uwo_usr_mtr
+			) u
+		WHERE
+			a.uat_auh_key = #uatAuhKey#
+			AND a.uat_rgt_id = u.uum_usr_key(+)
+	</select>
+
+	<select id="QR_SETUP017_MAP_LIST" parameterClass="String" resultClass="egovMap">
+		SELECT
+			m.umm_mnu_key
+			,m.umm_mnu_nam
+			,m.umm_odr_num
+			,DECODE(a.uam_mnu_key, NULL, 'N', 'Y') AS umm_mnu_chk
+		FROM
+			uwo_mnu_mtr m,
+			(
+				SELECT uam_mnu_key
+				FROM uwo_auh_map
+				WHERE uam_auh_key = #uamAuhKey#
+			) a
+		WHERE
+			m.umm_mnu_prt IS NULL
+			AND m.umm_mnu_key = a.uam_mnu_key(+)
+			AND m.umm_use_yn = 'Y'
+		ORDER BY m.umm_odr_num
+	</select>
+
+	<select id="QR_SETUP017_NODE_LIST" parameterClass="String" resultClass="egovMap">
+		SELECT
+			m.umm_mnu_key
+			,m.umm_mnu_nam
+			,m.umm_odr_num
+			,m.umm_mnu_prt
+			,DECODE(a.uam_mnu_key, NULL, 'N', 'Y') AS umm_mnu_chk
+			,DECODE(a.uam_mnu_rgt, NULL, 'N', 'Y') AS umm_mnu_rgt
+		FROM
+			uwo_mnu_mtr m,
+			(
+				SELECT uam_mnu_key,
+					uam_mnu_rgt
+				FROM uwo_auh_map
+				WHERE uam_auh_key = #uamAuhKey#
+			) a
+		WHERE
+			m.umm_mnu_prt IS NOT NULL
+			AND m.umm_mnu_key = a.uam_mnu_key(+)
+			AND m.umm_use_yn = 'Y'
+		ORDER BY m.umm_odr_num
+	</select>
+
+	<insert id="QR_SETUP017_AUH_INSERT" parameterClass="Map">
+		<selectKey keyProperty="uatAuhKey" resultClass="String">
+			SELECT seq_uwo_auh_mtr.NEXTVAL FROM dual
+		</selectKey>
+		INSERT
+			INTO uwo_auh_mtr (
+				uat_auh_key
+				,uat_auh_nam
+				,uat_auh_etc
+				,uat_use_yn
+				,uat_rgt_id
+				,uat_rgt_mdh
+				,uat_auh_gbn
+		) VALUES (
+			#uatAuhKey#
+			,#uatAuhNam#
+			,#uatAuhEtc#
+			,#uatUseYn#
+			,#uatRgtId#
+			,SYSDATE
+			,#uatAuhGbn#
+		)
+	</insert>
+
+	<insert id="QR_SETUP017_MAP_INSERT" parameterClass="Map">
+		INSERT
+			INTO uwo_auh_map (
+				uam_auh_key
+				,uam_mnu_key
+				,uam_rgt_id
+				,uam_rgt_mdh
+				,uam_mnu_rgt
+		) VALUES (
+			#uamAuhKey#
+			,#uamMnuKey#
+			,#uamRgtId#
+			,SYSDATE
+			,#uamMnuRgt#
+		)
+	</insert>
+
+	<update id="QR_SETUP017_AUH_UPDATE" parameterClass="Map">
+		UPDATE uwo_auh_mtr
+			SET
+				uat_auh_nam = #uatAuhNam#
+				,uat_auh_etc = #uatAuhEtc#
+				,uat_use_yn = #uatUseYn#
+				,uat_rgt_id = #uatRgtId#
+				,uat_rgt_mdh = SYSDATE
+				,uat_auh_gbn = #uatAuhGbn#
+		WHERE
+			uat_auh_key = #uatAuhKey#
+	</update>
+
+	<delete id="QR_SETUP017_MAP_DELETE" parameterClass="String">
+		DELETE uwo_auh_map
+		WHERE uam_auh_key = #uatAuhKey#
+	</delete>
+
+	<select id="QR_SETUP018_LIST" parameterClass="searchVO" resultClass="egovMap">
+		SELECT  *
+		FROM  (
+			SELECT ROWNUM RNUM, ALL_LIST.*
+			FROM  (
+				SELECT
+					c.ucc_fir_cod
+					,c.ucc_fir_nam
+					,(SELECT COUNT(UCC_FIR_COD) FROM UWO_COM_COD WHERE UCC_FIR_COD = c.ucc_fir_cod) AS FIR_CNT
+					,TO_CHAR(MAX(c.ucc_rgt_mdh), 'YYYY.MM.DD') AS ucc_rgt_mdh
+				FROM
+					uwo_com_cod c
+				WHERE 1=1
+				<isNotNull property="searchCondition">
+					<isEqual property="searchKeyword" compareValue="N">
+						AND c.ucc_fir_nam LIKE '%' || #searchCondition# || '%'
+					</isEqual>
+					<isEqual property="searchKeyword" compareValue="C">
+						AND c.ucc_fir_cod LIKE '%' || #searchCondition# || '%'
+					</isEqual>
+				</isNotNull>
+				GROUP BY
+					c.ucc_fir_cod
+					,c.ucc_fir_nam
+				) ALL_LIST
+			)
+		<![CDATA[
+		 WHERE  RNUM  > #firstIndex#
+		   AND  RNUM <= #firstIndex# + #recordCountPerPage#
+		]]>
+	</select>
+
+	<select id="QR_SETUP018_CNT" parameterClass="searchVO" resultClass="int">
+		SELECT COUNT(ALL_LIST.ucc_fir_cod)
+		FROM  (
+			SELECT
+				c.ucc_fir_cod
+				,c.ucc_fir_nam
+				,TO_CHAR(MAX(c.ucc_rgt_mdh), 'YYYY.MM.DD') AS ucc_rgt_mdh
+			FROM
+				uwo_com_cod c
+			WHERE 1=1
+			<isNotNull property="searchCondition">
+				<isEqual property="searchKeyword" compareValue="N">
+					AND c.ucc_fir_nam LIKE '%' || #searchCondition# || '%'
+				</isEqual>
+				<isEqual property="searchKeyword" compareValue="C">
+					AND c.ucc_fir_cod LIKE '%' || #searchCondition# || '%'
+				</isEqual>
+			</isNotNull>
+			GROUP BY
+				c.ucc_fir_cod
+				,c.ucc_fir_nam
+			) ALL_LIST
+	</select>
+
+	<select id="QR_SETUP018_NODE_LIST" parameterClass="String" resultClass="egovMap">
+		SELECT
+			c.ucc_snd_cod
+			,c.ucc_snd_nam
+			,c.ucc_use_yn
+			,c.ucc_etc
+			,(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UCC_RGT_ID) AS UUM_USR_NAM
+			,TO_CHAR(c.ucc_rgt_mdh, 'YYYY.MM.DD') AS ucc_rgt_mdh
+		FROM
+			uwo_com_cod c
+		WHERE
+			1=1
+			AND ucc_fir_cod = #code#
+		ORDER BY c.ucc_snd_cod
+	</select>
+
+	<select id="QR_SETUP018_NODE_LIST_SORT" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			c.ucc_snd_cod
+			,c.ucc_snd_nam
+			,c.ucc_use_yn
+			,c.ucc_etc
+			,(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UCC_RGT_ID) AS UUM_USR_NAM
+			,TO_CHAR(c.ucc_rgt_mdh, 'YYYY.MM.DD') AS ucc_rgt_mdh
+		FROM
+			uwo_com_cod c
+		WHERE
+			1=1
+			AND ucc_fir_cod = #uccFirCod#
+		ORDER BY
+		<isNotEmpty property="uccKind">
+			$uccKind$ <isNotEmpty property="uccSort">$uccSort$</isNotEmpty>
+		</isNotEmpty>
+		<isEmpty property="uccKind">
+			c.ucc_snd_cod
+		</isEmpty>
+	</select>
+
+	<select id="QR_SETUP018_INFO" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			c.ucc_fir_cod
+			,c.ucc_fir_nam
+			,c.ucc_snd_cod
+			,c.ucc_snd_nam
+			,c.ucc_use_yn
+			,c.ucc_etc
+			,(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UCC_RGT_ID) AS UUM_USR_NAM
+			,TO_CHAR(c.ucc_rgt_mdh, 'YYYY.MM.DD') AS ucc_rgt_mdh
+		FROM
+			uwo_com_cod c
+		WHERE
+			1=1
+			AND ucc_fir_cod = #uccFirCod#
+			AND ucc_snd_cod = #uccSndCod#
+	</select>
+
+	<select id="QR_SETUP018_INFO_DEPT" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			c.ucc_fir_cod
+			,c.ucc_fir_nam
+			,c.ucc_snd_cod
+			,c.ucc_snd_nam
+			,c.ucc_use_yn
+			,c.ucc_etc
+			,u.uum_usr_nam
+			,TO_CHAR(c.ucc_rgt_mdh, 'YYYY.MM.DD') AS ucc_rgt_mdh
+			,S.uom_svc_cod service,
+			DECODE(uom_svc_cod, NULL, 'N', 'Y') uom_dep_yn
+		FROM
+			uwo_com_cod c,
+			(
+				SELECT
+					uum_usr_key,
+					uum_usr_nam
+				FROM uwo_usr_mtr
+			) u,
+      		(
+        		SELECT uom_svc_cod, uom_dep_cod
+	        	FROM uwo_org_mtr
+	        ) S
+		WHERE
+			c.ucc_rgt_id = u.uum_usr_key
+			AND c.ucc_snd_cod = S.uom_dep_cod(+)
+			AND ucc_fir_cod = #uccFirCod#
+			AND ucc_snd_cod = #uccSndCod#
+	</select>
+
+	<select id="QR_SETUP018_COD_CNT" parameterClass="Map" resultClass="int">
+		SELECT COUNT(*)
+		FROM uwo_com_cod
+		WHERE
+			ucc_fir_cod = #uccFirCod#
+			AND ucc_snd_cod = #uccSndCod#
+	</select>
+
+	<insert id="QR_SETUP018_INSERT" parameterClass="Map">
+		INSERT
+			INTO uwo_com_cod (
+				ucc_fir_cod
+				,ucc_fir_nam
+				,ucc_snd_cod
+				,ucc_snd_nam
+				,ucc_use_yn
+				,ucc_etc
+				,ucc_rgt_id
+				,ucc_rgt_mdh
+		) VALUES (
+			#uccFirCod#
+			,#uccFirNam#
+			,#uccSndCod#
+			,#uccSndNam#
+			,#uccUseYn#
+			,#uccEtc#
+			,#uccRgtId#
+			,SYSDATE
+		)
+	</insert>
+
+	<insert id="QR_SETUP018_INSERT_MAP" parameterClass="Map">
+		INSERT
+			INTO UWO_ORG_MTR (
+				UOM_CSR_COD
+				,UOM_DIV_COD
+				,UOM_SVC_COD
+				,UOM_DEP_COD
+				,UOM_DEP_NAM
+				,UOM_USE_YN
+				,UOM_RGT_ID
+				,UOM_RGT_MDH
+				,UOM_DIV_NAM
+				,UOM_SVC_NAM
+				,UOM_BCY_COD
+		) VALUES (
+			'SKB'
+			,'D001'
+			,#service#
+			,#uccSndCod#
+			,#uccSndNam#
+			,#uccUseYn#
+			,#uccRgtId#
+			,SYSDATE
+			,(SELECT UCC_FIR_NAM FROM UWO_COM_COD WHERE UCC_SND_COD = 'D001')
+			,(SELECT svc_nam FROM uwo_svc_mtr WHERE svc_cod = #service#)
+		    ,#uomBcyCod#
+		)
+	</insert>
+
+	<update id="QR_SETUP018_UPDATE_MAP" parameterClass="Map">
+		UPDATE UWO_ORG_MTR
+		SET
+			UOM_SVC_COD = #service#
+			,UOM_USE_YN = #uccUseYn#
+			,UOM_RGT_ID = #uccRgtId#
+			,UOM_RGT_MDH = SYSDATE
+			,UOM_DIV_COD = 'D001'
+			,UOM_DIV_NAM = (SELECT UCC_FIR_NAM FROM UWO_COM_COD WHERE UCC_SND_COD = 'D001')
+			,UOM_SVC_NAM = (SELECT svc_nam FROM uwo_svc_mtr WHERE svc_cod = #service#)
+		WHERE UOM_DEP_COD = #hUccSndCod#
+	</update>
+
+	<update id="QR_SETUP018_UPDATE" parameterClass="Map">
+		UPDATE uwo_com_cod
+		SET
+			ucc_snd_nam = #uccSndNam#
+			,ucc_use_yn = #uccUseYn#
+			,ucc_etc = #uccEtc#
+			,ucc_rgt_id = #uccRgtId#
+			,ucc_rgt_mdh = SYSDATE
+		WHERE
+			ucc_fir_cod = #uccFirCod#
+			AND ucc_snd_cod = #hUccSndCod#
+	</update>
+
+	<select id="QR_SETUP018_INFO_STND" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			C.UCC_FIR_COD, C.UCC_FIR_NAM, C.UCC_SND_COD, C.UCC_SND_NAM, C.UCC_USE_YN, C.UCC_ETC
+			, (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UCC_RGT_ID) AS UUM_USR_NAM
+			, TO_CHAR(C.UCC_RGT_MDH, 'YYYY.MM.DD') AS UCC_RGT_MDH
+			, STND.KIND STND_KIND
+		FROM UWO_COM_COD C
+			LEFT JOIN UWO_COM_COD_EXP_STND_KIND STND ON STND.SND_COD = C.UCC_SND_COD
+		WHERE
+			1=1
+			AND UCC_FIR_COD = #uccFirCod#
+			AND UCC_SND_COD = #uccSndCod#
+	</select>
+
+	<select id="QR_SETUP018_STND_COUNT" parameterClass="Map" resultClass="Integer">
+		SELECT COUNT(KIND)
+		FROM UWO_COM_COD_EXP_STND_KIND
+		WHERE SND_COD = #hUccSndCod#
+	</select>
+
+	<insert id="QR_SETUP018_INSERT_STND" parameterClass="Map">
+		INSERT
+		INTO UWO_COM_COD_EXP_STND_KIND (SND_COD, KIND)
+		VALUES (#hUccSndCod#, #stndKind#)
+	</insert>
+
+	<update id="QR_SETUP018_UPDATE_STND" parameterClass="Map">
+		UPDATE UWO_COM_COD_EXP_STND_KIND
+		SET KIND = #stndKind#
+		WHERE SND_COD = #hUccSndCod#
+	</update>
+
+	<select id="QR_SETUP019_CAL" parameterClass="Map" resultClass="egovMap">
+	<![CDATA[
+		SELECT
+			UWY_WRK_YMD,
+			TO_NUMBER(SUBSTR(UWY_WRK_YMD,0,4)) SYEAR,
+			TO_NUMBER(SUBSTR(UWY_WRK_YMD,5,2)) SMONTH,
+			TO_NUMBER(SUBSTR(UWY_WRK_YMD,7,2)) SDAY,
+			UWY_DAY_WEK,
+			UWY_WRK_YN,
+			UWY_ETC,
+			(SELECT UWY_DAY_WEK FROM UWO_WRK_YMD WHERE TO_DATE(UWY_WRK_YMD,'YYYYMMDD') = TO_DATE(#iYear# || #iMonth#,'YYYYMM')) FSTART,
+			CASE
+				WHEN UWY_WRK_YMD = TO_CHAR(SYSDATE,'YYYYMMDD') THEN 'Y'
+				ELSE 'N'
+			END AS STODAY,
+			CASE
+				WHEN UWY_DAY_WEK = '1' THEN '일'
+				WHEN UWY_DAY_WEK = '2' THEN '월'
+				WHEN UWY_DAY_WEK = '3' THEN '화'
+				WHEN UWY_DAY_WEK = '4' THEN '수'
+				WHEN UWY_DAY_WEK = '5' THEN '목'
+				WHEN UWY_DAY_WEK = '6' THEN '금'
+				WHEN UWY_DAY_WEK = '7' THEN '토'
+			END AS TT
+  		FROM
+  			UWO_WRK_YMD
+ 		WHERE
+			TO_DATE(UWY_WRK_YMD,'YYYYMMDD') > TO_DATE(#iYear# || #iMonth#,'YYYYMM') - 8
+			AND TO_DATE(UWY_WRK_YMD,'YYYYMMDD') < ADD_MONTHS(TO_DATE(#iYear# || #iMonth#,'YYYYMM'),1) + 11
+		ORDER BY UWY_WRK_YMD ASC
+	]]>
+	</select>
+
+	<select id="QR_SETUP019_LIST" parameterClass="searchVO" resultClass="egovMap">
+		select 	SUBSTR(UWY_WRK_YMD,0,4) sYear , SUBSTR(UWY_WRK_YMD,5,2) sMonth, SUBSTR(UWY_WRK_YMD,7,2) sDay, uwy_day_wek, uwy_wrk_yn, uwy_etc,uwy_wrk_ymd,
+				CASE
+				  WHEN UWY_DAY_WEK = '1' THEN '일'
+				  WHEN UWY_DAY_WEK = '2' THEN '월'
+				  WHEN UWY_DAY_WEK = '3' THEN '화'
+				  WHEN UWY_DAY_WEK = '4' THEN '수'
+				  WHEN UWY_DAY_WEK = '5' THEN '목'
+				  WHEN UWY_DAY_WEK = '6' THEN '금'
+				  WHEN UWY_DAY_WEK = '7' THEN '토'
+				END AS TT
+				FROM UWO_WRK_YMD
+		WHERE 1=1
+		AND SUBSTR(UWY_WRK_YMD,0,4) = #year#
+		AND SUBSTR(UWY_WRK_YMD,5,2) = #month#
+		ORDER BY UWY_WRK_YMD
+	</select>
+
+	<select id="QR_SETUP019_CNT" parameterClass="searchVO" resultClass="int">
+		select count(*)
+		FROM UWO_WRK_YMD a
+		WHERE 1=1
+		AND SUBSTR(UWY_WRK_YMD,0,4) = #year#
+		AND SUBSTR(UWY_WRK_YMD,5,2) = #month#
+		ORDER BY UWY_WRK_YMD
+	</select>
+
+	<update id="QR_SETUP019_SAV_YMD" parameterClass="map">
+		UPDATE UWO_WRK_YMD
+		SET
+			UWY_ETC = #etc#,
+			UWY_WRK_YN = 'Y'
+		WHERE UWY_WRK_YMD = #key#
+	</update>
+
+	<update id="QR_SETUP019_RE_YMD" parameterClass="map">
+		UPDATE UWO_WRK_YMD
+		SET
+			UWY_ETC = '',
+			UWY_WRK_YN = 'N'
+		WHERE UWY_WRK_YMD = #key#
+	</update>
+
+	<select id="QR_SETUP019_LIST_YEAR" resultClass="egovMap">
+		select distinct SUBSTR(UWY_WRK_YMD,0,4) as sYear from UWO_WRK_YMD order by sYear
+	</select>
+
+	<select id="QR_SETUP019_LIST_MONTH" resultClass="egovMap">
+		select distinct SUBSTR(UWY_WRK_YMD,5,2) as sMonth from UWO_WRK_YMD order by sMonth
+	</select>
+
+	<select id="QR_SETUP020_CNT" parameterClass="searchVO" resultClass="int">
+		SELECT
+			COUNT(*) TOTCNT
+		FROM UWO_SVC_MNG
+		WHERE 1=1
+		<isNotEmpty property="service">
+			AND UVM_SVC_COD = #service#
+		</isNotEmpty>
+		<isNotEmpty property="searchCondition">
+			AND UVM_SVC_NAM = #searchCondition#
+		</isNotEmpty>
+		<isNotEmpty property="workCycleTerm">
+			AND UVM_BCY_COD = #workCycleTerm#
+		</isNotEmpty>
+		ORDER BY UVM_SVC_KEY DESC
+	</select>
+
+	<select id="QR_SETUP020_LIST" parameterClass="searchVO" resultClass="egovMap">
+		SELECT
+			svc_cod,
+			svc_nam,
+			use_yn,
+			F_GET_USR_NAME(rgt_id) rgt_nam,
+			TO_CHAR(rgt_mdh,'YYYY.MM.DD') rgt_mdh,
+			(SELECT COUNT(*) FROM uwo_svc_sub uss WHERE uss.svc_cod = usm.svc_cod) AS sub_cnt
+		 FROM uwo_svc_mtr usm
+		WHERE 1=1
+			<isNotEmpty property="searchCondition">
+				<![CDATA[ AND svc_nam LIKE '%' || #searchCondition# || '%' ]]>
+			</isNotEmpty>
+		ORDER BY sort
+	</select>
+
+	<select id="QR_SETUP020_VIEW" parameterClass="map" resultClass="egovMap">
+		SELECT
+			UVM_SVC_KEY,
+			UVM_SVC_COD,
+			F_GET_COMMON_NAME(UVM_SVC_COD, 'SERVICE') SERVICE,
+			UVM_SVC_NAM,
+			UVM_BCY_COD,
+			(SELECT (TO_CHAR(UMM_STD_DAT, 'YYYY.MM.DD') || ' ~ ' || TO_CHAR(UMM_END_DAT, 'YYYY.MM.DD')) FROM UWO_MCY_MTR WHERE UMM_MAN_CYL = UVM_BCY_COD) UVM_BCY_DAT,
+			F_GET_NTR_NAME(UVM_BCY_COD) UVM_BCY_NAM,
+			UVM_SVC_DES,
+			UVM_PIF_YN,
+			CASE WHEN UVM_PIF_YN = 'Y' THEN '대상'
+		             ELSE '비대상'
+		        END UVM_PIF_YN_NAM,
+			UVM_WEB_URL,
+			UVM_PRD_DES,
+			UVM_MNG_PER,
+			UVM_DUT_YN,
+			CASE WHEN UVM_DUT_YN = 'Y' THEN '의무'
+		             ELSE '비의무'
+		        END UVM_DUT_YN_NAM,
+			UVM_DUT_DES,
+			UVM_USE_PER,
+			UVM_MEN_CNT,
+			UVM_COF_RES,
+			UVM_ALL_ORG,
+			UVM_INF_ORG,
+			UVM_USE_YN,
+			UVM_RGT_ID,
+			UVM_RGT_MDH,
+			UVM_UPT_ID,
+			UVM_UPT_MDH,
+			UVM_ETC_DES
+		FROM
+			UWO_SVC_MNG
+		WHERE
+			UVM_SVC_KEY = #uvmSvcKey#
+	</select>
+
+	<update id="QR_SETUP020_UPDATE" parameterClass="map">
+		UPDATE UWO_SVC_MNG
+			SET
+			UVM_SVC_COD = #uvmSvcCod#,
+			UVM_SVC_NAM = #uvmSvcNam#,
+			UVM_BCY_COD = #uvmBcyCod#,
+			UVM_SVC_DES = #uvmSvcDes#,
+			UVM_PIF_YN = #uvmPifYn#,
+			UVM_WEB_URL = #uvmWebUrl#,
+			UVM_PRD_DES = #uvmPrdDes#,
+			UVM_MNG_PER = #uvmMngPer#,
+			UVM_DUT_YN = #uvmDutYn#,
+			UVM_DUT_DES = #uvmDutDes#,
+			UVM_USE_PER = #uvmUsePer#,
+			UVM_MEN_CNT = #uvmMenCnt#,
+			UVM_COF_RES = #uvmCofRes#,
+			UVM_ALL_ORG = #uvmAllOrg#,
+			UVM_INF_ORG = #uvmInfOrg#,
+			UVM_USE_YN = #uvmUseYn#,
+			UVM_ETC_DES = #uvmEtcDes#,
+			UVM_UPT_ID = #uvmUpId#,
+			UVM_UPT_MDH = SYSDATE
+		 WHERE
+		 	UVM_SVC_KEY = #uvmSvcKey#
+	</update>
+
+	<insert id="QR_SETUP020_INSERT" parameterClass="map">
+	<selectKey keyProperty="uvmSvcKey" resultClass="String">
+		SELECT NVL(MAX(UVM_SVC_KEY),0)+1 AS uvmSvcKey FROM UWO_SVC_MNG
+	</selectKey>
+		INSERT
+		  INTO UWO_SVC_MNG
+		       (
+		           UVM_SVC_KEY,
+		           UVM_SVC_COD,
+		           UVM_SVC_NAM,
+		           UVM_BCY_COD,
+		           UVM_SVC_DES,
+		           UVM_PIF_YN,
+		           UVM_WEB_URL,
+		           UVM_PRD_DES,
+		           UVM_MNG_PER,
+		           UVM_DUT_YN,
+		           UVM_DUT_DES,
+		           UVM_USE_PER,
+		           UVM_MEN_CNT,
+		           UVM_COF_RES,
+		           UVM_ALL_ORG,
+		           UVM_INF_ORG,
+		           UVM_USE_YN,
+		           UVM_ETC_DES,
+		           UVM_RGT_ID,
+		           UVM_RGT_MDH
+		       )
+		       VALUES
+		       (
+		           #uvmSvcKey#
+		           , #uvmSvcCod#
+		           , #uvmSvcNam#
+		           , #uvmBcyCod#
+		           , #uvmSvcDes#
+		           , #uvmPifYn#
+		           , #uvmWenUrl#
+		           , #uvmPrdDes#
+		           , #uvmMngPer#
+		           , #uvmDutYn#
+		           , #uvmDutDes#
+		           , #uvmUsePer#
+		           , #uvmMenCnt#
+		           , #uvmCofRes#
+		           , #uvmAllOrg#
+		           , #uvmInfOrg#
+		           , #uvmUseYn#
+		           , #uvmEtcDes#
+		           , #uvmRgtId#
+		           , SYSDATE
+		       )
+	</insert>
+
+	<select id="QR_SETUP021_LIST" parameterClass="searchVO" resultClass="egovMap">
+		SELECT
+			20 || #bcyCode# AS YEAR,
+			svc_cod AS ucc_snd_cod,
+			svc_nam AS ucc_snd_nam,
+			use_yn AS ucc_use_yn,
+			svc_etc AS ucc_etc,
+			(SELECT uum_usr_nam FROM uwo_usr_mtr WHERE uum_usr_key = usm.rgt_id) AS uum_usr_nam,
+            (
+				SELECT COUNT(*)
+				FROM uwo_org_mtr
+				WHERE uom_svc_cod = usm.svc_cod
+				<isNotEmpty property="bcyCode">
+				AND uom_bcy_cod = #bcyCode#
+				</isNotEmpty>
+			) AS dept_cnt,
+			TO_CHAR(rgt_mdh, 'YYYY.MM.DD') AS ucc_rgt_mdh
+		FROM
+			uwo_svc_mtr usm
+		WHERE
+			1=1
+		<isNotEmpty property="service">
+			AND svc_cod = #service#
+		</isNotEmpty>
+			AND use_yn = 'Y'
+		ORDER BY svc_nam
+	</select>
+
+	<select id="QR_SETUP021_DEPT_LIST" parameterClass="map" resultClass="egovMap">
+		SELECT UDM_DEP_COD,
+			UDM_DEP_NAM,
+			UDM_DEP_LVL,
+			UDM_DEP_1LV,
+			UDM_DEP_2LV,
+			UDM_DEP_3LV,
+			(SELECT UOM_SVC_COD FROM UWO_ORG_MTR WHERE UOM_DEP_COD = UDM_DEP_COD) AS UDM_SVC_COD
+		FROM UWO_DEP_MTR
+		ORDER BY UDM_DEP_1LV ASC, UDM_DEP_2LV DESC, UDM_DEP_3LV DESC
+	</select>
+
+	<select id="QR_SETUP021_NODE_LIST" resultClass="egovMap">
+		SELECT
+			UOM_DIV_COD
+			,UOM_DIV_NAM
+			,UOM_SVC_COD
+			,UOM_SVC_NAM
+			,UOM_DEP_COD
+			,UOM_DEP_NAM
+			,UOM_USE_YN
+		FROM
+			UWO_ORG_MTR
+		WHERE
+			UOM_USE_YN = 'Y'
+		<isNotEmpty property="uccSndCod">
+			AND uom_svc_cod = #uccSndCod#
+		</isNotEmpty>
+		<isNotEmpty property="uomBcyCod">
+			AND uom_bcy_cod = #uomBcyCod#
+		</isNotEmpty>
+		ORDER BY uom_dep_nam
+	</select>
+
+	<select id="QR_SETUP021_INFO" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			svc_cod AS ucc_snd_cod,
+			svc_nam AS ucc_snd_nam,
+			use_yn AS ucc_use_yn,
+			svc_etc AS ucc_etc,
+			(SELECT uum_usr_nam FROM uwo_usr_mtr WHERE uum_usr_key = usm.rgt_id) AS uum_usr_nam,
+         	TO_CHAR(rgt_mdh, 'YYYY.MM.DD') AS ucc_rgt_mdh
+		FROM
+			uwo_svc_mtr usm
+		WHERE
+			svc_cod = #uccSndCod#
+	</select>
+
+	<delete id="QR_SETUP021_MAP_DELETE" parameterClass="String">
+		DELETE UWO_ORG_MTR
+		WHERE UOM_SVC_COD = #uomSvcCod#
+	</delete>
+
+	<delete id="QR_SETUP021_MAP_DELETE_WITH_SVC_BCY" parameterClass="map">
+		DELETE UWO_ORG_MTR
+		WHERE UOM_SVC_COD = #uomSvcCod# AND UOM_BCY_COD = #uomBcyCod#
+	</delete>
+
+	<delete id="QR_SETUP021_DEP_DELETE" parameterClass="String">
+		DELETE UWO_ORG_MTR
+		WHERE UOM_DEP_COD = #uomDepCod#
+	</delete>
+
+	<update id="QR_SETUP021_M_UPDATE" parameterClass="map">
+		UPDATE UWO_USR_MTR
+			SET
+			UUM_SVC_COD = #service#,
+			UUM_RGT_ID = #uccRgtId#,
+			UUM_RGT_MDH = SYSDATE
+		WHERE
+			UUM_DEP_COD = #uccSndCod#
+	</update>
+
+	<update id="QR_SETUP021_M_RE_UPDATE" parameterClass="map">
+		UPDATE UWO_USR_MTR
+			SET
+			UUM_SVC_COD = 'S0001',
+			UUM_RGT_ID = #uccRgtId#,
+			UUM_RGT_MDH = SYSDATE
+		WHERE
+			UUM_SVC_COD = #uomSvcCod#
+	</update>
+
+	<!-- 2018-05-11 s, 사용자계정 일괄 업데이트 -->
+	<insert id="batchUpdateUser" parameterClass="java.util.List">
+		MERGE INTO uwo_usr_mtr uum
+		USING
+		(
+		<iterate conjunction="UNION ALL">
+			SELECT
+				#[].uumUsrId# AS usr_id,
+				#[].uumUsrPwd# AS usr_pwd,
+				#[].uumUsrNam# AS usr_nam,
+				#[].uumDepCod# AS dep_cod,
+				#[].uumPosCod# AS pos_cod,
+				#[].uumMalAds# AS mal_ads,
+				#[].uumCelNum# AS cel_num,
+				#[].uumTelNum# AS tel_num,
+				(SELECT svc_cod FROM uwo_svc_mtr WHERE svc_nam = #[].uumSvcCod#) AS svc_cod,
+				(SELECT ucc_snd_cod FROM uwo_com_cod WHERE ucc_fir_cod = 'USER_STAT' AND ucc_snd_nam = #[].uumUseYn#) AS use_yn,
+				(SELECT TO_CHAR(uat_auh_key) FROM uwo_auh_mtr WHERE uat_auh_nam = #[].uumAuhKey#) AS auh_key,
+				CASE WHEN #[].uumApvGbn# = '가능' THEN 'Y' WHEN #[].uumApvGbn# = '불가능' THEN 'N' END apv_gbn,
+				CASE WHEN #[].uumTraGbn# = '지정' THEN 'Y' WHEN #[].uumTraGbn# = '미지정' THEN 'N' END tra_gbn,
+				(SELECT TO_CHAR(uum_usr_key) FROM uwo_usr_mtr uum2 WHERE uum2.uum_usr_id = #[].uumApvOne#) AS apv_one,
+				(SELECT TO_CHAR(uum_usr_key) FROM uwo_usr_mtr uum2 WHERE uum2.uum_usr_id = #[].uumApvTwo#) AS apv_two,
+				(SELECT TO_CHAR(uum_usr_key) FROM uwo_usr_mtr uum2 WHERE uum2.uum_usr_id = #[].uumAgnId#) AS agn_id,
+				#[].uumAgnStr# AS agn_str,
+				#[].uumAgnEnd# AS agn_end
+			FROM DUAL
+		</iterate>
+		) u ON (
+			uum.uum_usr_id = u.usr_id
+		)
+    	WHEN MATCHED THEN
+		UPDATE SET
+			uum_usr_pwd = CASE WHEN u.usr_pwd IS NOT NULL THEN u.usr_pwd ELSE uum_usr_pwd END,
+			uum_dep_cod = CASE WHEN u.dep_cod IS NOT NULL THEN u.dep_cod ELSE uum_dep_cod END,
+			uum_pos_cod = CASE WHEN u.pos_cod IS NOT NULL THEN u.pos_cod ELSE uum_pos_cod END,
+			uum_mal_ads = CASE WHEN u.mal_ads IS NOT NULL THEN u.mal_ads ELSE uum_mal_ads END,
+			uum_cel_num = CASE WHEN u.cel_num IS NOT NULL THEN u.cel_num ELSE uum_cel_num END,
+			uum_tel_num = CASE WHEN u.tel_num IS NOT NULL THEN u.tel_num ELSE uum_tel_num END,
+			uum_svc_cod = CASE WHEN u.svc_cod IS NOT NULL THEN u.svc_cod ELSE uum_svc_cod END,
+			uum_use_yn  = CASE WHEN u.use_yn  IS NOT NULL THEN u.use_yn  ELSE uum_use_yn  END,
+			uum_auh_key = CASE WHEN u.auh_key IS NOT NULL THEN u.auh_key ELSE uum_auh_key END,
+			uum_apv_gbn = CASE WHEN u.apv_gbn IS NOT NULL THEN u.apv_gbn ELSE uum_apv_gbn END,
+			uum_tra_gbn = CASE WHEN u.tra_gbn IS NOT NULL THEN u.tra_gbn ELSE uum_tra_gbn END,
+			uum_apv_one = CASE WHEN u.apv_one IS NOT NULL THEN u.apv_one ELSE uum_apv_one END,
+			uum_apv_two = CASE WHEN u.apv_two IS NOT NULL THEN u.apv_two ELSE uum_apv_two END,
+			uum_agn_id  = CASE WHEN u.agn_id  IS NOT NULL THEN u.agn_id  ELSE uum_agn_id  END,
+			uum_upt_id  = '43',
+			uum_upt_mdh = SYSDATE
+		WHEN NOT MATCHED THEN
+		INSERT
+		(
+			uum_usr_key,
+			uum_usr_id,
+			uum_usr_pwd,
+			uum_usr_nam,
+			uum_dep_cod,
+			uum_pos_cod,
+			uum_mal_ads,
+			uum_cel_num,
+			uum_tel_num,
+			uum_svc_cod,
+			uum_use_yn,
+			uum_auh_key,
+			uum_apv_gbn,
+			uum_pwd_fai,
+			uum_apv_one,
+			uum_apv_two,
+			uum_agn_id,
+			uum_rgt_id,
+			uum_rgt_mdh,
+			uum_upt_id,
+			uum_upt_mdh,
+			uum_tra_gbn,
+			uum_bat_yn
+		)
+		VALUES
+		(
+			SEQ_NEXTVAL_ON_DEMAND('seq_uwo_usr_mtr'),
+			u.usr_id,
+			u.usr_pwd,
+			u.usr_nam,
+			u.dep_cod,
+			u.pos_cod,
+			u.mal_ads,
+			u.cel_num,
+			u.tel_num,
+			u.svc_cod,
+			u.use_yn,
+			u.auh_key,
+			u.apv_gbn,
+			0,
+			u.apv_one,
+			u.apv_two,
+			u.agn_id,
+			'43',
+			SYSDATE,
+			'43',
+			SYSDATE,
+			u.tra_gbn,
+			'N'
+		)
+	</insert>
+
+	<select id="QR_CNT_COM_COD_COMP_NAME" parameterClass="Map" resultClass="int">
+		SELECT COUNT(*)
+		FROM UWO_COM_COD
+		WHERE
+		UCC_FIR_COD='STND' AND UCC_SND_NAM = #uccSndNam#
+		<isNotEmpty property="uccSndCod">
+			AND UCC_SND_COD != #uccSndCod#
+		</isNotEmpty>
+	</select>
+
+	<select id="QR_CNT_COM_COD_PREFIX" parameterClass="Map" resultClass="int">
+		SELECT COUNT(*)
+		FROM UWO_COM_COD
+		WHERE
+		UCC_FIR_COD='STND' AND UCC_ETC = #uccEtc#
+		<isNotEmpty property="uccSndCod">
+			AND UCC_SND_COD != #uccSndCod#
+		</isNotEmpty>
+	</select>
+</sqlMap>

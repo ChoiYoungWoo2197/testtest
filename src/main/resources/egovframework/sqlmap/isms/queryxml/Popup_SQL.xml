@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="popup">
+
+    <typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+    <typeAlias  alias="popupVO" type="com.uwo.isms.domain.PopupVO"/>
+
+    <select id="QR_BE_KEY" parameterClass="Integer" resultClass="Integer">
+        SELECT COUNT(*) AS CNT
+        FROM POPUP
+        WHERE BRD_KEY = #popup_brd_key#
+    </select>
+
+    <select id="QR_READ_KEY" parameterClass="Integer" resultClass="popupVO">
+        SELECT
+        POPUP_ID, BRD_KEY, STATUS, WIDTH, HEIGHT, TOP, LEFT
+        , TO_CHAR(START_DATE,'YYYY-MM-DD HH24') AS START_DATE, TO_CHAR(FINISH_DATE,'YYYY-MM-DD HH24') AS FINISH_DATE
+        FROM POPUP
+        WHERE BRD_KEY = #popup_brd_key#
+    </select>
+
+    <insert id="QR_INSERT" parameterClass="popupVO">
+        INSERT INTO POPUP(POPUP_ID, BRD_KEY, STATUS, START_DATE, FINISH_DATE, WIDTH, HEIGHT, TOP, LEFT)
+        VALUES (
+        SEQ_POPUP.nextval, SEQ_UWO_BRD_MTR.currval
+        , #status#, TO_DATE(#start_date#,'YYYY-MM-DD HH24'), TO_DATE(#finish_date#,'YYYY-MM-DD HH24'), #width#, #height#, #top#, #left#
+        )
+    </insert>
+
+    <update id="QR_UPDATE" parameterClass="popupVO">
+        UPDATE POPUP
+        SET
+        STATUS = #status#, START_DATE = TO_DATE(#start_date#,'YYYY-MM-DD HH24'), FINISH_DATE = TO_DATE(#finish_date#,'YYYY-MM-DD HH24')
+        , WIDTH = #width#, HEIGHT = #height#, TOP = #top#, LEFT = #left#
+        WHERE POPUP_ID = #popup_id# AND BRD_KEY = #brd_key#
+    </update>
+
+    <insert id="QR_UPDATE_INSERT" parameterClass="popupVO">
+        INSERT INTO POPUP(POPUP_ID, BRD_KEY, STATUS, START_DATE, FINISH_DATE, WIDTH, HEIGHT, TOP, LEFT)
+        VALUES (
+        SEQ_POPUP.nextval, #brd_key#
+        , #status#, TO_DATE(#start_date#,'YYYY-MM-DD HH24'), TO_DATE(#finish_date#,'YYYY-MM-DD HH24'), #width#, #height#, #top#, #left#
+        )
+    </insert>
+
+    <select id="QR_POPUP" parameterClass="String" resultClass="egovMap">
+        <![CDATA[
+		SELECT
+			P.POPUP_ID, P.BRD_KEY, P.STATUS, P.START_DATE, P.FINISH_DATE, P.WIDTH, P.HEIGHT, P.TOP, P.LEFT
+		FROM
+			POPUP P
+			LEFT JOIN UWO_BRD_MTR B ON B.UBM_BRD_KEY = P.BRD_KEY
+		WHERE
+			P.START_DATE <= TO_DATE(#now_date#, 'YYYY-MM-DD HH24') AND P.FINISH_DATE >= TO_DATE(#now_date#, 'YYYY-MM-DD HH24')
+			AND P.STATUS = 'Y' AND B.UBM_DEL_YN = 'N' AND B.UBM_BRD_GBN = '1'
+		]]>
+    </select>
+
+    <select id="QR_POPUP_INFO" parameterClass="Map" resultClass="popupVO">
+        <![CDATA[
+		SELECT
+			P.POPUP_ID, P.BRD_KEY AS brd_key, P.STATUS, P.START_DATE, P.FINISH_DATE, P.WIDTH, P.HEIGHT, P.TOP, P.LEFT
+			, B.UBM_BRD_TLE AS TITLE, B.UBM_BRD_CTS AS CONTENT
+		FROM
+			POPUP P
+			LEFT JOIN UWO_BRD_MTR B ON B.UBM_BRD_KEY = P.BRD_KEY
+		WHERE
+			POPUP_ID = #pid# AND UBM_BRD_KEY = #bk# AND P.STATUS = 'Y' AND B.UBM_DEL_YN = 'N' AND B.UBM_BRD_GBN = '1'
+		]]>
+    </select>
+</sqlMap>

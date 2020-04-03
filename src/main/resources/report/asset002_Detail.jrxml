@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="asset002_Detail" language="groovy" pageWidth="555" pageHeight="802" columnWidth="555" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" isFloatColumnFooter="true" uuid="e914d204-2992-449e-be00-7a4803547569">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<style name="table">
+		<box>
+			<pen lineWidth="1.0" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<field name="mTitle" class="java.lang.String"/>
+	<field name="text1" class="java.lang.String"/>
+	<field name="text2" class="java.lang.String"/>
+	<field name="text3" class="java.lang.String"/>
+	<field name="text4" class="java.lang.String"/>
+	<field name="text5" class="java.lang.String"/>
+	<field name="text6" class="java.lang.String"/>
+	<field name="text7" class="java.lang.String"/>
+	<field name="text8" class="java.lang.String"/>
+	<field name="text9" class="java.lang.String"/>
+	<field name="text10" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<detail>
+		<band height="50" splitType="Stretch">
+			<textField isStretchWithOverflow="true" evaluationTime="Auto" isBlankWhenNull="true">
+				<reportElement uuid="9a242961-b83e-4bb6-8fda-eee51b6b35e7" style="table_TD" stretchType="RelativeToBandHeight" mode="Opaque" x="495" y="35" width="60" height="15" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="5" rightIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text10}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" evaluationTime="Auto" isBlankWhenNull="true">
+				<reportElement uuid="e104932f-5249-4fc8-aa26-7d31868a4470" style="table_TD" stretchType="RelativeToBandHeight" mode="Opaque" x="0" y="35" width="180" height="15" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="5" rightIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text6}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" evaluationTime="Auto" isBlankWhenNull="true">
+				<reportElement uuid="3ddb3ec5-8737-4c5c-adb2-cc1dbbfa2a47" style="table_TD" stretchType="RelativeToBandHeight" mode="Opaque" x="180" y="35" width="95" height="15" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="5" rightIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text7}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" evaluationTime="Auto" isBlankWhenNull="true">
+				<reportElement uuid="98188a88-b03e-4c7f-8a47-92537f451a6a" style="table_TD" stretchType="RelativeToBandHeight" mode="Opaque" x="275" y="35" width="110" height="15" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="5" rightIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text8}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" evaluationTime="Auto" isBlankWhenNull="true">
+				<reportElement uuid="998b9707-7c9f-4f39-9473-95e8608d12a9" style="table_TD" stretchType="RelativeToBandHeight" mode="Opaque" x="385" y="35" width="110" height="15" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="5" rightIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text9}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" evaluationTime="Auto" isBlankWhenNull="true">
+				<reportElement uuid="4a09f52f-a77c-472f-b345-17caeb07c3ec" positionType="Float" x="0" y="0" width="555" height="20" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle" rotation="None" markup="none">
+					<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="5" rightIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mTitle}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Auto" isBlankWhenNull="true">
+				<reportElement uuid="b1439a70-3815-49fb-994a-3d274872c4f4" style="table_TH" positionType="Float" x="385" y="20" width="110" height="15" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="5" rightIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text4}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Auto" isBlankWhenNull="true">
+				<reportElement uuid="d5718856-db6c-4543-92ab-67d1f39ba352" style="table_TH" positionType="Float" x="495" y="20" width="60" height="15" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="5" rightIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text5}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Auto" isBlankWhenNull="true">
+				<reportElement uuid="d6ddec54-735a-4df4-b6ca-5de98d599078" style="table_TH" positionType="Float" x="275" y="20" width="110" height="15" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="5" rightIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text3}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Auto" isBlankWhenNull="true">
+				<reportElement uuid="ad4d8a17-095e-44cb-8487-b0e40c65686e" style="table_TH" positionType="Float" x="180" y="20" width="95" height="15" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="5" rightIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text2}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Auto" isBlankWhenNull="true">
+				<reportElement uuid="5d6a2c41-22ea-4e0e-93be-e5bc9f076605" style="table_TH" positionType="Float" x="0" y="20" width="180" height="15" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle" rotation="None">
+					<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="5" rightIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text1}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

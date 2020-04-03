@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  - Copyright (c) 2012 JOBTOY, Co., Ltd. All rights reserved.
+  - 
+  - Author      :	
+  - Date        :	
+  - @(#)
+  - Description :	
+  -->
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN"
+    "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+
+	<bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="interceptors">
+			<list>
+				<ref bean="localeChangeInterceptor" />
+			</list>
+		</property>
+		<property name="mappings">
+			<props>
+				<prop key="/board/list.do">boardCtrl</prop>
+				<prop key="/board/save.do">boardCtrl</prop>
+			</props>
+		</property>
+	</bean>
+	
+	<!-- Board -->
+	<bean id="boardCtrl" class="com.jobtoy.board.web.BoardCtrl">
+		<property name="methodNameResolver">
+			<ref local="boardNameResolver" />
+		</property>
+		<property name="messages" ref="messageSourceAccessor" />
+	</bean>
+
+	<bean id="boardNameResolver" class="org.springframework.web.servlet.mvc.multiaction.PropertiesMethodNameResolver">
+		<property name="mappings">
+			<props>
+				<prop key="/board/list.do">list</prop>
+				<prop key="/board/save.do">save</prop>
+			</props>
+		</property>
+	</bean>
+	
+</beans>
+

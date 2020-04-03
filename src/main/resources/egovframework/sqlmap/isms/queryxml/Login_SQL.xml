@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="fmLogin">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="loginVO"  type="com.uwo.isms.domain.LoginVO"/>
+
+	<select id="actionLogin" parameterClass="loginVO" resultClass="loginVO">
+		   SELECT UUM_USR_KEY,
+		          UUM_USR_ID ID,
+		          UUM_USR_NAM,
+		          UUM_MAL_ADS,
+		          UUM_USR_PWD PASSWORD,
+		          UUM_DIV_COD,
+		          F_FIND_NAME('21', UUM_DEP_COD, #company#) DIVISION,
+		          UUM_SVC_COD,
+		          F_GET_COMMON_NAME(UUM_SVC_COD,'SERVICE') SERVICE,
+		          UUM_DEP_COD,
+		          udm.UDM_DEP_NAM AS DEPT,
+		          DECODE(UUM_USR_ID, UUM_USR_PWD, 'N','Y') PWD_CHG_YN,
+		          UUM_AUH_KEY,
+                  UUM_APV_GBN,
+                  UUM_USE_YN,
+                  UAT.UAT_AUH_GBN,
+                  udm.udm_dep_1lv AS stOrg,
+                  udm.udm_dep_2lv AS hqOrg,
+                  udm.udm_dep_3lv AS gpOrg,
+                  FLOOR(SYSDATE - uum_chg_mdh) AS uum_chg_mdh,
+                  uat_def_mnu
+		     FROM UWO_USR_MTR UUM
+			INNER JOIN UWO_AUH_MTR UAT ON UAT.UAT_AUH_KEY = UUM.UUM_AUH_KEY
+			INNER JOIN uwo_dep_mtr udm ON uum.uum_dep_cod = udm.udm_dep_cod
+		    WHERE UUM_USR_ID = #id#
+		      AND UUM_USR_PWD = #password#
+	</select>
+
+	<select id="getManCyl" parameterClass="loginVO" resultClass="loginVO">
+		SELECT	UMM_MAN_CYL,
+				TO_CHAR(UMM_STD_DAT, 'yyyymmdd') UMM_STD_DAT,
+				TO_CHAR(UMM_END_DAT, 'yyyymmdd') UMM_END_DAT
+		  FROM UWO_MCY_MTR
+		  <isEmpty property="umm_man_cyl">
+		  	WHERE TO_CHAR(SYSDATE, 'yyyymmdd') BETWEEN TO_CHAR(UMM_STD_DAT, 'yyyymmdd') AND TO_CHAR(UMM_END_DAT, 'yyyymmdd')
+		  </isEmpty>
+		  <isNotEmpty property="umm_man_cyl">
+		  	WHERE UMM_MAN_CYL = #umm_man_cyl#
+		  </isNotEmpty>
+
+	</select>
+
+	<!-- 오늘날짜를 포함하는 심사주기가 없을 경우, 이전/다음 버튼(gubun is notEmpty) -->
+	<select id="getManCylRetry" parameterClass="loginVO" resultClass="loginVO">
+		SELECT	UMM_MAN_CYL,
+				TO_CHAR(UMM_STD_DAT, 'yyyymmdd') UMM_STD_DAT,
+				TO_CHAR(UMM_END_DAT, 'yyyymmdd') UMM_END_DAT
+		  FROM UWO_MCY_MTR
+		 WHERE 1=1
+		 <isEmpty property="gubun">
+		 	AND UMM_MAN_CYL = (SELECT max(UMM_MAN_CYL) FROM UWO_MCY_MTR)
+		 </isEmpty>
+		 <isNotEmpty property="gubun">
+		 	<isEqual property="gubun" compareValue="pre">
+		 		AND UMM_MAN_CYL = (SELECT MIN(UMM_MAN_CYL) FROM UWO_MCY_MTR)
+		 	</isEqual>
+		 	<isEqual property="gubun" compareValue="next">
+		 		AND UMM_MAN_CYL = (SELECT MAX(UMM_MAN_CYL) FROM UWO_MCY_MTR)
+		 	</isEqual>
+		 </isNotEmpty>
+	</select>
+
+	<!-- login 실패 시 id 존재 여부 체크 -->
+	<select id="isExistId" parameterClass="String" resultClass="String">
+		SELECT UUM_USR_KEY FROM UWO_USR_MTR WHERE UUM_USR_ID = #id#
+	</select>
+
+	<!-- 로그인 로그 insert -->
+	<insert id="INSERT_lOG_INFO" parameterClass="loginVO">
+		INSERT INTO UWO_LOG_MTR
+		(
+		       ULM_LOG_KEY
+		       , ULM_LOG_GBN
+		       , ULM_LIN_ID
+		       , ULM_LIN_PWD
+		       , ULM_LIN_IP
+		       , ULM_RGT_MDH
+		)
+		VALUES
+		(
+		    (SELECT NVL(MAX(ULM_LOG_KEY),0)+1 FROM UWO_LOG_MTR)
+		    , #ulm_log_gbn#
+		    , #id#
+		    , #password#
+		    , #ulm_lin_ip#
+		    , SYSDATE
+		)
+	</insert>
+
+	<!-- 로그인 실패횟수 갖고오기 -->
+	<select id="getFailCnt" parameterClass="String" resultClass="String">
+		SELECT NVL(UUM_PWD_FAI,0)
+		  FROM UWO_USR_MTR
+		 WHERE UUM_USR_KEY = #userKey#
+	</select>
+
+	<update id="setLoginFailCnt" parameterClass="egovMap">
+		UPDATE UWO_USR_MTR
+		   SET UUM_PWD_FAI = #failCnt#
+		       , UUM_USE_YN = #useYn#
+		 WHERE UUM_USR_KEY = #userKey#
+	</update>
+
+
+
+	<!-- 메뉴정보를 가져온다 -->
+	<select id="getMenuList" parameterClass="String" resultClass="egovMap">
+		SELECT
+			m.umm_mnu_key
+			,m.umm_mnu_nam
+			,m.umm_mnu_url
+			,m.umm_odr_num
+			,m.umm_mnu_prt
+			,m.umm_mnu_lvl
+			,m.umm_mnu_spd
+		FROM
+			uwo_usr_mtr u,
+			uwo_auh_map a,
+			uwo_mnu_mtr m
+		WHERE u.uum_auh_key = a.uam_auh_key
+			AND a.uam_mnu_key = m.umm_mnu_key
+			AND u.uum_usr_key = #userKey#
+			AND m.umm_use_yn = 'Y'
+		ORDER BY umm_mnu_prt DESC, umm_mnu_lvl, m.umm_odr_num
+	</select>
+
+	<!-- 메뉴 권한 정보 -->
+	<select id="getMenuAuthList" parameterClass="String" resultClass="egovMap">
+		SELECT
+			m.umm_mnu_key,
+			TRIM(m.umm_mnu_url) AS umm_mnu_url,
+     		CASE WHEN a.uam_mnu_key IS NOT NULL THEN 'Y' ELSE 'N' END mnu_key,
+     		CASE WHEN a.uam_mnu_rgt = 'Y' THEN 'Y' ELSE 'N' END mnu_rgt
+		FROM
+			uwo_mnu_mtr m
+      		LEFT OUTER JOIN
+		    (
+		        SELECT
+		        	a.uam_mnu_key,
+		        	a.uam_mnu_rgt
+		        FROM
+		        uwo_usr_mtr u
+		      	INNER JOIN uwo_auh_map a ON u.uum_auh_key = a.uam_auh_key
+		        WHERE u.uum_usr_key = #userKey#
+		    ) a ON m.umm_mnu_key = a.uam_mnu_key
+		WHERE m.umm_use_yn = 'Y'
+			<!-- 2018-05-09 s, 대메뉴는 포함시키지 않음 -->
+			AND umm_mnu_prt IS NOT NULL
+	</select>
+
+	<!-- 바로가기 메뉴정보를 가져온다 -->
+	<select id="getSpdMenuList" parameterClass="String" resultClass="egovMap">
+		SELECT
+			m.umm_mnu_key
+			,m.umm_mnu_nam
+			,m.umm_mnu_url
+			,m.umm_odr_num
+			,m.umm_mnu_prt
+			,m.umm_mnu_lvl
+			,m.umm_mnu_spd
+		FROM
+			uwo_usr_mtr u,
+			uwo_auh_map a,
+			uwo_mnu_mtr m
+		WHERE u.uum_auh_key = a.uam_auh_key
+			AND a.uam_mnu_key = m.umm_mnu_key
+			AND u.uum_usr_key = #userKey#
+			AND m.umm_use_yn = 'Y'
+			AND m.umm_mnu_prt is NOT NULL
+			AND m.umm_mnu_spd = 'Y'
+		ORDER BY m.umm_odr_num
+	</select>
+
+	<select id="getUser" parameterClass="String" resultClass="egovMap">
+		SELECT uum_usr_id, uum_usr_pwd FROM UWO_USR_MTR WHERE UUM_USR_ID = #decString#
+	</select>
+</sqlMap>

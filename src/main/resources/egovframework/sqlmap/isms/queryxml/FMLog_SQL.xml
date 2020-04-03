@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="fmLog">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>	
+	<typeAlias	alias="cntrLogVO" type="com.uwo.isms.domain.CntrLogVO"/>
+	<typeAlias	alias="cntrVO" type="com.uwo.isms.domain.CntrVO"/>
+	<typeAlias  alias="userVO" type="com.uwo.isms.domain.UserVO"/>
+	
+	<!-- 공통표준 1DEPTH 추출 -->
+	<select id="QR_LOG001" parameterClass="Map" resultClass="cntrVO">
+		SELECT 
+			UCM_CTR_KEY,UCM_BCY_COD,UCM_CTR_GBN,UCM_CTR_COD,UCM_LVL_GBN,UCM_1LV_COD,UCM_1LV_NAM,
+			UCM_2LV_COD,UCM_2LV_NAM,UCM_2LV_DTL,UCM_3LV_COD,UCM_3LV_NAM,UCM_3LV_DTL,UCM_4LV_COD,
+			UCM_4LV_NAM,UCM_5LV_COD,UCM_5LV_NAM,UCM_RLT_GID,UCM_CTR_OPR,UCM_DIV_COD,UCM_ETC,
+			UCM_GOL_NO,UCM_SUM_PNT,UCM_RGT_ID,UCM_RGT_MDH,UCM_UPD_ID,UCM_UPD_MDH,
+			UCM_1LD_YN,UCM_2LD_YN,UCM_3LD_YN,UCM_4LD_YN,UCM_5LD_YN
+		FROM UWO_CTR_MTR
+		WHERE UCM_1LV_COD = #UCM_1LV_COD#
+	</select>
+	
+	<!-- 공통표준 2DEPTH 추출 -->
+	<select id="QR_LOG002" parameterClass="Map" resultClass="cntrVO">
+		SELECT 
+			UCM_CTR_KEY,UCM_BCY_COD,UCM_CTR_GBN,UCM_CTR_COD,UCM_LVL_GBN,UCM_1LV_COD,UCM_1LV_NAM,
+			UCM_2LV_COD,UCM_2LV_NAM,UCM_2LV_DTL,UCM_3LV_COD,UCM_3LV_NAM,UCM_3LV_DTL,UCM_4LV_COD,
+			UCM_4LV_NAM,UCM_5LV_COD,UCM_5LV_NAM,UCM_RLT_GID,UCM_CTR_OPR,UCM_DIV_COD,UCM_ETC,
+			UCM_GOL_NO,UCM_SUM_PNT,UCM_RGT_ID,UCM_RGT_MDH,UCM_UPD_ID,UCM_UPD_MDH,
+			UCM_1LD_YN,UCM_2LD_YN,UCM_3LD_YN,UCM_4LD_YN,UCM_5LD_YN
+		FROM UWO_CTR_MTR
+		WHERE UCM_2LV_COD = #UCM_2LV_COD#
+	</select>
+	
+	<!-- 공통표준 3DEPTH 추출 -->
+	<select id="QR_LOG003" parameterClass="Map" resultClass="cntrVO">
+		SELECT 
+			UCM_CTR_KEY,UCM_BCY_COD,UCM_CTR_GBN,UCM_CTR_COD,UCM_LVL_GBN,UCM_1LV_COD,UCM_1LV_NAM,
+			UCM_2LV_COD,UCM_2LV_NAM,UCM_2LV_DTL,UCM_3LV_COD,UCM_3LV_NAM,UCM_3LV_DTL,UCM_4LV_COD,
+			UCM_4LV_NAM,UCM_5LV_COD,UCM_5LV_NAM,UCM_RLT_GID,UCM_CTR_OPR,UCM_DIV_COD,UCM_ETC,
+			UCM_GOL_NO,UCM_SUM_PNT,UCM_RGT_ID,UCM_RGT_MDH,UCM_UPD_ID,UCM_UPD_MDH,
+			UCM_1LD_YN,UCM_2LD_YN,UCM_3LD_YN,UCM_4LD_YN,UCM_5LD_YN
+		FROM UWO_CTR_MTR
+		WHERE UCM_3LV_COD = #UCM_3LV_COD#
+	</select>
+	
+	<!-- 공통표준 1DEPTH 추가 -->
+	<insert id="QR_LOG004" parameterClass="Map">
+		INSERT INTO UWO_CTR_LOG
+		(UCL_CTR_KEY, UCL_BCY_COD, UCL_CTR_GBN, UCL_CTR_COD, UCL_LVL_GBN, UCL_1LV_COD, UCL_1LV_NAM,
+		UCL_1LD_YN, UCL_RGT_ID, UCL_RGT_MDH, UCL_DIV_COD, UCL_GOL_NO, UCL_LOG_KEY, UCL_LOG_GBN)
+		VALUES(
+		(SELECT UCM_CTR_KEY FROM UWO_CTR_MTR WHERE UCM_1LV_COD = #UCM_1LV_COD# ), #UCM_BCY_COD#, #UCM_CTR_GBN#,
+		(SELECT UCM_CTR_COD FROM UWO_CTR_MTR WHERE UCM_1LV_COD = #UCM_1LV_COD#), '3', #UCM_1LV_COD#,
+		#UCM_1LV_NAM#, 'N', #UCM_RGT_ID#, SYSDATE, #UCM_DIV_COD#, #UCM_1LV_COD#, (SELECT NVL(MAX(UCL_LOG_KEY)+1,1) FROM UWO_CTR_LOG), 'I'
+		)
+	</insert>
+	
+	<!-- 공통표준 1DEPTH 수정 -->
+	<insert id="QR_LOG005" parameterClass="cntrVO">
+		INSERT INTO UWO_CTR_LOG(
+			UCL_LOG_KEY,UCL_LOG_GBN,UCL_CTR_KEY,UCL_BCY_COD,UCL_CTR_GBN,
+			UCL_CTR_COD,UCL_LVL_GBN,UCL_1LV_COD,UCL_1LV_NAM,UCL_2LV_COD,
+			UCL_2LV_NAM,UCL_2LV_DTL,UCL_3LV_COD,UCL_3LV_NAM,UCL_3LV_DTL,
+			UCL_4LV_COD,UCL_4LV_NAM,UCL_5LV_COD,UCL_5LV_NAM,UCL_RLT_GID,
+			UCL_CTR_OPR,UCL_DIV_COD,UCL_ETC,UCL_GOL_NO,UCL_SUM_PNT,UCL_RGT_ID,
+			UCL_RGT_MDH,UCL_UPD_ID,UCL_UPD_MDH,UCL_1LD_YN,UCL_2LD_YN,UCL_3LD_YN,
+			UCL_4LD_YN,UCL_5LD_YN)
+		VALUES(
+			(SELECT NVL(MAX(UCL_LOG_KEY)+1,1) FROM UWO_CTR_LOG),'U',#ucm_ctr_key#,#ucm_bcy_cod#,#ucm_ctr_gbn#,
+			#ucm_ctr_cod#,#ucm_lvl_gbn#,#ucm_1lv_cod#,#ucm_1lv_nam#,#ucm_2lv_cod#,
+			#ucm_2lv_nam#,#ucm_2lv_dtl#,#ucm_3lv_cod#,#ucm_3lv_nam#,#ucm_3lv_dtl#,
+			#ucm_4lv_cod#,#ucm_4lv_nam#,#ucm_5lv_cod#,#ucm_5lv_nam#,#ucm_rlt_gid#,
+			#ucm_ctr_opr#,#ucm_div_cod#,#ucm_etc#,#ucm_gol_no#,#ucm_sum_pnt#,#ucm_rgt_id#,
+			#ucm_rgt_mdh#,#ucm_upd_id#,#ucm_upd_mdh#,#ucm_1ld_yn#,#ucm_2ld_yn#,#ucm_3ld_yn#,
+			#ucm_4ld_yn#,#ucm_5ld_yn#)		
+	</insert>
+	
+	<!-- 공통표준 2DEPTH 추가(기존데이터 존재 시) -->
+	<insert id="QR_LOG006" parameterClass="Map">
+		INSERT INTO UWO_CTR_LOG
+		(UCL_CTR_KEY, UCL_BCY_COD, UCL_CTR_GBN, UCL_CTR_COD, UCL_LVL_GBN, UCL_1LV_COD, UCL_1LV_NAM, UCL_1LD_YN, 
+		UCL_2LV_COD, UCL_2LV_NAM, UCL_2LV_DTL, UCL_2LD_YN, UCL_RGT_ID, UCL_RGT_MDH,	UCL_DIV_COD, UCL_GOL_NO,
+		UCL_LOG_KEY,UCL_LOG_GBN)
+		VALUES(
+			(SELECT UCM_CTR_KEY FROM UWO_CTR_MTR WHERE UCM_2LV_COD = #UCM_2LV_COD#), #UCM_BCY_COD#, #UCM_CTR_GBN#,
+			(SELECT DISTINCT UCM_CTR_COD FROM UWO_CTR_MTR WHERE UCM_2LV_COD=#UCM_2LV_COD#),
+			(SELECT DISTINCT UCM_LVL_GBN FROM UWO_CTR_MTR WHERE UCM_2LV_COD=#UCM_2LV_COD#),
+			#KEY#, (SELECT DISTINCT UCM_1LV_NAM FROM UWO_CTR_MTR WHERE UCM_2LV_COD=#UCM_2LV_COD#),
+			(SELECT DISTINCT UCM_1LD_YN FROM UWO_CTR_MTR WHERE UCM_2LV_COD=#UCM_2LV_COD#),
+			#UCM_2LV_COD#, #UCM_2LV_NAM#, #UCM_2LV_DTL#,
+			(SELECT DISTINCT UCM_1LD_YN FROM UWO_CTR_MTR WHERE UCM_1LV_COD=#UCM_2LV_COD#),
+			#UCM_RGT_ID#, (SELECT DISTINCT UCM_RGT_MDH FROM UWO_CTR_MTR WHERE UCM_2LV_COD=#UCM_2LV_COD#), 
+			(SELECT DISTINCT UCM_DIV_COD FROM UWO_CTR_MTR WHERE UCM_2LV_COD=#UCM_2LV_COD#),
+			#UCM_2LV_COD#,(SELECT NVL(MAX(UCL_LOG_KEY)+1,1) FROM UWO_CTR_LOG),'I')
+	</insert>
+	
+	<!-- 공통표준 2DEPTH 추가(기존데이터 미존재 시) -->
+	<insert id="QR_LOG007" parameterClass="cntrVO">
+		INSERT INTO UWO_CTR_LOG(
+			UCL_LOG_KEY,UCL_LOG_GBN,UCL_CTR_KEY,UCL_BCY_COD,UCL_CTR_GBN,
+			UCL_CTR_COD,UCL_LVL_GBN,UCL_1LV_COD,UCL_1LV_NAM,UCL_2LV_COD,
+			UCL_2LV_NAM,UCL_2LV_DTL,UCL_3LV_COD,UCL_3LV_NAM,UCL_3LV_DTL,
+			UCL_4LV_COD,UCL_4LV_NAM,UCL_5LV_COD,UCL_5LV_NAM,UCL_RLT_GID,
+			UCL_CTR_OPR,UCL_DIV_COD,UCL_ETC,UCL_GOL_NO,UCL_SUM_PNT,UCL_RGT_ID,
+			UCL_RGT_MDH,UCL_UPD_ID,UCL_UPD_MDH,UCL_1LD_YN,UCL_2LD_YN,UCL_3LD_YN,
+			UCL_4LD_YN,UCL_5LD_YN)
+		VALUES(
+			(SELECT NVL(MAX(UCL_LOG_KEY)+1,1) FROM UWO_CTR_LOG),'I',#ucm_ctr_key#,#ucm_bcy_cod#,#ucm_ctr_gbn#,
+			#ucm_ctr_cod#,#ucm_lvl_gbn#,#ucm_1lv_cod#,#ucm_1lv_nam#,#ucm_2lv_cod#,
+			#ucm_2lv_nam#,#ucm_2lv_dtl#,#ucm_3lv_cod#,#ucm_3lv_nam#,#ucm_3lv_dtl#,
+			#ucm_4lv_cod#,#ucm_4lv_nam#,#ucm_5lv_cod#,#ucm_5lv_nam#,#ucm_rlt_gid#,
+			#ucm_ctr_opr#,#ucm_div_cod#,#ucm_etc#,#ucm_gol_no#,#ucm_sum_pnt#,#ucm_rgt_id#,
+			#ucm_rgt_mdh#,#ucm_upd_id#,#ucm_upd_mdh#,#ucm_1ld_yn#,#ucm_2ld_yn#,#ucm_3ld_yn#,
+			#ucm_4ld_yn#,#ucm_5ld_yn#)		
+	</insert>
+	
+	<!-- 공통표준 2DEPTH 수정 -->
+	<insert id="QR_LOG008" parameterClass="cntrVO">
+		INSERT INTO UWO_CTR_LOG(
+			UCL_LOG_KEY,UCL_LOG_GBN,UCL_CTR_KEY,UCL_BCY_COD,UCL_CTR_GBN,
+			UCL_CTR_COD,UCL_LVL_GBN,UCL_1LV_COD,UCL_1LV_NAM,UCL_2LV_COD,
+			UCL_2LV_NAM,UCL_2LV_DTL,UCL_3LV_COD,UCL_3LV_NAM,UCL_3LV_DTL,
+			UCL_4LV_COD,UCL_4LV_NAM,UCL_5LV_COD,UCL_5LV_NAM,UCL_RLT_GID,
+			UCL_CTR_OPR,UCL_DIV_COD,UCL_ETC,UCL_GOL_NO,UCL_SUM_PNT,UCL_RGT_ID,
+			UCL_RGT_MDH,UCL_UPD_ID,UCL_UPD_MDH,UCL_1LD_YN,UCL_2LD_YN,UCL_3LD_YN,
+			UCL_4LD_YN,UCL_5LD_YN)
+		VALUES(
+			(SELECT NVL(MAX(UCL_LOG_KEY)+1,1) FROM UWO_CTR_LOG),'U',#ucm_ctr_key#,#ucm_bcy_cod#,#ucm_ctr_gbn#,
+			#ucm_ctr_cod#,#ucm_lvl_gbn#,#ucm_1lv_cod#,#ucm_1lv_nam#,#ucm_2lv_cod#,
+			#ucm_2lv_nam#,#ucm_2lv_dtl#,#ucm_3lv_cod#,#ucm_3lv_nam#,#ucm_3lv_dtl#,
+			#ucm_4lv_cod#,#ucm_4lv_nam#,#ucm_5lv_cod#,#ucm_5lv_nam#,#ucm_rlt_gid#,
+			#ucm_ctr_opr#,#ucm_div_cod#,#ucm_etc#,#ucm_gol_no#,#ucm_sum_pnt#,#ucm_rgt_id#,
+			#ucm_rgt_mdh#,#ucm_upd_id#,#ucm_upd_mdh#,#ucm_1ld_yn#,#ucm_2ld_yn#,#ucm_3ld_yn#,
+			#ucm_4ld_yn#,#ucm_5ld_yn#)		
+	</insert>
+	
+	<!-- 공통표준 3DEPTH 추가(기존 데이터 존재 시) -->
+	<insert id="QR_LOG009" parameterClass="Map">
+		INSERT INTO UWO_CTR_LOG
+		(UCL_CTR_KEY, UCL_BCY_COD, UCL_CTR_GBN, UCL_CTR_COD, UCL_LVL_GBN, UCL_1LV_COD, UCL_1LV_NAM, UCL_1LD_YN,
+		UCL_2LV_COD, UCL_2LV_NAM, UCL_2LV_DTL, UCL_2LD_YN, UCL_3LV_COD, UCL_3LV_NAM, UCL_3LV_DTL, UCL_3LD_YN,
+		UCL_RGT_ID, UCL_RGT_MDH, UCL_DIV_COD, UCL_GOL_NO, UCL_LOG_KEY,UCL_LOG_GBN)
+		VALUES(
+			(SELECT UCM_CTR_KEY FROM UWO_CTR_MTR WHERE UCM_3LV_COD = #UCM_3LV_COD#), #UCM_BCY_COD#, 
+			#UCM_CTR_GBN#, (SELECT DISTINCT UCM_CTR_COD FROM UWO_CTR_MTR WHERE UCM_3LV_COD=#UCM_3LV_COD#),
+			(SELECT DISTINCT UCM_LVL_GBN FROM UWO_CTR_MTR WHERE UCM_3LV_COD=#UCM_3LV_COD#),
+			(SELECT DISTINCT UCM_1LV_COD FROM UWO_CTR_MTR WHERE UCM_3LV_COD=#UCM_3LV_COD#),
+			(SELECT DISTINCT UCM_1LV_NAM FROM UWO_CTR_MTR WHERE UCM_3LV_COD=#UCM_3LV_COD#),
+			(SELECT DISTINCT UCM_1LD_YN FROM UWO_CTR_MTR WHERE UCM_3LV_COD=#UCM_3LV_COD#),
+			#KEY#, (SELECT DISTINCT UCM_2LV_NAM FROM UWO_CTR_MTR WHERE UCM_3LV_COD=#UCM_3LV_COD#),
+			(SELECT DISTINCT UCM_2LV_DTL FROM UWO_CTR_MTR WHERE UCM_3LV_COD=#UCM_3LV_COD#),
+			(SELECT DISTINCT UCM_2LD_YN FROM UWO_CTR_MTR WHERE UCM_3LV_COD=#UCM_3LV_COD#),
+			#UCM_3LV_COD#, #UCM_3LV_NAM#, #UCM_3LV_DTL#,
+			(SELECT DISTINCT UCM_2LD_YN FROM UWO_CTR_MTR WHERE UCM_3LV_COD=#UCM_3LV_COD#),
+			#UCM_RGT_ID#, (SELECT DISTINCT UCM_RGT_MDH FROM UWO_CTR_MTR WHERE UCM_3LV_COD=#UCM_3LV_COD#),
+			(SELECT DISTINCT UCM_DIV_COD FROM UWO_CTR_MTR WHERE UCM_3LV_COD=#UCM_3LV_COD#),
+			 #UCM_3LV_COD#,(SELECT NVL(MAX(UCL_LOG_KEY)+1,1) FROM UWO_CTR_LOG),'I')
+	</insert>
+	
+	<!-- 공통표준 3DEPTH 추가(기존데이터 미존재 시) -->
+	<insert id="QR_LOG010" parameterClass="cntrVO">
+		INSERT INTO UWO_CTR_LOG(
+			UCL_LOG_KEY,UCL_LOG_GBN,UCL_CTR_KEY,UCL_BCY_COD,UCL_CTR_GBN,
+			UCL_CTR_COD,UCL_LVL_GBN,UCL_1LV_COD,UCL_1LV_NAM,UCL_2LV_COD,
+			UCL_2LV_NAM,UCL_2LV_DTL,UCL_3LV_COD,UCL_3LV_NAM,UCL_3LV_DTL,
+			UCL_4LV_COD,UCL_4LV_NAM,UCL_5LV_COD,UCL_5LV_NAM,UCL_RLT_GID,
+			UCL_CTR_OPR,UCL_DIV_COD,UCL_ETC,UCL_GOL_NO,UCL_SUM_PNT,UCL_RGT_ID,
+			UCL_RGT_MDH,UCL_UPD_ID,UCL_UPD_MDH,UCL_1LD_YN,UCL_2LD_YN,UCL_3LD_YN,
+			UCL_4LD_YN,UCL_5LD_YN)
+		VALUES(
+			(SELECT NVL(MAX(UCL_LOG_KEY)+1,1) FROM UWO_CTR_LOG),'I',#ucm_ctr_key#,#ucm_bcy_cod#,#ucm_ctr_gbn#,
+			#ucm_ctr_cod#,#ucm_lvl_gbn#,#ucm_1lv_cod#,#ucm_1lv_nam#,#ucm_2lv_cod#,
+			#ucm_2lv_nam#,#ucm_2lv_dtl#,#ucm_3lv_cod#,#ucm_3lv_nam#,#ucm_3lv_dtl#,
+			#ucm_4lv_cod#,#ucm_4lv_nam#,#ucm_5lv_cod#,#ucm_5lv_nam#,#ucm_rlt_gid#,
+			#ucm_ctr_opr#,#ucm_div_cod#,#ucm_etc#,#ucm_gol_no#,#ucm_sum_pnt#,#ucm_rgt_id#,
+			#ucm_rgt_mdh#,#ucm_upd_id#,#ucm_upd_mdh#,#ucm_1ld_yn#,#ucm_2ld_yn#,#ucm_3ld_yn#,
+			#ucm_4ld_yn#,#ucm_5ld_yn#)		
+	</insert>
+	
+	<!-- 공통표준 3DEPTH 수정 -->
+	<insert id="QR_LOG011" parameterClass="cntrVO">
+		INSERT INTO UWO_CTR_LOG(
+			UCL_LOG_KEY,UCL_LOG_GBN,UCL_CTR_KEY,UCL_BCY_COD,UCL_CTR_GBN,
+			UCL_CTR_COD,UCL_LVL_GBN,UCL_1LV_COD,UCL_1LV_NAM,UCL_2LV_COD,
+			UCL_2LV_NAM,UCL_2LV_DTL,UCL_3LV_COD,UCL_3LV_NAM,UCL_3LV_DTL,
+			UCL_4LV_COD,UCL_4LV_NAM,UCL_5LV_COD,UCL_5LV_NAM,UCL_RLT_GID,
+			UCL_CTR_OPR,UCL_DIV_COD,UCL_ETC,UCL_GOL_NO,UCL_SUM_PNT,UCL_RGT_ID,
+			UCL_RGT_MDH,UCL_UPD_ID,UCL_UPD_MDH,UCL_1LD_YN,UCL_2LD_YN,UCL_3LD_YN,
+			UCL_4LD_YN,UCL_5LD_YN)
+		VALUES(
+			(SELECT NVL(MAX(UCL_LOG_KEY)+1,1) FROM UWO_CTR_LOG),'U',#ucm_ctr_key#,#ucm_bcy_cod#,#ucm_ctr_gbn#,
+			#ucm_ctr_cod#,#ucm_lvl_gbn#,#ucm_1lv_cod#,#ucm_1lv_nam#,#ucm_2lv_cod#,
+			#ucm_2lv_nam#,#ucm_2lv_dtl#,#ucm_3lv_cod#,#ucm_3lv_nam#,#ucm_3lv_dtl#,
+			#ucm_4lv_cod#,#ucm_4lv_nam#,#ucm_5lv_cod#,#ucm_5lv_nam#,#ucm_rlt_gid#,
+			#ucm_ctr_opr#,#ucm_div_cod#,#ucm_etc#,#ucm_gol_no#,#ucm_sum_pnt#,#ucm_rgt_id#,
+			#ucm_rgt_mdh#,#ucm_upd_id#,#ucm_upd_mdh#,#ucm_1ld_yn#,#ucm_2ld_yn#,#ucm_3ld_yn#,
+			#ucm_4ld_yn#,#ucm_5ld_yn#)		
+	</insert>
+	
+	<insert id="QR_LOG012" parameterClass="userVO">
+		INSERT INTO UWO_USR_LOG(
+			UUL_MTR_KEY,UUL_USR_KEY,UUL_USR_ID,UUL_USR_PWD,UUL_USR_NAM,
+			UUL_MAL_ADS,UUL_DIV_COD,UUL_SVC_COD,UUL_DEP_COD,UUL_USR_NUM,
+			UUL_POS_COD,UUL_CEL_NUM,UUL_TEL_NUM,UUL_USE_YN,UUL_PWD_FAI,
+			UUL_CHG_MDH,UUL_RGT_ID,UUL_RGT_MDH,UUL_ATH_GBN,UUL_APV_GBN,
+			UUL_APV_ONE,UUL_APV_TWO		)
+		VALUES(
+			(SELECT NVL(MAX(UUL_MTR_KEY)+1,1) FROM UWO_USR_LOG),#uumUsrKey#,#uumUsrId#,#uumUsrPwd#,#uumUsrNam#,
+			#uumMalAds#,#uumDivCod#,#uumSvcCod#,#uumDepCod#,#uumUsrNum#,
+			#uumPosCod#,#uumCelNum#,#uumTelNum#,#uumUseYn#,#uumPwdFai#,
+			#uumChgMdh#,#uumRgtId#,SYSDATE,#uumAthGbn#,#uumApvGbn#,
+			#uumApvOne#,#uumApvTwo#
+		)
+	</insert>
+	
+	<insert id="QR_LOG013" parameterClass="String">
+		INSERT INTO UWO_USR_LOG(
+			UUL_MTR_KEY,UUL_USR_ID,UUL_USE_YN,UUL_RGT_MDH)
+		VALUES(
+			(SELECT NVL(MAX(UUL_MTR_KEY)+1,1) FROM UWO_USR_LOG),'N',SYSDATE)
+	</insert>
+</sqlMap>

@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<rule name="기반시설 관리적 물리적">
+  <ruleStyle id="style01" startRow="4" startCell="1" finishCell="7">
+    <cell order="1" type="String">
+      <!-- regex>[\d]+</regex -->
+      <title>No</title>
+    </cell>
+    <cell order="2" type="String">
+      <title>분류</title>
+    </cell>
+    <cell order="4" type="String">
+      <title>Ref No.</title>
+    </cell>
+    <cell order="5">
+      <title>점검 항목</title>
+    </cell>
+    <cell order="6">
+      <title>등급</title>
+    </cell>
+    <cell order="7">
+      <title>점수</title>
+    </cell>
+  </ruleStyle>
+
+  <sheets>
+    <sheet />
+    <sheet />
+    <sheet ruleStyle="style01" />
+    <sheet ruleStyle="style01" />
+  </sheets>
+</rule>

@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<rule name="기반시설 수준평가">
+  <ruleStyle id="style01" startRow="4" startCell="1" finishCell="9">
+    <cell order="1" type="String">
+      <regex>[\d]+\.[\s]+(.|\s)+</regex>
+      <title>통제분야</title>
+    </cell>
+    <cell order="2" type="String">
+      <regex>[\d]+\.[\d]+[\.]*(.|\s)+</regex>
+      <title>통제항목</title>
+    </cell>
+    <cell order="3" type="String">
+      <title>평가내용</title>
+    </cell>
+    <cell order="5" >
+      <title>세부 평가항목</title>
+    </cell>
+    <cell order="7" nullCheck="true">
+      <title>착안사항 설명</title>
+    </cell>
+    <cell order="9">
+      <title>증빙자료 예시</title>
+    </cell>
+  </ruleStyle>
+
+  <sheets>
+    <sheet />
+    <sheet />
+    <sheet ruleStyle="style01" />
+    <sheet ruleStyle="style01" />
+    <sheet ruleStyle="style01" />
+    <sheet ruleStyle="style01" />
+    <sheet ruleStyle="style01" />
+    <sheet ruleStyle="style01" />
+    <sheet ruleStyle="style01" />
+    <sheet ruleStyle="style01" />
+    <sheet ruleStyle="style01" />
+    <sheet ruleStyle="style01" />
+    <sheet ruleStyle="style01" />
+    <sheet ruleStyle="style01" />
+  </sheets>
+</rule>

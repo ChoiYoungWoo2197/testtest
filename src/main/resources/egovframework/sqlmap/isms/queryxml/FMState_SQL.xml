@@ -1,0 +1,2593 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="fmState">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="com.uwo.isms.domain.SearchVO"/>
+
+	<select id="QR_STATE001_A" resultClass="egovMap" parameterClass="searchVO">
+		SELECT DIV AS DIVISION, DEPT AS DEPT_COD, UCM_CTR_GBN AS UCM_CTR_GBN, F_FIND_NAME('23', DEPT, #company#) DEPT, SUM(YANG) AS YANG, SUM(DAM) AS DAM, SUM(UPMU) AS UPMU
+		FROM (
+				SELECT UCM_CTR_GBN, F_FIND_NAME('01', UTW_DIV_COD, #company#) DIV, UTW_DEP_COD AS DEPT, COUNT(*) YANG, 0 DAM, 0 UPMU
+		          FROM (
+		          		SELECT UCM_CTR_GBN, UTW_DIV_COD, UTW_DEP_COD, UTD_TRC_KEY
+						FROM UWO_TRC_WRK, UWO_TRC_CTR, UWO_CTR_MTR, UWO_TRC_DOC
+						WHERE UTC_CTR_KEY = UCM_CTR_KEY
+						AND UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTW_DEL_YN = 'N'
+						AND UCM_BCY_COD = #manCyl#
+						<isNotEqual property="searchKeyword" compareValue="A">
+			  <![CDATA[ AND SUBSTR(TO_CHAR(UTW_STR_DAT,'YYYYMM'),1,6) >= ]]> #searchKeyword#
+						</isNotEqual>
+						<isNotEmpty property="division">
+							<isNotEqual property="division" compareValue="A">
+						AND UTW_DIV_COD = #division#
+							</isNotEqual>
+						</isNotEmpty>
+						<isNotEmpty property="dept">
+						AND UTW_DEP_COD = #dept#
+						</isNotEmpty>
+						GROUP BY UCM_CTR_GBN, UTW_DIV_COD, UTW_DEP_COD, UTD_TRC_KEY)
+				GROUP BY UCM_CTR_GBN, UTW_DIV_COD, UTW_DEP_COD
+		        UNION ALL
+		        SELECT UCM_CTR_GBN,	F_FIND_NAME('01', UTW_DIV_COD, #company#) DIV, UTW_DEP_COD AS DEPT, 0 YANG, COUNT(*) DAM, 0 UPMU
+				FROM (
+		          		SELECT UCM_CTR_GBN, UTW_DIV_COD, UTW_DEP_COD, UTW_WRK_ID
+						FROM UWO_TRC_WRK, UWO_TRC_CTR, UWO_CTR_MTR, UWO_TRC_DOC
+						WHERE UTC_CTR_KEY = UCM_CTR_KEY
+						AND UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTW_DEL_YN = 'N'
+						AND UCM_BCY_COD = #manCyl#
+						<isNotEqual property="searchKeyword" compareValue="A">
+			<![CDATA[   AND SUBSTR(TO_CHAR(UTW_STR_DAT,'YYYYMM'),1,6) >= ]]> #searchKeyword#
+						</isNotEqual>
+						<isNotEmpty property="division">
+							<isNotEqual property="division" compareValue="A">
+						AND UTW_DIV_COD = #division#
+							</isNotEqual>
+						</isNotEmpty>
+						<isNotEmpty property="dept">
+						AND UTW_DEP_COD = #dept#
+						</isNotEmpty>
+						GROUP BY UCM_CTR_GBN, UTW_DIV_COD, UTW_DEP_COD, UTW_WRK_ID)
+				GROUP BY UCM_CTR_GBN, UTW_DIV_COD, UTW_DEP_COD
+		        UNION ALL
+		        SELECT UCM_CTR_GBN, DIV, DEPT, 0 YANG, 0 DAM, COUNT(CNT)
+				FROM (
+						SELECT DISTINCT UCM_CTR_GBN, F_FIND_NAME('01', UTW_DIV_COD, #company#) DIV, UTW_DEP_COD AS DEPT, UTW_WRK_KEY CNT
+						FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_CTR_MTR, UWO_TRC_CTR
+						WHERE UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTC_CTR_KEY = UCM_CTR_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTW_DEL_YN = 'N'
+						AND UCM_BCY_COD = #manCyl#
+						<isNotEqual property="searchKeyword" compareValue="A">
+			<![CDATA[   AND SUBSTR(TO_CHAR(UTW_STR_DAT,'YYYYMM'),1,6) >=  ]]> #searchKeyword#
+						</isNotEqual>
+						<isNotEmpty property="division">
+							<isNotEqual property="division" compareValue="A">
+						AND UTW_DIV_COD = #division#
+							</isNotEqual>
+						</isNotEmpty>
+						<isNotEmpty property="dept">
+						AND UTW_DEP_COD = #dept#
+						</isNotEmpty>
+						GROUP BY UCM_CTR_GBN, UTW_DIV_COD, UTW_DEP_COD, UTW_WRK_KEY)
+				GROUP BY UCM_CTR_GBN, DIV, DEPT)
+		 	GROUP BY ROLLUP(UCM_CTR_GBN, DIV, DEPT)
+		ORDER BY UCM_CTR_GBN, DIV, DEPT_COD
+	</select>
+
+	<select id="QR_STATE001_B" resultClass="egovMap" parameterClass="searchVO">
+		SELECT F_FIND_NAME('01', UTW_DIV_COD, #company#) AS DIVISION, F_FIND_NAME('23', UTW_DEP_COD, #company#) DEPT, UTW_DEP_COD AS DEPT_COD, UCM_CTR_GBN, COUNT(UTD_DIV_COD) WAN,
+		       SUM(	CASE
+		       			WHEN UTD_APR_YN = 'N' THEN	1
+		            ELSE	0
+		           	END) AS JAGA,
+		       SUM(	CASE
+		             	WHEN UTD_APR_YN = 'Y' THEN	1
+		            ELSE	0
+		           	END) APRV
+		FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR
+		WHERE UTD_APR_YN IS NOT NULL
+		AND UTW_TRC_KEY = UTD_TRC_KEY
+		AND UTD_TRC_KEY = UTC_TRC_KEY
+		AND UTC_CTR_KEY = UCM_CTR_KEY
+		AND UTW_WRK_STA = '90'
+		AND UTW_PRD_COD = #manCyl#
+		<isNotEqual property="searchKeyword" compareValue="A">
+<![CDATA[AND SUBSTR(TO_CHAR(UTW_END_DAT,'YYYYMM'),1,6) <= ]]> #searchKeyword#
+		</isNotEqual>
+		<isNotEmpty property="division">
+			<isNotEqual property="division" compareValue="A">
+		AND UTW_DIV_COD = #division#
+			</isNotEqual>
+		</isNotEmpty>
+		<isNotEmpty property="dept">
+		AND UTW_DEP_COD = #dept#
+		</isNotEmpty>
+		GROUP BY ROLLUP(UCM_CTR_GBN, UTW_DIV_COD, UTW_DEP_COD)
+		ORDER BY UCM_CTR_GBN, UTW_DIV_COD, UTW_DEP_COD
+	</select>
+
+	<select id="QR_STATE001_C" resultClass="egovMap" parameterClass="searchVO">
+		SELECT UCM_CTR_GBN, F_FIND_NAME('01', UTW_DIV_COD, #company#) AS DIVISION, F_FIND_NAME('23', UTW_DEP_COD, #company#) AS DEPT, UTW_DEP_COD AS DEPT_COD, COUNT(UTD_DIV_COD) AS ALLWORK,
+		       SUM(	CASE
+						WHEN UTW_WRK_STA = '10' THEN 1
+					ELSE	0
+		           	END) AS NONWORK,
+		       SUM(	CASE
+			<![CDATA[   WHEN UTW_WRK_STA = '10' AND UTW_END_DAT < SYSDATE THEN ]]> 1
+					ELSE	0
+		           	END) AS DELAY
+		FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR
+		WHERE UTD_APR_YN IS NOT NULL
+		AND UTW_TRC_KEY = UTD_TRC_KEY
+		AND UTD_TRC_KEY = UTC_TRC_KEY
+		AND UTC_CTR_KEY = UCM_CTR_KEY
+		AND UTW_PRD_COD = #manCyl#
+		<isNotEqual property="searchKeyword" compareValue="A">
+<![CDATA[AND SUBSTR(TO_CHAR(UTW_END_DAT,'YYYYMM'),1,6) <= ]]> #searchKeyword#
+		</isNotEqual>
+		<isNotEmpty property="division">
+			<isNotEqual property="division" compareValue="A">
+		AND UTW_DIV_COD = #division#
+			</isNotEqual>
+		</isNotEmpty>
+		<isNotEmpty property="dept">
+		AND UTW_DEP_COD = #dept#
+		</isNotEmpty>
+		GROUP BY ROLLUP(UCM_CTR_GBN, UTW_DIV_COD, UTW_DEP_COD)
+		ORDER BY UCM_CTR_GBN, UTW_DIV_COD, UTW_DEP_COD
+	</select>
+
+	<select id="QR_STATE001_D" resultClass="egovMap" parameterClass="searchVO">
+		SELECT CTR_GBN, DIV AS DIVISION, DEPT, ROUND(JI / WAN * 100,2) AS DELAY_PER, UTW_DEP_COD AS DEPT_COD
+		FROM (
+				SELECT UCM_CTR_GBN CTR_GBN, F_FIND_NAME('01', UTW_DIV_COD, #company#) DIV, F_FIND_NAME('23', UTW_DEP_COD, #company#) DEPT, UTW_DEP_COD, COUNT(UTW_DEP_COD) WAN,
+		               SUM(	CASE
+		                     	WHEN UTW_WRK_STA = '10' THEN	1
+							ELSE	0
+		                   	END) MIWAN,
+		               SUM(	CASE
+					<![CDATA[   WHEN UTW_WRK_STA = '10' AND UTW_END_DAT < SYSDATE THEN ]]>	1
+							ELSE	0
+		                   	END) JI
+				FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR
+				WHERE UTD_APR_YN IS NOT NULL
+				AND UTW_TRC_KEY = UTD_TRC_KEY
+				AND UTD_TRC_KEY = UTC_TRC_KEY
+				AND UTC_CTR_KEY = UCM_CTR_KEY
+				AND UTW_WRK_STA = '10'
+				AND UTW_PRD_COD = #manCyl#
+				<isNotEqual property="searchKeyword" compareValue="A">
+	<![CDATA[   AND SUBSTR(TO_CHAR(UTW_END_DAT,'YYYYMM'),1,6) <= ]]> #searchKeyword#
+				</isNotEqual>
+				<isNotEmpty property="division">
+					<isNotEqual property="division" compareValue="A">
+				AND UTW_DIV_COD = #division#
+					</isNotEqual>
+				</isNotEmpty>
+				<isNotEmpty property="dept">
+				AND UTW_DEP_COD = #dept#
+				</isNotEmpty>
+				GROUP BY UCM_CTR_GBN, UTW_DIV_COD, UTW_DEP_COD)
+		ORDER BY CTR_GBN, DIV, DEPT
+	</select>
+
+	<select id="QR_STATE001_E" resultClass="egovMap" parameterClass="searchVO">
+		SELECT F_FIND_NAME('23', UTW_DEP_COD, #company#) DEPT, F_GET_USR_NAME(UTW_WRK_ID) WORKER, UCM_CTR_GBN, COUNT(UTD_TRC_KEY) CNT
+		FROM (
+				SELECT UCM_CTR_GBN, UTW_DIV_COD, UTW_DEP_COD, UTW_WRK_ID, UTD_TRC_KEY
+				FROM UWO_TRC_WRK, UWO_TRC_CTR, UWO_CTR_MTR, UWO_TRC_DOC
+				WHERE UTC_CTR_KEY = UCM_CTR_KEY
+				AND UTW_TRC_KEY = UTD_TRC_KEY
+				AND UTD_TRC_KEY = UTC_TRC_KEY
+				AND UTW_DEL_YN = 'N'
+				AND UCM_BCY_COD = #manCyl#
+				AND UTW_DEP_COD = #dept#
+				<isNotEqual property="searchKeyword" compareValue="A">
+	<![CDATA[   AND SUBSTR(TO_CHAR(UTW_STR_DAT,'YYYYMM'),1,6) >=  ]]> #searchKeyword#
+				</isNotEqual>
+				<isNotEmpty property="division">
+					<isNotEqual property="division" compareValue="A">
+				AND UTW_DIV_COD = #division#
+					</isNotEqual>
+				</isNotEmpty>
+				<isNotEmpty property="dept">
+				AND UTW_DEP_COD = #dept#
+				</isNotEmpty>
+		        )
+		 GROUP BY ROLLUP(UTW_DEP_COD, UTW_WRK_ID, UCM_CTR_GBN)
+		 ORDER BY UTW_DEP_COD, UCM_CTR_GBN
+	</select>
+
+	<select id="QR_STATE001_F" resultClass="egovMap" parameterClass="searchVO">
+		SELECT F_FIND_NAME('23', UTW_DEP_COD, 'SKB') AS DEPT, F_GET_USR_NAME(UTW_WRK_ID) AS WORKER, UCM_CTR_GBN, COUNT(UTD_DIV_COD) WAN,
+		       SUM(	CASE
+		             	WHEN UTD_APR_YN = 'N' THEN	1
+					ELSE	0
+		           	END) JAGA,
+		       SUM(	CASE
+		            	WHEN UTD_APR_YN = 'Y' THEN	1
+		            ELSE	0
+		           	END) APRV
+		FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR
+		WHERE UTD_APR_YN IS NOT NULL
+		AND UTW_TRC_KEY = UTD_TRC_KEY
+		AND UTD_TRC_KEY = UTC_TRC_KEY
+		AND UTC_CTR_KEY = UCM_CTR_KEY
+		AND UTW_WRK_STA = '90'
+		AND UTW_PRD_COD = #manCyl#
+		AND UTW_DEP_COD = #dept#
+		<isNotEqual property="searchKeyword" compareValue="A">
+<![CDATA[AND SUBSTR(TO_CHAR(UTW_END_DAT,'YYYYMM'),1,6) <= ]]> #searchKeyword#
+		</isNotEqual>
+        <isNotEmpty property="division">
+        	<isNotEqual property="division" compareValue="A">
+		AND UTW_DIV_COD = #division#
+        	</isNotEqual>
+        </isNotEmpty>
+        <isNotEmpty property="dept">
+		AND UTW_DEP_COD = #dept#
+		</isNotEmpty>
+		GROUP BY ROLLUP(UTW_DEP_COD, UTW_WRK_ID, UCM_CTR_GBN)
+		ORDER BY UTW_DEP_COD, UCM_CTR_GBN, UTW_WRK_ID
+	</select>
+
+	<select id="QR_STATE001_G" resultClass="egovMap" parameterClass="searchVO">
+		SELECT F_FIND_NAME('23', UTW_DEP_COD, 'SKB') DEPT, F_GET_USR_NAME(UTW_WRK_ID) WORKER, UCM_CTR_GBN, COUNT(UTW_WRK_KEY) AS ALLWORK,
+		       SUM(	CASE
+		             	WHEN UTW_WRK_STA = '10' THEN	1
+					ELSE	0
+		           	END) NOWORK,
+		       SUM(	CASE
+		<![CDATA[       WHEN UTW_WRK_STA = '10' AND UTW_END_DAT < SYSDATE THEN ]]>	1
+		            ELSE	0
+		           	END) DELAY
+		FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR
+		WHERE UTD_APR_YN IS NOT NULL
+		AND UTW_TRC_KEY = UTD_TRC_KEY
+		AND UTD_TRC_KEY = UTC_TRC_KEY
+		AND UTC_CTR_KEY = UCM_CTR_KEY
+		AND UTW_PRD_COD = #manCyl#
+		AND UTW_DEP_COD = #dept#
+		<isNotEqual property="searchKeyword" compareValue="A">
+<![CDATA[AND SUBSTR(TO_CHAR(UTW_END_DAT,'YYYYMM'),1,6) <= ]]> #searchKeyword#
+		</isNotEqual>
+		<isNotEmpty property="division">
+			<isNotEqual property="division" compareValue="A">
+		AND UTW_DIV_COD = #division#
+          	</isNotEqual>
+          </isNotEmpty>
+		<isNotEmpty property="dept">
+		AND UTW_DEP_COD = #dept#
+		</isNotEmpty>
+		GROUP BY ROLLUP(UTW_DEP_COD, UTW_WRK_ID, UCM_CTR_GBN)
+		ORDER BY UTW_DEP_COD, UCM_CTR_GBN, UTW_WRK_ID
+	</select>
+
+	<select id="QR_STATE001_H" resultClass="egovMap" parameterClass="searchVO">
+		SELECT DEPT, WRK, CTR_GBN, ALL_GUN, MIWAN, ROUND(MIWAN / ALL_GUN * 100, 1) || '%' AS NON_PER, ROUND(JI / DECODE(MIWAN, 0, 1, MIWAN) * 100, 1) || '%' AS DELAY_PER
+		FROM (
+				SELECT UCM_CTR_GBN CTR_GBN, F_FIND_NAME('23', UTW_DEP_COD, 'SKB') DEPT, F_GET_USR_NAME(UTW_WRK_ID) WRK, COUNT(UTW_DEP_COD) ALL_GUN,
+		               SUM(	CASE
+		                     	WHEN UTW_WRK_STA = '10' THEN	1
+		                    ELSE	0
+		                   	END) MIWAN,
+		               SUM(	CASE
+					<![CDATA[   WHEN UTW_WRK_STA = '10' AND UTW_END_DAT < SYSDATE THEN ]]>	1
+							ELSE	0
+		                   	END) JI
+				FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR
+				WHERE UTD_APR_YN IS NOT NULL
+				AND UTW_TRC_KEY = UTD_TRC_KEY
+				AND UTD_TRC_KEY = UTC_TRC_KEY
+				AND UTC_CTR_KEY = UCM_CTR_KEY
+				AND UTW_PRD_COD = #manCyl#
+				AND UTW_DEP_COD = #dept#
+				<isNotEqual property="searchKeyword" compareValue="A">
+	<![CDATA[	AND SUBSTR(TO_CHAR(UTW_END_DAT,'YYYYMM'),1,6) <= ]]> #searchKeyword#
+				</isNotEqual>
+				<isNotEmpty property="division">
+					<isNotEqual property="division" compareValue="A">
+				AND UTW_DIV_COD = #division#
+                   	</isNotEqual>
+				</isNotEmpty>
+				<isNotEmpty property="dept">
+				AND UTW_DEP_COD = #dept#
+				</isNotEmpty>
+		         GROUP BY UCM_CTR_GBN, UTW_DIV_COD, UTW_DEP_COD, UTW_WRK_ID)
+		ORDER BY DEPT, WRK, CTR_GBN
+	</select>
+
+	<select id="QR_STATE001_I" resultClass="egovMap">
+		SELECT UOM_DIV_COD, UOM_DIV_NAM
+		FROM UWO_ORG_MTR
+		GROUP BY UOM_DIV_COD, UOM_DIV_NAM
+		ORDER BY UOM_DIV_COD
+	</select>
+
+	<select id="QR_STATE002_A" resultClass="egovMap" parameterClass="searchVO">
+		SELECT
+				UCC_SND_COD AS STD_COD,
+				CASE
+    				WHEN F_GET_COMMON_NAME(T.UCC_SND_COD,'STND') = '-' THEN 'ALL'
+					ELSE F_GET_COMMON_NAME(T.UCC_SND_COD,'STND')
+    			END "SCALE",
+    			SUM(T."ALL") AS "ALL", SUM(T.WAN) AS "COMP", ROUND((SUM(T.WAN)/SUM(T."ALL"))*100,1) AS "COMPP", SUM(T.JI) AS "DELAY", ROUND((SUM(T.JI)/SUM(T."ALL"))*100,1) AS "DELAYP", SUM(T.MIJIN) AS "NOWORK", ROUND((SUM(T.MIJIN)/SUM(T."ALL"))*100,1) AS "NOWORKp", SUM(T.TODAY) AS "TODAY"
+		FROM(
+				SELECT UCC_SND_COD, TT.STD,COUNT(TT.WKEY) "ALL",0 "WAN",0 "JI",0 "MIJIN",0 "TODAY"
+				FROM(
+						SELECT UCC_SND_COD, UCC_SND_NAM AS STD, UTW_WRK_KEY AS WKEY
+						FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR, (SELECT UCC_SND_COD,UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_FIR_COD = 'STND')
+						WHERE UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTC_CTR_KEY = UCM_CTR_KEY
+						AND UCC_SND_COD = UCM_CTR_GBN
+						AND UTW_PRD_COD = #manCyl#
+						AND UTD_BCY_COD = #manCyl#
+						AND UTC_BCY_COD = #manCyl#
+						AND UCM_BCY_COD = #manCyl#
+						AND UTW_DEL_YN = 'N'
+						AND UTD_DEL_YN = 'N'
+						AND UTC_DEL_YN = 'N'
+						AND UTW_WRK_ID = UUM_USR_KEY
+			  <![CDATA[ AND UTW_STR_DAT <= LAST_DAY(SYSDATE)]]>
+						<isNotEqual property="auth" compareValue="A">
+							<isNotEmpty property="dept">
+						AND UTW_DEP_COD = #dept#
+							</isNotEmpty>
+						</isNotEqual>
+						<isNotEmpty property="service">
+		    			AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+						GROUP BY UCC_SND_COD, UCC_SND_NAM, UTW_WRK_KEY
+						) TT
+				group by TT.UCC_SND_COD, TT.STD
+				UNION ALL
+				SELECT UCC_SND_COD, TT.STD,0 "ALL",COUNT(TT.WKEY) "WAN",0 "JI",0 "MIJIN",0 "TODAY"
+				FROM(
+						SELECT UCC_SND_COD, UCC_SND_NAM AS STD, UTW_WRK_KEY AS WKEY
+						FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR, (SELECT UCC_SND_COD,UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_FIR_COD = 'STND')
+						WHERE UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTC_CTR_KEY = UCM_CTR_KEY
+						AND UCC_SND_COD = UCM_CTR_GBN
+						AND UTW_PRD_COD = #manCyl#
+						AND UTD_BCY_COD = #manCyl#
+						AND UTC_BCY_COD = #manCyl#
+						AND UCM_BCY_COD = #manCyl#
+						AND UTW_DEL_YN = 'N'
+						AND UTD_DEL_YN = 'N'
+						AND UTC_DEL_YN = 'N'
+						AND UTW_WRK_ID = UUM_USR_KEY
+						AND UTW_WRK_STA = '90'
+			<![CDATA[	AND UTW_STR_DAT <= LAST_DAY(SYSDATE)]]>
+						<isNotEqual property="auth" compareValue="A">
+							<isNotEmpty property="dept">
+						AND UTW_DEP_COD = #dept#
+							</isNotEmpty>
+						</isNotEqual>
+						<isNotEmpty property="service">
+		    			AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+						GROUP BY UCC_SND_COD, UCC_SND_NAM, UTW_WRK_KEY
+					) TT
+				group by TT.UCC_SND_COD, TT.STD
+				UNION ALL
+				SELECT UCC_SND_COD, TT.STD,0 "ALL",0 "WAN",COUNT(TT.WKEY) "JI",0 "MIJIN",0 "TODAY"
+				FROM(
+						SELECT UCC_SND_COD, UCC_SND_NAM AS STD, UTW_WRK_KEY AS WKEY
+						FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR, (SELECT UCC_SND_COD,UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_FIR_COD = 'STND')
+						WHERE UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTC_CTR_KEY = UCM_CTR_KEY
+						AND UCC_SND_COD = UCM_CTR_GBN
+						AND UTW_PRD_COD = #manCyl#
+						AND UTD_BCY_COD = #manCyl#
+						AND UTC_BCY_COD = #manCyl#
+						AND UCM_BCY_COD = #manCyl#
+						AND UTW_DEL_YN = 'N'
+						AND UTD_DEL_YN = 'N'
+						AND UTC_DEL_YN = 'N'
+						AND UTW_WRK_ID = UUM_USR_KEY
+						AND UTW_WRK_STA = '10'
+			<![CDATA[	AND UTW_END_DAT < SYSDATE
+						AND UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]>
+						<isNotEqual property="auth" compareValue="A">
+				 			<isNotEmpty property="dept">
+				 		AND UTW_DEP_COD = #dept#
+				 			</isNotEmpty>
+				 		</isNotEqual>
+				 		<isNotEmpty property="service">
+		    			AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+						GROUP BY UCC_SND_COD, UCC_SND_NAM, UTW_WRK_KEY
+					) TT
+				group by TT.UCC_SND_COD, TT.STD
+				UNION ALL
+				SELECT UCC_SND_COD, TT.STD,0 "ALL",0 "WAN",0 "JI",COUNT(TT.WKEY) "MIJIN",0 "TODAY"
+				FROM(
+						SELECT UCC_SND_COD, UCC_SND_NAM AS STD, UTW_WRK_KEY AS WKEY
+						FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR, (SELECT UCC_SND_COD,UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_FIR_COD = 'STND')
+						WHERE UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTC_CTR_KEY = UCM_CTR_KEY
+						AND UCC_SND_COD = UCM_CTR_GBN
+						AND UTW_PRD_COD = #manCyl#
+						AND UTD_BCY_COD = #manCyl#
+						AND UTC_BCY_COD = #manCyl#
+						AND UCM_BCY_COD = #manCyl#
+						AND UTW_DEL_YN = 'N'
+						AND UTD_DEL_YN = 'N'
+						AND UTC_DEL_YN = 'N'
+						AND UTW_WRK_ID = UUM_USR_KEY
+						AND UTW_WRK_STA = '10'
+			<![CDATA[	AND UTW_END_DAT >= SYSDATE
+						AND UTW_STR_DAT <= LAST_DAY(SYSDATE)]]>
+						<isNotEqual property="auth" compareValue="A">
+				 			<isNotEmpty property="dept">
+				 		AND UTW_DEP_COD = #dept#
+				 			</isNotEmpty>
+				 		</isNotEqual>
+				 		<isNotEmpty property="service">
+		    			AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+						GROUP BY UCC_SND_COD, UCC_SND_NAM, UTW_WRK_KEY
+					) TT
+				group by TT.UCC_SND_COD, TT.STD
+				UNION ALL
+				SELECT UCC_SND_COD, TT.STD,0 "ALL",0 "WAN",0 "JI",0 "MIJIN",COUNT(TT.WKEY) "TODAY"
+				FROM(
+						SELECT UCC_SND_COD, UCC_SND_NAM AS STD, UTW_WRK_KEY AS WKEY
+						FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR, (SELECT UCC_SND_COD,UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_FIR_COD = 'STND')
+						WHERE UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTC_CTR_KEY = UCM_CTR_KEY
+						AND UCC_SND_COD = UCM_CTR_GBN
+						AND UTW_PRD_COD = #manCyl#
+						AND UTD_BCY_COD = #manCyl#
+						AND UTC_BCY_COD = #manCyl#
+						AND UCM_BCY_COD = #manCyl#
+						AND UTW_DEL_YN = 'N'
+						AND UTD_DEL_YN = 'N'
+						AND UTC_DEL_YN = 'N'
+						AND UTW_WRK_ID = UUM_USR_KEY
+						AND UTW_WRK_STA = '10'
+						AND UTW_END_DAT = SYSDATE
+			<![CDATA[	AND UTW_STR_DAT <= LAST_DAY(SYSDATE)]]>
+						<isNotEqual property="auth" compareValue="A">
+				 			<isNotEmpty property="dept">
+				 		AND UTW_DEP_COD = #dept#
+				 			</isNotEmpty>
+				 		</isNotEqual>
+				 		<isNotEmpty property="service">
+		    			AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+						GROUP BY UCC_SND_COD, UCC_SND_NAM, UTW_WRK_KEY
+					) TT
+				GROUP BY TT.UCC_SND_COD, TT.STD
+			) T
+		GROUP BY ROLLUP(T.UCC_SND_COD)
+	</select>
+
+	<select id="QR_STATE002_B" resultClass="egovMap" parameterClass="searchVO">
+		SELECT
+				CASE
+		    		WHEN T.UTW_DEP_COD IS NOT NULL THEN T.UTW_DEP_COD
+		    		ELSE 'ALL'
+		    	END "DEPCODE",
+		  		CASE
+		    		WHEN T.UCC_SND_NAM IS NOT NULL THEN T.UCC_SND_NAM
+		    		ELSE '전체'
+		    	END "SCALE",
+		    SUM(T."ALL") AS "ALL", SUM(T.WAN) AS "COMP", SUM(T.JI) AS "DELAY", SUM(T.MIJIN) AS "NOWORK", SUM(T.TODAY) AS "TODAY"
+		FROM(
+				SELECT TT.STD,TT.UTW_DEP_COD,TT.UCC_SND_NAM,COUNT(TT.WKEY) "ALL",0 "WAN",0 "JI",0 "MIJIN",0 "TODAY"
+				FROM(
+						SELECT DISTINCT UCM_CTR_GBN AS STD, UTW_WRK_KEY AS WKEY, UTW_DEP_COD, UDM_DEP_NAM AS UCC_SND_NAM
+						FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR, UWO_DEP_MTR
+						WHERE UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTC_CTR_KEY = UCM_CTR_KEY
+						AND UTW_PRD_COD = #manCyl#
+						AND UTD_BCY_COD = #manCyl#
+						AND UTC_BCY_COD = #manCyl#
+						AND UCM_BCY_COD = #manCyl#
+						AND UTW_DEL_YN = 'N'
+						AND UTD_DEL_YN = 'N'
+						AND UTC_DEL_YN = 'N'
+						AND UTW_WRK_ID = UUM_USR_KEY
+						AND UDM_DEP_COD = uum_dep_cod
+			<![CDATA[	AND UTW_STR_DAT <= LAST_DAY(SYSDATE)]]>
+						<isNotEqual property="standard" compareValue="null">
+						AND UCM_CTR_GBN = #standard#
+						</isNotEqual>
+						<isNotEqual property="auth" compareValue="A">
+				 			<isNotEmpty property="dept">
+				 		AND UTW_DEP_COD = #dept#
+				 			</isNotEmpty>
+				 		</isNotEqual>
+				 		<isNotEmpty property="service">
+		    			AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+					) TT
+				group by  TT.STD, TT.UTW_DEP_COD,TT.UCC_SND_NAM
+				UNION ALL
+				SELECT TT.STD,TT.UTW_DEP_COD,TT.UCC_SND_NAM,0 "ALL", COUNT(TT.WKEY) "WAN",0 "JI",0 "MIJIN",0 "TODAY"
+				FROM(
+						SELECT DISTINCT UCM_CTR_GBN AS STD, UTW_WRK_KEY AS WKEY, UTW_DEP_COD, UDM_DEP_NAM AS UCC_SND_NAM
+						FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR,UWO_DEP_MTR
+						WHERE UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTC_CTR_KEY = UCM_CTR_KEY
+						AND UTW_PRD_COD = #manCyl#
+						AND UTD_BCY_COD = #manCyl#
+						AND UTC_BCY_COD = #manCyl#
+						AND UCM_BCY_COD = #manCyl#
+						AND UTW_DEL_YN = 'N'
+						AND UTD_DEL_YN = 'N'
+						AND UTC_DEL_YN = 'N'
+						AND UTW_WRK_ID = UUM_USR_KEY
+						AND UDM_DEP_COD = uum_dep_cod
+						AND UTW_WRK_STA = '90'
+			<![CDATA[	AND UTW_STR_DAT <= LAST_DAY(SYSDATE)]]>
+						<isNotEqual property="standard" compareValue="null">
+						AND UCM_CTR_GBN = #standard#
+						</isNotEqual>
+						<isNotEqual property="auth" compareValue="A">
+							<isNotEmpty property="dept">
+						AND UTW_DEP_COD = #dept#
+							</isNotEmpty>
+						</isNotEqual>
+						<isNotEmpty property="service">
+		    			AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+					) TT
+				group by TT.STD, TT.UTW_DEP_COD,TT.UCC_SND_NAM
+				UNION ALL
+				SELECT TT.STD,TT.UTW_DEP_COD,TT.UCC_SND_NAM,0 "ALL", 0 "WAN",COUNT(TT.WKEY) "JI",0 "MIJIN",0 "TODAY"
+				FROM(
+						SELECT DISTINCT UCM_CTR_GBN AS STD, UTW_WRK_KEY AS WKEY, UTW_DEP_COD, UDM_DEP_NAM AS UCC_SND_NAM
+						FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR,UWO_DEP_MTR
+						WHERE UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTC_CTR_KEY = UCM_CTR_KEY
+						AND UTW_PRD_COD = #manCyl#
+						AND UTD_BCY_COD = #manCyl#
+						AND UTC_BCY_COD = #manCyl#
+						AND UCM_BCY_COD = #manCyl#
+						AND UTW_DEL_YN = 'N'
+						AND UTD_DEL_YN = 'N'
+						AND UTC_DEL_YN = 'N'
+						AND UTW_WRK_ID = UUM_USR_KEY
+						AND UDM_DEP_COD = uum_dep_cod
+						AND UTW_WRK_STA = '10'
+			<![CDATA[	AND UTW_END_DAT < SYSDATE
+						AND UTW_STR_DAT <= LAST_DAY(SYSDATE)]]>
+						<isNotEqual property="standard" compareValue="null">
+						AND UCM_CTR_GBN = #standard#
+						</isNotEqual>
+						<isNotEqual property="auth" compareValue="A">
+							<isNotEmpty property="dept">
+						AND UTW_DEP_COD = #dept#
+							</isNotEmpty>
+						</isNotEqual>
+						<isNotEmpty property="service">
+		    			AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+				) TT
+				group by TT.STD, TT.UTW_DEP_COD,TT.UCC_SND_NAM
+				UNION ALL
+				SELECT TT.STD,TT.UTW_DEP_COD,TT.UCC_SND_NAM,0 "ALL", 0 "WAN",0 "JI",COUNT(TT.WKEY) "MIJIN",0 "TODAY"
+				FROM(
+				SELECT DISTINCT UCM_CTR_GBN AS STD, UTW_WRK_KEY AS WKEY, UTW_DEP_COD, UDM_DEP_NAM AS UCC_SND_NAM
+				FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR,UWO_DEP_MTR
+				WHERE UTW_TRC_KEY = UTD_TRC_KEY
+				AND UTD_TRC_KEY = UTC_TRC_KEY
+				AND UTC_CTR_KEY = UCM_CTR_KEY
+				AND UTW_PRD_COD = #manCyl#
+				AND UTD_BCY_COD = #manCyl#
+				AND UTC_BCY_COD = #manCyl#
+				AND UCM_BCY_COD = #manCyl#
+				AND UTW_DEL_YN = 'N'
+				AND UTD_DEL_YN = 'N'
+				AND UTC_DEL_YN = 'N'
+				AND UTW_WRK_ID = UUM_USR_KEY
+				AND UDM_DEP_COD = uum_dep_cod
+				AND UTW_WRK_STA = '10'
+				<![CDATA[AND UTW_END_DAT >= SYSDATE
+				AND UTW_STR_DAT <= LAST_DAY(SYSDATE)]]>
+				<isNotEqual property="standard" compareValue="null">
+					AND UCM_CTR_GBN = #standard#
+				</isNotEqual>
+				<isNotEqual property="auth" compareValue="A">
+				 <isNotEmpty property="dept">
+				 AND UTW_DEP_COD = #dept#
+				 </isNotEmpty>
+				 </isNotEqual>
+				 <isNotEmpty property="service">
+		    			AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+				) TT
+				group by TT.STD, TT.UTW_DEP_COD,TT.UCC_SND_NAM
+				UNION ALL
+				SELECT TT.STD,TT.UTW_DEP_COD,TT.UCC_SND_NAM,0 "ALL", 0 "WAN",0 "JI",0 "MIJIN",COUNT(TT.WKEY) "TODAY"
+				FROM(
+				SELECT DISTINCT UCM_CTR_GBN AS STD, UTW_WRK_KEY AS WKEY, UTW_DEP_COD, UDM_DEP_NAM AS UCC_SND_NAM
+				FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR,UWO_DEP_MTR
+				WHERE UTW_TRC_KEY = UTD_TRC_KEY
+				AND UTD_TRC_KEY = UTC_TRC_KEY
+				AND UTC_CTR_KEY = UCM_CTR_KEY
+				AND UTW_PRD_COD = #manCyl#
+				AND UTD_BCY_COD = #manCyl#
+				AND UTC_BCY_COD = #manCyl#
+				AND UCM_BCY_COD = #manCyl#
+				AND UTW_DEL_YN = 'N'
+				AND UTD_DEL_YN = 'N'
+				AND UTC_DEL_YN = 'N'
+				AND UTW_WRK_ID = UUM_USR_KEY
+				AND UDM_DEP_COD = uum_dep_cod
+				AND UTW_WRK_STA = '10'
+				AND UTW_END_DAT = SYSDATE
+				<![CDATA[AND UTW_STR_DAT <= LAST_DAY(SYSDATE)]]>
+				<isNotEqual property="standard" compareValue="null">
+					AND UCM_CTR_GBN = #standard#
+				</isNotEqual>
+				<isNotEqual property="auth" compareValue="A">
+				 <isNotEmpty property="dept">
+				 AND UTW_DEP_COD = #dept#
+				 </isNotEmpty>
+				 </isNotEqual>
+				 <isNotEmpty property="service">
+		    			AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+				) TT
+				group by TT.STD, TT.UTW_DEP_COD,TT.UCC_SND_NAM
+			) T
+		GROUP BY GROUPING SETS((T.UTW_DEP_COD,T.UCC_SND_NAM),())
+	</select>
+
+	<select id="QR_STATE002_C" resultClass="egovMap" parameterClass="searchVO">
+		SELECT
+				CASE
+					WHEN T.UUM_USR_KEY IS NOT NULL THEN T.UUM_USR_KEY
+					ELSE 0
+				END "USRID",
+		  		CASE
+		    		WHEN T.UUM_USR_NAM IS NOT NULL THEN T.UUM_USR_NAM
+		    		ELSE '전체'
+		    	END "USRNAM",
+		    	SUM(T."ALL") AS "ALL", SUM(T.WAN) AS "COMP", SUM(T.JI) AS "DELAY", SUM(T.MIJIN) AS "NOWORK", SUM(T.TODAY) AS "TODAY", T.UUM_CEL_NUM AS CELNUM, T.uum_dep_cod AS DEPCODE
+		FROM(
+				SELECT TT.STD, TT.UUM_USR_KEY, TT.UUM_USR_NAM, TT.UUM_CEL_NUM,TT.uum_dep_cod,COUNT(TT.WKEY) "ALL",0 "WAN",0 "JI",0 "MIJIN",0 "TODAY"
+				FROM(
+						SELECT DISTINCT UCM_CTR_GBN AS STD, UTW_WRK_KEY AS WKEY, uum_dep_cod, UUM_USR_KEY, UUM_USR_NAM, UUM_CEL_NUM
+						FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR
+						WHERE UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTC_CTR_KEY = UCM_CTR_KEY
+						AND UTW_PRD_COD = #manCyl#
+						AND UTD_BCY_COD = #manCyl#
+						AND UTC_BCY_COD = #manCyl#
+						AND UCM_BCY_COD = #manCyl#
+						AND UTW_DEL_YN = 'N'
+						AND UTD_DEL_YN = 'N'
+						AND UTC_DEL_YN = 'N'
+						AND UTW_WRK_ID = UUM_USR_KEY
+			<![CDATA[	AND UTW_STR_DAT <= LAST_DAY(SYSDATE)	]]>
+						<isNotEqual property="standard" compareValue="null">
+						AND UCM_CTR_GBN = #standard#
+						</isNotEqual>
+						<isNotEmpty property="dept">
+							AND uum_dep_cod = #dept#
+						</isNotEmpty>
+						<isNotEmpty property="service">
+		    			AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+					) TT
+				group by  TT.STD, TT.UUM_USR_KEY, TT.UUM_USR_NAM, TT.UUM_CEL_NUM,TT.uum_dep_cod
+				UNION ALL
+				SELECT TT.STD, TT.UUM_USR_KEY, TT.UUM_USR_NAM, TT.UUM_CEL_NUM,TT.uum_dep_cod,0 "ALL", COUNT(TT.WKEY) "WAN",0 "JI",0 "MIJIN",0 "TODAY"
+				FROM(
+						SELECT DISTINCT UCM_CTR_GBN AS STD, UTW_WRK_KEY AS WKEY, uum_dep_cod, UUM_USR_KEY, UUM_USR_NAM, UUM_CEL_NUM
+						FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR
+						WHERE UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTC_CTR_KEY = UCM_CTR_KEY
+						AND UTW_PRD_COD = #manCyl#
+						AND UTD_BCY_COD = #manCyl#
+						AND UTC_BCY_COD = #manCyl#
+						AND UCM_BCY_COD = #manCyl#
+						AND UTW_DEL_YN = 'N'
+						AND UTD_DEL_YN = 'N'
+						AND UTC_DEL_YN = 'N'
+						AND UTW_WRK_ID = UUM_USR_KEY
+						AND UTW_WRK_STA = '90'
+			<![CDATA[	AND UTW_STR_DAT <= LAST_DAY(SYSDATE)	]]>
+						<isNotEqual property="standard" compareValue="null">
+						AND UCM_CTR_GBN = #standard#
+						</isNotEqual>
+						<isNotEmpty property="dept">
+							AND uum_dep_cod = #dept#
+						</isNotEmpty>
+						<isNotEmpty property="service">
+		    			AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+					) TT
+				group by  TT.STD, TT.UUM_USR_KEY, TT.UUM_USR_NAM, TT.UUM_CEL_NUM,TT.uum_dep_cod
+				UNION ALL
+				SELECT TT.STD, TT.UUM_USR_KEY, TT.UUM_USR_NAM, TT.UUM_CEL_NUM,TT.uum_dep_cod,0 "ALL", 0 "WAN",COUNT(TT.WKEY) "JI",0 "MIJIN",0 "TODAY"
+				FROM(
+						SELECT DISTINCT UCM_CTR_GBN AS STD, UTW_WRK_KEY AS WKEY, uum_dep_cod, UUM_USR_KEY, UUM_USR_NAM, UUM_CEL_NUM
+						FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR
+						WHERE UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTC_CTR_KEY = UCM_CTR_KEY
+						AND UTW_PRD_COD = #manCyl#
+						AND UTD_BCY_COD = #manCyl#
+						AND UTC_BCY_COD = #manCyl#
+						AND UCM_BCY_COD = #manCyl#
+						AND UTW_DEL_YN = 'N'
+						AND UTD_DEL_YN = 'N'
+						AND UTC_DEL_YN = 'N'
+						AND UTW_WRK_ID = UUM_USR_KEY
+						AND UTW_WRK_STA = '10'
+			<![CDATA[	AND UTW_END_DAT < SYSDATE
+						AND UTW_STR_DAT <= LAST_DAY(SYSDATE)	]]>
+						<isNotEqual property="standard" compareValue="null">
+						AND UCM_CTR_GBN = #standard#
+						</isNotEqual>
+          				<isNotEmpty property="dept">
+							AND uum_dep_cod = #dept#
+						</isNotEmpty>
+						<isNotEmpty property="service">
+		    			AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+					) TT
+				group by  TT.STD, TT.UUM_USR_KEY, TT.UUM_USR_NAM, TT.UUM_CEL_NUM,TT.uum_dep_cod
+				UNION ALL
+				SELECT TT.STD, TT.UUM_USR_KEY, TT.UUM_USR_NAM, TT.UUM_CEL_NUM,TT.uum_dep_cod,0 "ALL", 0 "WAN",0 "JI",COUNT(TT.WKEY) "MIJIN",0 "TODAY"
+				FROM(
+						SELECT DISTINCT UCM_CTR_GBN AS STD, UTW_WRK_KEY AS WKEY, uum_dep_cod, UUM_USR_KEY, UUM_USR_NAM, UUM_CEL_NUM
+						FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR
+						WHERE UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTC_CTR_KEY = UCM_CTR_KEY
+						AND UTW_PRD_COD = #manCyl#
+						AND UTD_BCY_COD = #manCyl#
+						AND UTC_BCY_COD = #manCyl#
+						AND UCM_BCY_COD = #manCyl#
+						AND UTW_DEL_YN = 'N'
+						AND UTD_DEL_YN = 'N'
+						AND UTC_DEL_YN = 'N'
+						AND UTW_WRK_ID = UUM_USR_KEY
+						AND UTW_WRK_STA = '10'
+			<![CDATA[	AND UTW_END_DAT >= SYSDATE
+						AND UTW_STR_DAT <= LAST_DAY(SYSDATE)	]]>
+						<isNotEqual property="standard" compareValue="null">
+						AND UCM_CTR_GBN = #standard#
+						</isNotEqual>
+          				<isNotEmpty property="dept">
+							AND uum_dep_cod = #dept#
+						</isNotEmpty>
+						<isNotEmpty property="service">
+		    			AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+					) TT
+				group by  TT.STD, TT.UUM_USR_KEY, TT.UUM_USR_NAM, TT.UUM_CEL_NUM,TT.uum_dep_cod
+				UNION ALL
+				SELECT TT.STD, TT.UUM_USR_KEY, TT.UUM_USR_NAM, TT.UUM_CEL_NUM,TT.uum_dep_cod,0 "ALL", 0 "WAN",0 "JI",0 "MIJIN",COUNT(TT.WKEY) "TODAY"
+				FROM(
+						SELECT DISTINCT UCM_CTR_GBN AS STD, UTW_WRK_KEY AS WKEY, uum_dep_cod, UUM_USR_KEY, UUM_USR_NAM, UUM_CEL_NUM
+						FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR
+						WHERE UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTC_CTR_KEY = UCM_CTR_KEY
+						AND UTW_PRD_COD = #manCyl#
+						AND UTD_BCY_COD = #manCyl#
+						AND UTC_BCY_COD = #manCyl#
+						AND UCM_BCY_COD = #manCyl#
+						AND UTW_DEL_YN = 'N'
+						AND UTD_DEL_YN = 'N'
+						AND UTC_DEL_YN = 'N'
+						AND UTW_WRK_ID = UUM_USR_KEY
+						AND UTW_WRK_STA = '10'
+						AND UTW_END_DAT = SYSDATE
+			<![CDATA[	AND UTW_STR_DAT <= LAST_DAY(SYSDATE)	]]>
+						<isNotEqual property="standard" compareValue="null">
+						AND UCM_CTR_GBN = #standard#
+						</isNotEqual>
+          				<isNotEmpty property="dept">
+							AND uum_dep_cod = #dept#
+						</isNotEmpty>
+						<isNotEmpty property="service">
+		    			AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+				) TT
+			group by  TT.STD, TT.UUM_USR_KEY, TT.UUM_USR_NAM, TT.UUM_CEL_NUM,TT.uum_dep_cod
+		) T
+		GROUP BY GROUPING SETS((T.UUM_USR_KEY,T.UUM_USR_NAM,T.UUM_CEL_NUM,T.uum_dep_cod),())
+	</select>
+
+	<select id="QR_STATE002_D" resultClass="egovMap" parameterClass="searchVO">
+		SELECT * FROM(
+			  			SELECT  F_GET_COMMON_NAME(UCM_CTR_GBN,'STND') AS STD
+			  			, (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR UDM WHERE UDM.UDM_DEP_COD = UUM_DEP_COD) AS DEPT
+			  			, UUM_USR_NAM UNAM
+			  			, F_GET_COMMON_NAME(UUM_POS_COD,'POS') AS POSI
+			  			, F_GET_COMMON_NAME(UUM_SVC_COD,'SERVICE') AS SERVICE
+			  			, UTD_DOC_NAM AS DNAM, TO_CHAR(UTW_END_DAT,'YYYY.MM.DD') AS ED, UTW_WRK_KEY AS WKEY, UTD_TRC_KEY AS DKEY,
+			  			LISTAGG(UCM_GOL_NO, ' / ') WITHIN GROUP(ORDER BY UCM_GOL_NO) GOAL ,
+			<![CDATA[	CASE
+	      					WHEN UTW_WRK_STA = '90' THEN '완료'
+	      					WHEN UTW_WRK_STA = '10' AND UTW_END_DAT < SYSDATE THEN '지연'
+	      					WHEN UTW_WRK_STA = '10' AND UTW_END_DAT >= SYSDATE THEN '미진행'
+	      					WHEN UTW_WRK_STA = '10' AND UTW_END_DAT = SYSDATE THEN '금일완료'
+	    					ELSE ''
+	    				END AS STA,
+	    				CASE
+	    					WHEN UTW_END_DAT < SYSDATE THEN TO_CHAR(ROUND(TO_NUMBER(SYSDATE-UTW_END_DAT)))
+	    					ELSE ''
+	    				END AS CHA]]>
+			    		FROM UWO_TRC_WRK,  UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR, UWO_USR_MTR
+			    		WHERE UTW_TRC_KEY = UTD_TRC_KEY
+			    		AND UTD_TRC_KEY = UTC_TRC_KEY
+					    AND UTC_CTR_KEY = UCM_CTR_KEY
+					    AND UTW_PRD_COD = #manCyl#
+					    AND UTD_BCY_COD = #manCyl#
+					    AND UTC_BCY_COD = #manCyl#
+					    AND UCM_BCY_COD = #manCyl#
+					    AND UTW_DEL_YN = 'N'
+					    AND UTD_DEL_YN = 'N'
+					    AND UTC_DEL_YN = 'N'
+					    AND UTW_WRK_ID = UUM_USR_KEY
+		   <![CDATA[ 	AND UTW_STR_DAT <= LAST_DAY(SYSDATE)]]>
+		    			<isNotEmpty property="standard">
+		    				<isNotEqual property="standard" compareValue="null">
+		    			AND UCM_CTR_GBN = #standard#
+		    				</isNotEqual>
+		    			</isNotEmpty>
+						<isNotEmpty property="dept">
+		    			AND UTW_DEP_COD = #dept#
+		    			</isNotEmpty>
+		    			<!-- <isEmpty property="dept">
+		    				<isEqual property="auth" compareValue="V">
+		    			AND UTW_DEP_COD = #searchKeyword#
+		    				</isEqual>
+		    			</isEmpty> -->
+		    			<isNotEmpty property="workerName">
+						    AND UTW_WRK_ID IN (SELECT UUM_USR_KEY FROM UWO_USR_MTR WHERE UTW_WRK_ID = UUM_USR_KEY AND UUM_USR_NAM like '%' || #workerName# || '%')
+						</isNotEmpty>
+						<isNotEmpty property="stOrg">
+						    AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = utw_dep_cod AND udm_dep_1lv = #stOrg#)
+						</isNotEmpty>
+						<isNotEmpty property="hqOrg">
+						    AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = utw_dep_cod AND udm_dep_2lv = #hqOrg#)
+						</isNotEmpty>
+						<isNotEmpty property="gpOrg">
+						    AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = utw_dep_cod AND udm_dep_3lv = #gpOrg#)
+						</isNotEmpty>
+		    			<isNotEmpty property="service">
+		    					AND UTW_SVC_COD = #service#
+		    			</isNotEmpty>
+		    			<isEmpty property="service">
+		    				<isEqual property="auth" compareValue="V">
+		    			AND UTW_SVC_COD = #serviceName#
+		    				</isEqual>
+		    			</isEmpty>
+
+						<isNotEmpty property="worker">
+		    			AND UTW_WRK_ID = #worker#
+		    			</isNotEmpty>
+		    			<isNotEmpty property="searchCondition">
+							<isEqual property="searchCondition" compareValue="1">
+						AND UTW_WRK_STA = '90'
+							</isEqual>
+							<isEqual property="searchCondition" compareValue="2">
+			<![CDATA[	AND UTW_WRK_STA <> '90' AND UTW_END_DAT < SYSDATE ]]>
+							</isEqual>
+							<isEqual property="searchCondition" compareValue="3">
+			<![CDATA[	AND UTW_WRK_STA <> '90' AND UTW_END_DAT >= SYSDATE ]]>
+							</isEqual>
+							<isEqual property="searchCondition" compareValue="4">
+			<![CDATA[	AND UTW_WRK_STA <> '90' AND UTW_END_DAT = SYSDATE ]]>
+							</isEqual>
+						</isNotEmpty>
+						GROUP BY UTW_WRK_KEY, UCM_CTR_GBN, UUM_USR_KEY,UUM_USR_NAM,UTD_DOC_NAM,UTW_END_DAT,UTD_TRC_KEY,UTW_WRK_STA,UUM_POS_COD,UUM_DEP_COD,UUM_SVC_COD
+		    	)TT
+    		ORDER BY TT.DEPT, TT.UNAM, TT.STD, TT.ED
+	</select>
+
+	<select id="QR_STATE002_E" resultClass="egovMap" parameterClass="searchVO">
+		SELECT DISTINCT UCM_CTR_GBN AS STD
+		FROM UWO_CTR_MTR
+		WHERE UCM_BCY_COD = #manCyl#
+	</select>
+
+	<select id="QR_STATE002_F" resultClass="egovMap" parameterClass="searchVO">
+		SELECT UCC_SND_COD AS DCOD , UCC_SND_NAM AS DNAM
+		FROM UWO_COM_COD
+		WHERE UCC_FIR_COD = 'DEPT'
+		<isNotEqual property="auth" compareValue="A">
+		AND UCC_SND_COD= #searchKeyword#
+		</isNotEqual>
+	</select>
+
+	<select id="QR_STATE002_G" resultClass="egovMap" parameterClass="searchVO">
+		SELECT UUM_USR_KEY AS UKEY,UUM_USR_NAM AS UNAM
+		FROM UWO_USR_MTR
+		<isNotEqual property="auth" compareValue="A">
+		WHERE UUM_DEP_COD = #searchKeyword#
+		</isNotEqual>
+	</select>
+
+	<select id="QR_STATE003_L" resultClass="egovMap" parameterClass="searchVO">
+	<![CDATA[
+		SELECT UCM_CTR_GBN,F_GET_COMMON_NAME (UCM_CTR_GBN,'STND') CTR_NAM,
+				UTW_SVC_COD,F_GET_COMMON_NAME (UTW_SVC_COD,'SERVICE') SVC_NAM,
+				TRIM(UCM_CTR_COD) AS UCM_CTR_COD,
+				SUM(TOT_W) AS TOT_W,
+				SUM(TOT_A) AS TOT_A,
+				NVL(ROUND((SUM(TOT_W)/DECODE(SUM(TOT_A),0,NULL,SUM(TOT_A)))*100,1),0) AS TOT_P
+		 FROM(
+			SELECT UCM_CTR_GBN, UTW_SVC_COD, UCM_CTR_COD, UTD_TRC_KEY,
+				sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) then 1 else 0 end)) tot_a,
+				sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) AND UTW_WRK_STA = '90' then 1 else 0 end)) tot_w
+			FROM UWO_CTR_MTR UCM
+		      INNER JOIN UWO_TRC_CTR UTC ON UTC.UTC_CTR_KEY = UCM.UCM_CTR_KEY
+		      INNER JOIN UWO_TRC_DOC UTD ON UTD.UTD_TRC_KEY = UTC.UTC_TRC_KEY
+		      INNER JOIN UWO_TRC_WRK UTW ON UTW.UTW_TRC_KEY = UTC.UTC_TRC_KEY
+			WHERE UCM_BCY_COD = #manCyl#
+				AND UTW_DEL_YN = 'N'
+			GROUP BY UCM_CTR_GBN, UTW_SVC_COD, UCM_CTR_COD, UTD_TRC_KEY
+				)
+		WHERE 1=1
+	]]>
+		<isNotEmpty property="standard">
+		AND UCM_CTR_GBN = #standard#
+		</isNotEmpty>
+		<isNotEmpty property="service">
+		AND UTW_SVC_COD = #service#
+		</isNotEmpty>
+	<![CDATA[
+		GROUP BY UCM_CTR_GBN,F_GET_COMMON_NAME (UCM_CTR_GBN,'STND'),
+			UTW_SVC_COD,F_GET_COMMON_NAME (UTW_SVC_COD,'SERVICE'),
+			UCM_CTR_COD
+		order by to_number(ucm_Ctr_cod),1,3
+	]]>
+	</select>
+
+	<select id="QR_STATE003_D" resultClass="egovMap" parameterClass="searchVO">
+	<![CDATA[
+		SELECT UCM_CTR_GBN,UTW_DEP_COD,UTD_SVC_COD,
+				F_GET_COMMON_NAME (UTD_SVC_COD,'SERVICE') SVC_NAM,
+				(SELECT UDM_DEP_NAM FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UTW_DEP_COD) AS DEP_NAM,
+				TRIM(UCM_CTR_COD) AS UCM_CTR_COD,
+				SUM(TOT_W) AS TOT_W,
+				SUM(TOT_A) AS TOT_A,
+				NVL(ROUND((SUM(TOT_W)/DECODE(SUM(TOT_A),0,NULL,SUM(TOT_A)))*100,1),0) AS TOT_P
+		FROM(
+		SELECT UCM_CTR_GBN, UTW_DEP_COD, UTD_SVC_COD, UCM_CTR_COD, UTD_TRC_KEY,
+			sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) then 1 else 0 end)) tot_a,
+			sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) AND UTW_WRK_STA = '90' then 1 else 0 end)) tot_w
+		FROM
+	    	UWO_CTR_MTR UCM
+	    	INNER JOIN UWO_TRC_CTR UTC ON UCM.UCM_CTR_KEY = UTC.UTC_CTR_KEY
+	    	INNER JOIN UWO_TRC_DOC UTD ON UTC.UTC_TRC_KEY = UTD.UTD_TRC_KEY
+	    	INNER JOIN UWO_TRC_WRK UTW ON UTD.UTD_TRC_KEY = UTW.UTW_TRC_KEY
+	    WHERE
+	    	UCM_BCY_COD = #manCyl#
+			AND UTW_DEL_YN = 'N'
+	]]>
+			<isNotEmpty property="standard">
+			AND UCM_CTR_GBN = #standard#
+			</isNotEmpty>
+			<isNotEmpty property="service">
+			AND UTW_SVC_COD = #service#
+			</isNotEmpty>
+			<isNotEmpty property="code">
+			AND TRIM(UCM_CTR_COD) = TRIM(#code#)
+			</isNotEmpty>
+			<isNotEmpty property="dept">
+			AND UTW_DEP_COD = #dept#
+			</isNotEmpty>
+	<![CDATA[
+		GROUP BY UCM_CTR_GBN, UTW_DEP_COD, UTD_SVC_COD, UCM_CTR_COD, UTD_TRC_KEY
+			)
+		GROUP BY UCM_CTR_GBN,UTW_DEP_COD,UTD_SVC_COD,
+			F_GET_COMMON_NAME(UTW_DEP_COD,'DEPT'),
+			UCM_CTR_COD
+		order BY to_number(ucm_Ctr_cod)
+	]]>
+	</select>
+
+	<select id="QR_STATE003_C" resultClass="egovMap" parameterClass="searchVO">
+	<![CDATA[
+		SELECT
+			DISTINCT(TO_NUMBER(UCM_CTR_COD)) AS UCM_CTR_COD
+		FROM UWO_CTR_MTR
+		WHERE 1=1
+	]]>
+			<isNotEmpty property="standard">
+			AND UCM_CTR_GBN = #standard#
+			</isNotEmpty>
+			<isNotEmpty property="service">
+			AND UCM_DIV_COD = #service#
+			</isNotEmpty>
+	<![CDATA[
+		ORDER BY TO_NUMBER(UCM_CTR_COD) ASC
+	]]>
+	</select>
+
+	<select id="QR_STATE004_L" resultClass="egovMap" parameterClass="searchVO">
+	<![CDATA[
+		SELECT CASE WHEN UTW_STR_DAT IS NULL THEN 'ALL' ELSE UTW_STR_DAT END MONTH ,
+			SUM(ISMS_W)||'/'|| SUM(ISMS_A) || ' (' ||
+			NVL(ROUND((SUM(ISMS_W)/DECODE(SUM(ISMS_A),0,NULL,SUM(ISMS_A)))*100,1),0)|| '%)' ISMS,
+			SUM(SKPNG_W)||'/'|| SUM(SKPNG_A) || ' (' ||
+			NVL(ROUND((SUM(SKPNG_W)/DECODE(SUM(SKPNG_A),0,NULL,SUM(SKPNG_A)))*100,1),0)|| '%)' SKPNG,
+			SUM(PIMS_W)||'/'|| SUM(PIMS_A) || ' (' ||
+			NVL(ROUND((SUM(PIMS_W)/DECODE(SUM(PIMS_A),0,NULL,SUM(PIMS_A)))*100,1),0)|| '%)' PIMS,
+			SUM(TOT_W) AS TOT_W,
+			SUM(TOT_A) AS TOT_A,
+			NVL(ROUND((SUM(ISMS_W)/DECODE(SUM(ISMS_A),0,NULL,SUM(ISMS_A)))*100,1),0) AS ISMS_P,
+		   NVL(ROUND((SUM(SKPNG_W)/DECODE(SUM(SKPNG_A),0,NULL,SUM(SKPNG_A)))*100,1),0) AS SKPNG_P,
+		   NVL(ROUND((SUM(PIMS_W)/DECODE(SUM(PIMS_A),0,NULL,SUM(PIMS_A)))*100,1),0) AS PIMS_P,
+			NVL(ROUND((SUM(TOT_W)/DECODE(SUM(TOT_A),0,NULL,SUM(TOT_A)))*100,1),0) AS TOT_P
+		FROM( SELECT TO_CHAR(UTW_STR_DAT, 'YYYYMM') UTW_STR_DAT,
+				sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) then 1 else 0 end)) tot_a,
+				sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) AND UTW_WRK_STA = '90' then 1 else 0 end)) tot_w,
+				sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) AND UCM_CTR_GBN = 'S03' then 1 else 0 end)) isms_a,
+				sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) AND UTW_WRK_STA = '90' AND UCM_CTR_GBN = 'S03' then 1 else 0 end)) isms_w,
+				sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) AND UCM_CTR_GBN = 'S05' then 1 else 0 end)) SKPNG_a,
+				sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) AND UTW_WRK_STA = '90' AND UCM_CTR_GBN = 'S05' then 1 else 0 end)) SKPNG_w,
+				sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) AND UCM_CTR_GBN = 'S06' then 1 else 0 end)) PIMS_a,
+				sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) AND UTW_WRK_STA = '90' AND UCM_CTR_GBN = 'S06' then 1 else 0 end)) PIMS_w
+			FROM (SELECT UCM_CTR_GBN, UTW_SVC_COD,
+						UTW_WRK_KEY AS WKEY,
+						UTW_STR_DAT,
+						UTW_WRK_STA
+					FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR
+					WHERE UTW_TRC_KEY = UTD_TRC_KEY
+						AND UTD_TRC_KEY = UTC_TRC_KEY
+						AND UTC_CTR_KEY = UCM_CTR_KEY
+						AND UTW_PRD_COD = #manCyl#
+						AND UTD_BCY_COD = #manCyl#
+						AND UTC_BCY_COD = #manCyl#
+						AND UCM_BCY_COD = #manCyl#
+						AND UTW_DEL_YN = 'N'
+						AND UTD_DEL_YN = 'N'
+						AND UTC_DEL_YN = 'N'
+						]]>
+						<isNotEmpty property="service">
+						AND UTW_SVC_COD = #service#
+						</isNotEmpty>
+						<![CDATA[
+					) TT
+			GROUP BY TO_CHAR(UTW_STR_DAT, 'YYYYMM')
+			)
+		GROUP BY ROLLUP(UTW_STR_DAT)
+		ORDER BY 1
+	]]>
+	</select>
+
+	<select id="QR_STATE004_D" resultClass="egovMap" parameterClass="searchVO">
+	<![CDATA[
+		SELECT UTW_DEP_COD, CASE WHEN UTW_DEP_COD IS NULL THEN 'ALL'
+		ELSE (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR UDM WHERE UDM.UDM_DEP_COD = UTW_DEP_COD) END DEPT ,
+	       SUM(ISMS_W)||'/'|| SUM(ISMS_A) || ' (' ||
+	       NVL(ROUND((SUM(ISMS_W)/DECODE(SUM(ISMS_A),0,NULL,SUM(ISMS_A)))*100,1),0)|| '%)' ISMS,
+	       SUM(SKPNG_W)||'/'|| SUM(SKPNG_A) || ' (' ||
+	       NVL(ROUND((SUM(SKPNG_W)/DECODE(SUM(SKPNG_A),0,NULL,SUM(SKPNG_A)))*100,1),0)|| '%)' SKPNG,
+	       SUM(PIMS_W)||'/'|| SUM(PIMS_A) || ' (' ||
+	       NVL(ROUND((SUM(PIMS_W)/DECODE(SUM(PIMS_A),0,NULL,SUM(PIMS_A)))*100,1),0)|| '%)' PIMS,
+	       SUM(TOT_W) AS TOT_W,
+		   SUM(TOT_A) AS TOT_A,
+		   NVL(ROUND((SUM(ISMS_W)/DECODE(SUM(ISMS_A),0,NULL,SUM(ISMS_A)))*100,1),0) AS ISMS_P,
+		   NVL(ROUND((SUM(SKPNG_W)/DECODE(SUM(SKPNG_A),0,NULL,SUM(SKPNG_A)))*100,1),0) AS SKPNG_P,
+		   NVL(ROUND((SUM(PIMS_W)/DECODE(SUM(PIMS_A),0,NULL,SUM(PIMS_A)))*100,1),0) AS PIMS_P,
+		   NVL(ROUND((SUM(TOT_W)/DECODE(SUM(TOT_A),0,NULL,SUM(TOT_A)))*100,1),0) AS TOT_P
+		FROM( SELECT UTW_DEP_COD,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><![CDATA[ then 1 else 0 end)) tot_a,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><![CDATA[ AND UTW_WRK_STA = '90' then 1 else 0 end)) tot_w,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><![CDATA[ AND UCM_CTR_GBN = 'S03' then 1 else 0 end)) isms_a,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><![CDATA[ AND UTW_WRK_STA = '90' AND UCM_CTR_GBN = 'S03' then 1 else 0 end)) isms_w,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><![CDATA[ AND UCM_CTR_GBN = 'S05' then 1 else 0 end)) SKPNG_a,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><![CDATA[ AND UTW_WRK_STA = '90' AND UCM_CTR_GBN = 'S05' then 1 else 0 end)) SKPNG_w,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><![CDATA[ AND UCM_CTR_GBN = 'S06' then 1 else 0 end)) PIMS_a,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><![CDATA[ AND UTW_WRK_STA = '90' AND UCM_CTR_GBN = 'S06' then 1 else 0 end)) PIMS_w,
+	               COUNT(TT.WKEY) COM_A
+	          FROM (SELECT UTW_DEP_COD, UTW_SVC_COD,
+	                       UCM_CTR_GBN,
+	                       UTW_WRK_KEY AS WKEY,
+	                       UTW_STR_DAT,
+	                       UTW_WRK_STA
+	                  FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR
+	                 WHERE UTW_TRC_KEY = UTD_TRC_KEY
+		                   AND UTD_TRC_KEY = UTC_TRC_KEY
+		                   AND UTC_CTR_KEY = UCM_CTR_KEY
+		                   AND UTW_PRD_COD = #manCyl#
+		                   AND UTD_BCY_COD = #manCyl#
+		                   AND UTC_BCY_COD = #manCyl#
+		                   AND UCM_BCY_COD = #manCyl#
+		                   AND UTW_DEL_YN = 'N'
+		                   AND UTD_DEL_YN = 'N'
+		                   AND UTC_DEL_YN = 'N'
+		                   ]]>
+						<isNotEmpty property="service">
+						AND UTW_SVC_COD = #service#
+						</isNotEmpty>
+						<![CDATA[
+	                 ) TT
+	         GROUP BY UTW_DEP_COD
+		)
+		GROUP BY ROLLUP(UTW_DEP_COD)
+		ORDER BY CASE WHEN UTW_DEP_COD IS NULL THEN 2 ELSE 1 END
+	]]>
+	</select>
+
+	<select id="QR_STATE004_U" resultClass="egovMap" parameterClass="searchVO">
+	<![CDATA[
+	SELECT CASE WHEN UTW_WRK_ID IS NULL THEN 'ALL' ELSE F_GET_USR_NAME(UTW_WRK_ID) END USERNAM ,
+	       SUM(ISMS_W)||'/'|| SUM(ISMS_A) || ' (' ||
+	       NVL(ROUND((SUM(ISMS_W)/DECODE(SUM(ISMS_A),0,NULL,SUM(ISMS_A)))*100,1),0)|| '%)' ISMS,
+	       SUM(SKPNG_W)||'/'|| SUM(SKPNG_A) || ' (' ||
+	       NVL(ROUND((SUM(SKPNG_W)/DECODE(SUM(SKPNG_A),0,NULL,SUM(SKPNG_A)))*100,1),0)|| '%)' SKPNG,
+	       SUM(PIMS_W)||'/'|| SUM(PIMS_A) || ' (' ||
+	       NVL(ROUND((SUM(PIMS_W)/DECODE(SUM(PIMS_A),0,NULL,SUM(PIMS_A)))*100,1),0)|| '%)' PIMS,
+	       SUM(TOT_W) AS TOT_W,
+		   SUM(TOT_A) AS TOT_A,
+		   NVL(ROUND((SUM(ISMS_W)/DECODE(SUM(ISMS_A),0,NULL,SUM(ISMS_A)))*100,1),0) AS ISMS_P,
+		   NVL(ROUND((SUM(SKPNG_W)/DECODE(SUM(SKPNG_A),0,NULL,SUM(SKPNG_A)))*100,1),0) AS SKPNG_P,
+		   NVL(ROUND((SUM(PIMS_W)/DECODE(SUM(PIMS_A),0,NULL,SUM(PIMS_A)))*100,1),0) AS PIMS_P,
+		   NVL(ROUND((SUM(TOT_W)/DECODE(SUM(TOT_A),0,NULL,SUM(TOT_A)))*100,1),0) AS TOT_P
+	  FROM( SELECT UTW_WRK_ID,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><isNotEmpty property="dept">AND UTW_DEP_COD = #dept#</isNotEmpty><![CDATA[  then 1 else 0 end)) tot_a,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><isNotEmpty property="dept">AND UTW_DEP_COD = #dept#</isNotEmpty><![CDATA[  AND UTW_WRK_STA = '90' then 1 else 0 end)) tot_w,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><isNotEmpty property="dept">AND UTW_DEP_COD = #dept#</isNotEmpty><![CDATA[  AND UCM_CTR_GBN = 'S03' then 1 else 0 end)) isms_a,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><isNotEmpty property="dept">AND UTW_DEP_COD = #dept#</isNotEmpty><![CDATA[  AND UTW_WRK_STA = '90' AND UCM_CTR_GBN = 'S03' then 1 else 0 end)) isms_w,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><isNotEmpty property="dept">AND UTW_DEP_COD = #dept#</isNotEmpty><![CDATA[  AND UCM_CTR_GBN = 'S05' then 1 else 0 end)) SKPNG_a,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><isNotEmpty property="dept">AND UTW_DEP_COD = #dept#</isNotEmpty><![CDATA[  AND UTW_WRK_STA = '90' AND UCM_CTR_GBN = 'S05' then 1 else 0 end)) SKPNG_w,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><isNotEmpty property="dept">AND UTW_DEP_COD = #dept#</isNotEmpty><![CDATA[  AND UCM_CTR_GBN = 'S06' then 1 else 0 end)) PIMS_a,
+	               sum((case when UTW_STR_DAT <= LAST_DAY(SYSDATE) ]]><isNotEmpty property="strDat">AND TO_CHAR(UTW_STR_DAT, 'YYYYMM') = #strDat#</isNotEmpty><isNotEmpty property="dept">AND UTW_DEP_COD = #dept#</isNotEmpty><![CDATA[  AND UTW_WRK_STA = '90' AND UCM_CTR_GBN = 'S06' then 1 else 0 end)) PIMS_w,
+	               COUNT(TT.WKEY) COM_A
+	          FROM (SELECT UTW_WRK_ID, UTW_SVC_COD,
+	                       UTW_DEP_COD,
+	                       UCM_CTR_GBN,
+	                       UTW_WRK_KEY AS WKEY,
+	                       UTW_STR_DAT,
+	                       UTW_WRK_STA
+	                  FROM UWO_TRC_WRK, UWO_TRC_DOC, UWO_TRC_CTR, UWO_CTR_MTR
+	                 WHERE UTW_TRC_KEY = UTD_TRC_KEY
+	                   AND UTD_TRC_KEY = UTC_TRC_KEY
+	                   AND UTC_CTR_KEY = UCM_CTR_KEY
+	                   AND UTW_PRD_COD = #manCyl#
+	                   AND UTD_BCY_COD = #manCyl#
+	                   AND UTC_BCY_COD = #manCyl#
+	                   AND UCM_BCY_COD = #manCyl#
+	                   AND UTW_DEL_YN = 'N'
+	                   AND UTD_DEL_YN = 'N'
+	                   AND UTC_DEL_YN = 'N'
+	                   ]]>
+						<isNotEmpty property="service">
+						AND UTW_SVC_COD = #service#
+						</isNotEmpty>
+						<![CDATA[
+	                 ) TT
+	         GROUP BY UTW_WRK_ID
+	)
+	GROUP BY ROLLUP(UTW_WRK_ID)
+	ORDER BY CASE WHEN UTW_WRK_ID IS NULL THEN 2 ELSE 1 END
+	]]>
+	</select>
+
+	<select id="QR_STATE005_L" resultClass="egovMap" parameterClass="searchVO">
+	<![CDATA[
+	select UAG_SUB_COD, case when  UAG_SUB_COD is null then 'all' else F_GET_COMMON_NAME (UAG_SUB_COD, 'SERVICE') end service,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '6' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '6' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '6' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '6' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '6' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '6' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c06,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '7' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '7' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '7' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '7' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '7' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '7' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c07,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '8' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '8' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '8' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '8' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '8' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '8' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c08,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '9' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '9' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '9' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '9' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '9' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '9' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c09,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '10' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '10' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '10' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '10' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '10' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '10' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c10,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '11' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '11' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '11' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '11' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '11' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '11' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c11,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '12' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '12' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '12' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '12' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '12' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '12' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c12,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '13' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '13' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '13' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '13' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '13' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '13' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c13,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY in ('6','7','8','9','10','11','12''13') and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY in ('6','7','8','9','10','11','12''13') and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY in ('6','7','8','9','10','11','12''13') and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY in ('6','7','8','9','10','11','12''13') and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY in ('6','7','8','9','10','11','12''13') and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY in ('6','7','8','9','10','11','12''13') and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' tot
+	from uwo_asS_grp,uwo_rsk_mng
+	where urg_bcy_cod = #manCyl#
+		and uag_grp_key = urg_grp_key
+		and URG_RSK_CHK <> 'A'
+	group by rollup(UAG_SUB_COD)
+	]]>
+	</select>
+
+	<select id="QR_STATE005_D" resultClass="egovMap" parameterClass="searchVO">
+	<![CDATA[
+	select case when  uag_dep_cod is null then 'all' else F_FIND_NAME('31',uag_dep_cod,'SEC') end dept,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '6' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '6' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '6' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '6' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '6' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '6' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c06,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '7' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '7' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '7' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '7' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '7' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '7' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c07,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '8' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '8' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '8' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '8' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '8' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '8' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c08,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '9' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '9' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '9' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '9' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '9' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '9' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c09,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '10' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '10' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '10' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '10' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '10' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '10' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c10,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '11' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '11' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '11' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '11' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '11' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '11' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c11,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '12' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '12' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '12' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '12' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '12' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '12' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c12,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '13' and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '13' and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '13' and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '13' and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY = '13' and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY = '13' and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' c13,
+	       '미흡:'||sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY in ('6','7','8','9','10','11','12''13') and urg_rsk_chk = 'N' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY in ('6','7','8','9','10','11','12''13') and urg_rsk_chk = 'N' then 1 else 0 end)|| ')@@부분미흡:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY in ('6','7','8','9','10','11','12''13') and urg_rsk_chk = 'P' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY in ('6','7','8','9','10','11','12''13') and urg_rsk_chk = 'P' then 1 else 0 end)|| ')@@양호:'||
+	                sum(case when URG_STA_COD = 'R29' and UAG_CAT_KEY in ('6','7','8','9','10','11','12''13') and urg_rsk_chk = 'Y' then 1 else 0 end) || '(' ||sum(case when UAG_CAT_KEY in ('6','7','8','9','10','11','12''13') and urg_rsk_chk = 'Y' then 1 else 0 end)|| ')' tot
+	from uwo_asS_grp,uwo_rsk_mng
+	where urg_bcy_cod = #manCyl#
+		and uag_grp_key = urg_grp_key
+		and URG_RSK_CHK <> 'A'
+	]]>
+	<isNotEmpty property="service">
+		and uag_svc_cod = #service#
+	</isNotEmpty>
+	<![CDATA[
+	group by rollup(uag_dep_cod)
+	order by case when uag_dep_cod is not null then 1 else 2 end
+	]]>
+	</select>
+
+	<select id="QR_STATE006_L" resultClass="egovMap" parameterClass="searchVO">
+	<!-- <![CDATA[
+		select uar_svr_cod, case when uar_svr_cod is null then 'all' else F_GET_COMMON_NAME (uar_svr_cod, 'SERVICE') end service,
+			sum(case when uac_cat_key = '6' then 1 else 0 end) c06,
+			sum(case when uac_cat_key = '7' then 1 else 0 end) c07,
+			sum(case when uac_cat_key = '8' then 1 else 0 end) c08,
+			sum(case when uac_cat_key = '9' then 1 else 0 end) c09,
+			sum(case when uac_cat_key = '10' then 1 else 0 end) c10,
+			sum(case when uac_cat_key = '11' then 1 else 0 end) c11,
+			sum(case when uac_cat_key = '12' then 1 else 0 end) c12,
+			sum(case when uac_cat_key = '13' then 1 else 0 end) c13
+		from uwo_ass_mtr,uwo_ass_cat
+		where uar_ass_cat = uac_cat_key
+			and uar_use_yn = 'Y'
+			and uar_bcy_cod = #manCyl#
+		group by rollup(uar_svr_cod)
+		order by case when uar_svr_cod is not null then 1 else 2 end
+	]]> -->
+		select uar_sub_cod, case when uar_sub_cod is null then 'ALL'
+			else (select UCC_SND_NAM from UWO_COM_COD where UCC_SND_COD = uar_sub_cod) end service,
+			sum(case when uac_cat_key = '6' then 1 else 0 end) c06,
+			sum(case when uac_cat_key = '7' then 1 else 0 end) c07,
+			sum(case when uac_cat_key = '8' then 1 else 0 end) c08,
+			sum(case when uac_cat_key = '9' then 1 else 0 end) c09,
+			sum(case when uac_cat_key = '10' then 1 else 0 end) c10,
+			sum(case when uac_cat_key = '11' then 1 else 0 end) c11,
+			sum(case when uac_cat_key = '12' then 1 else 0 end) c12,
+			sum(case when uac_cat_key = '13' then 1 else 0 end) c13,
+			sum(case when uac_cat_key = '17' then 1 else 0 end) c17
+		from uwo_ass_mtr,uwo_ass_cat
+		where uar_ass_cat = uac_cat_key
+			and uar_use_yn = 'Y'
+			and uar_bcy_cod = #manCyl#
+		group by rollup(uar_sub_cod)
+		order by case when uar_sub_cod is not null then 1 else 2 end
+
+	</select>
+
+	<select id="QR_STATE006_S" resultClass="egovMap" parameterClass="searchVO">
+	<![CDATA[
+	select case when uar_dep_cod is null then 'all'
+		else (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR UDM WHERE UDM.UDM_DEP_COD = uar_dep_cod) end dept,
+		sum(case when uac_cat_key = '6' then 1 else 0 end) c06,
+		sum(case when uac_cat_key = '7' then 1 else 0 end) c07,
+		sum(case when uac_cat_key = '8' then 1 else 0 end) c08,
+		sum(case when uac_cat_key = '9' then 1 else 0 end) c09,
+		sum(case when uac_cat_key = '10' then 1 else 0 end) c10,
+		sum(case when uac_cat_key = '11' then 1 else 0 end) c11,
+		sum(case when uac_cat_key = '12' then 1 else 0 end) c12,
+		sum(case when uac_cat_key = '13' then 1 else 0 end) c13,
+		sum(case when uac_cat_key = '17' then 1 else 0 end) c17
+	from uwo_ass_mtr,uwo_ass_cat
+	where uar_ass_cat = uac_cat_key
+		and uar_use_yn = 'Y'
+	]]>
+	<isNotEmpty property="service">
+		and uar_sub_cod = #service#
+	</isNotEmpty>
+	<![CDATA[
+		and uar_bcy_cod = #manCyl#
+	group by rollup(uar_dep_cod)
+	order by case when uar_dep_cod is not null then 1 else 2 end
+	]]>
+	</select>
+
+	<!-- 서비스별 진행현황
+		  동적쿼리 캐시 안함 remapResults="true"
+	-->
+	<select id="selectWorkServiceStatistics" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			usm.svc_cod AS title_code,
+			usm.svc_nam AS title_name,
+			COALESCE(total, 0) AS total,
+			COALESCE(comp, 0) AS comp,
+			COALESCE(delay, 0) AS delay,
+			COALESCE(ready, 0) AS ready,
+			COALESCE(100 - ROUND((delay + ready) / total * 100, 0), 0) AS per_comp,
+			COALESCE(100 - ROUND((comp + ready) / total * 100, 0), 0) AS per_delay,
+			CASE WHEN comp + delay + ready > 0 THEN
+				100 - COALESCE(100 - ROUND((delay + ready) / total * 100, 0), 0) - COALESCE(100 - ROUND((comp + ready) / total * 100, 0), 0)
+			ELSE 0
+			END per_ready
+		FROM
+			uwo_svc_mtr usm
+			LEFT OUTER JOIN (
+			SELECT
+				grp_key,
+				COALESCE(SUM(ready), 0) AS ready,
+				COALESCE(SUM(delay), 0) AS delay,
+				COALESCE(SUM(comp), 0) AS comp,
+				COALESCE(SUM(ready), 0) + COALESCE(SUM(delay), 0) + COALESCE(SUM(comp), 0) AS total
+			FROM (
+				SELECT
+					grp_key,
+					CASE WHEN wrk_status = 'ready' THEN cnt END ready,
+					CASE WHEN wrk_status = 'delay' THEN cnt END delay,
+					CASE WHEN wrk_status = 'comp' THEN cnt END comp
+				FROM (
+					SELECT grp_key, wrk_status, COUNT(*) cnt
+					FROM (
+						SELECT
+							utw.utw_svc_cod AS grp_key,
+							CASE
+								WHEN utw.utw_wrk_sta = '90' THEN 'comp'
+								WHEN utw.utw_wrk_sta &lt; '90' AND utw.utw_end_dat &lt; SYSDATE THEN 'delay'
+								WHEN utw.utw_wrk_sta &lt; '90' THEN 'ready'
+							END wrk_status
+						FROM
+							uwo_trc_doc utd
+							INNER JOIN uwo_trc_wrk utw ON utd.utd_trc_key = utw.utw_trc_key
+						WHERE
+							utd.utd_bcy_cod = #manCyl#
+							<!-- AND utd.utd_del_yn = 'N' -->
+							AND utw.utw_del_yn = 'N'
+		<isNotEmpty property="month">
+							AND utw.utw_end_dat &gt;= TO_DATE(#month#)
+							AND utw.utw_end_dat &lt; ADD_MONTHS(TO_DATE(#month#, 'yyyy-mm=dd'), 1)
+		</isNotEmpty>
+					) t1
+					GROUP BY grp_key, wrk_status
+				) t2
+			) t3
+			GROUP BY grp_key
+		) t ON usm.svc_cod = t.grp_key
+		ORDER BY usm.sort
+	</select>
+
+	<!-- 부서별 진행현황
+		 동적쿼리 캐시 안함 remapResults="true"
+	-->
+	<select id="selectWorkDepStatistics" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			udm.udm_dep_cod AS title_code,
+			udm.udm_dep_nam AS title_name,
+			COALESCE(total, 0) AS total,
+			COALESCE(comp, 0) AS comp,
+			COALESCE(delay, 0) AS delay,
+			COALESCE(ready, 0) AS ready,
+			COALESCE(100 - ROUND((delay + ready) / total * 100, 0), 0) AS per_comp,
+			COALESCE(100 - ROUND((comp + ready) / total * 100, 0), 0) AS per_delay,
+			CASE WHEN comp + delay + ready > 0 THEN
+				100 - COALESCE(100 - ROUND((delay + ready) / total * 100, 0), 0) - COALESCE(100 - ROUND((comp + ready) / total * 100, 0), 0)
+			ELSE 0
+			END per_ready
+		FROM
+			uwo_dep_mtr udm
+		<isNotEmpty property="service">
+			INNER JOIN (
+		</isNotEmpty>
+		<isEmpty property="service">
+			LEFT OUTER JOIN (
+		</isEmpty>
+			SELECT
+				grp_key,
+				COALESCE(SUM(ready), 0) AS ready,
+				COALESCE(SUM(delay), 0) AS delay,
+				COALESCE(SUM(comp), 0) AS comp,
+				COALESCE(SUM(ready), 0) + COALESCE(SUM(delay), 0) + COALESCE(SUM(comp), 0) AS total
+			FROM (
+				SELECT
+					grp_key,
+					CASE WHEN wrk_status = 'comp' THEN cnt END comp,
+					CASE WHEN wrk_status = 'delay' THEN cnt END delay,
+					CASE WHEN wrk_status = 'ready' THEN cnt END ready
+				FROM (
+					SELECT grp_key, wrk_status, COUNT(*) cnt
+					FROM (
+						SELECT
+		<isEqual property="depLevel" compareValue="1">
+							udm.udm_dep_1lv AS grp_key,
+		</isEqual>
+		<isEqual property="depLevel" compareValue="2">
+							udm.udm_dep_2lv AS grp_key,
+		</isEqual>
+		<isEqual property="depLevel" compareValue="3">
+							uum.uum_dep_cod AS grp_key,
+		</isEqual>
+		<isNotEmpty property="hasWork">
+							uum.uum_dep_cod AS grp_key,
+		</isNotEmpty>
+							CASE
+								WHEN utw.utw_wrk_sta = '90' THEN 'comp'
+								WHEN utw.utw_wrk_sta &lt; '90' AND utw_end_dat &lt; SYSDATE THEN 'delay'
+								WHEN utw.utw_wrk_sta &lt; '90' THEN 'ready'
+							END wrk_status
+						FROM
+							uwo_trc_doc utd
+							INNER JOIN uwo_trc_wrk utw ON utd.utd_trc_key = utw.utw_trc_key
+							INNER JOIN uwo_usr_mtr uum ON utw.utw_wrk_id = uum.uum_usr_key
+							INNER JOIN uwo_dep_mtr udm ON uum.uum_dep_cod = udm.udm_dep_cod
+						WHERE
+							utd.utd_bcy_cod = #manCyl#
+							<!-- AND utd.utd_del_yn = 'N' -->
+							AND utw.utw_del_yn = 'N'
+		<isNotEmpty property="service">
+							AND utw.utw_svc_cod = #service#
+		</isNotEmpty>
+					) t1
+					GROUP BY grp_key, wrk_status
+				) t2
+			) t3
+			GROUP BY grp_key
+
+		) t ON udm.udm_dep_cod = t.grp_key
+		WHERE 1=1
+		<!-- <isNotEmpty property="service">
+			AND EXISTS (SELECT * FROM uwo_org_mtr uom WHERE udm.udm_dep_cod = uom.uom_dep_cod AND uom.uom_svc_cod = #service#)
+		</isNotEmpty> -->
+		<isNotEmpty property="depLevel">
+			AND udm.udm_dep_lvl = #depLevel#
+		</isNotEmpty>
+		<isNotEmpty property="depCode">
+			<isNotEmpty property="depLevel">
+				<isEqual property="depLevel" compareValue="1">
+			AND udm.udm_dep_1lv = #depCode#
+				</isEqual>
+				<isEqual property="depLevel" compareValue="2">
+			AND udm.udm_dep_1lv = #depCode#
+				</isEqual>
+				<isEqual property="depLevel" compareValue="3">
+			AND udm.udm_dep_2lv = #depCode#
+				</isEqual>
+			</isNotEmpty>
+			<isEmpty property="depLevel">
+			AND udm.udm_dep_cod = #depCode#
+			</isEmpty>
+		</isNotEmpty>
+			AND t.total > 0
+		ORDER BY udm.udm_dep_nam
+	</select>
+
+	<!-- 2017-02-10
+		 개인별 진행현황, 업무가 할당된 사용자만 보여줌
+		 동적쿼리 캐시 안함 remapResults="true"
+	-->
+	<select id="selectWorkUserStatistics" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			uum.uum_usr_key AS title_code,
+			uum.uum_usr_nam AS title_name,
+			COALESCE(total, 0) AS total,
+			COALESCE(comp, 0) AS comp,
+			COALESCE(delay, 0) AS delay,
+			COALESCE(ready, 0) AS ready,
+			COALESCE(100 - ROUND((delay + ready) / total * 100, 0), 0) AS per_comp,
+			COALESCE(100 - ROUND((comp + ready) / total * 100, 0), 0) AS per_delay,
+			CASE WHEN comp + delay + ready > 0 THEN
+				100 - COALESCE(100 - ROUND((delay + ready) / total * 100, 0), 0) - COALESCE(100 - ROUND((comp + ready) / total * 100, 0), 0)
+			ELSE 0
+			END per_ready
+		FROM
+			uwo_usr_mtr uum
+			INNER JOIN (
+			SELECT
+				grp_key,
+				COALESCE(SUM(ready), 0) AS ready,
+				COALESCE(SUM(delay), 0) AS delay,
+				COALESCE(SUM(comp), 0) AS comp,
+				COALESCE(SUM(ready), 0) + COALESCE(SUM(delay), 0) + COALESCE(SUM(comp), 0) AS total
+			FROM (
+				SELECT
+					grp_key,
+					CASE WHEN wrk_status = 'comp' THEN cnt END comp,
+					CASE WHEN wrk_status = 'delay' THEN cnt END delay,
+					CASE WHEN wrk_status = 'ready' THEN cnt END ready
+				FROM (
+					SELECT grp_key, wrk_status, COUNT(*) cnt
+					FROM (
+						SELECT
+							uum.uum_usr_key AS grp_key,
+							CASE
+								WHEN utw.utw_wrk_sta = '90' THEN 'comp'
+								WHEN utw.utw_wrk_sta &lt; '90' AND utw_end_dat &lt; SYSDATE THEN 'delay'
+								WHEN utw.utw_wrk_sta &lt; '90' THEN 'ready'
+							END wrk_status
+						FROM
+							uwo_trc_doc utd
+							INNER JOIN uwo_trc_wrk utw ON utd.utd_trc_key = utw.utw_trc_key
+							INNER JOIN uwo_usr_mtr uum ON utw.utw_wrk_id = uum.uum_usr_key
+							INNER JOIN uwo_dep_mtr udm ON uum.uum_dep_cod = udm.udm_dep_cod
+						WHERE
+							utd.utd_bcy_cod = #manCyl#
+							<!-- AND utd.utd_del_yn = 'N' -->
+							AND utw.utw_del_yn = 'N'
+		<isNotEmpty property="service">
+							AND utw.utw_svc_cod = #service#
+		</isNotEmpty>
+		<isNotEmpty property="depCode">
+							AND uum.uum_dep_cod = #depCode#
+		</isNotEmpty>
+					) t1
+					GROUP BY grp_key, wrk_status
+				) t2
+			) t3
+			GROUP BY grp_key
+
+		) t ON uum.uum_usr_key = t.grp_key
+		WHERE 1=1
+		<!-- <isNotEmpty property="service">
+			AND EXISTS (SELECT * FROM uwo_org_mtr uom WHERE uum.uum_dep_cod = uom.uom_dep_cod AND uom.uom_svc_cod = #service#)
+		</isNotEmpty> -->
+			AND t.total > 0
+		ORDER BY uum.uum_usr_nam
+	</select>
+
+	<!-- 기간별(월) 진행현황
+		 동적쿼리 캐시 안함 remapResults="true"
+	-->
+	<select id="selectWorkMonthStatistics" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			ymd AS title_code,
+			ym AS title_name,
+			COALESCE(total, 0) AS total,
+			COALESCE(comp, 0) AS comp,
+			COALESCE(delay, 0) AS delay,
+			COALESCE(ready, 0) AS ready,
+			COALESCE(100 - ROUND((delay + ready) / total * 100, 0), 0) AS per_comp,
+			COALESCE(100 - ROUND((comp + ready) / total * 100, 0), 0) AS per_delay,
+			CASE WHEN comp + delay + ready > 0 THEN
+				100 - COALESCE(100 - ROUND((delay + ready) / total * 100, 0), 0) - COALESCE(100 - ROUND((comp + ready) / total * 100, 0), 0)
+			ELSE 0
+			END per_ready
+		FROM (
+				SELECT
+					SUBSTR(TO_CHAR(A.YMD, 'yyyymm'), 0, 4) || '년' || TO_NUMBER(SUBSTR(TO_CHAR(A.YMD, 'yyyymm'), 5, 2)) || '월' AS ym,
+				    SUBSTR(TO_CHAR(A.YMD, 'yyyymm'), 0, 4) || '-' || SUBSTR(TO_CHAR(A.YMD, 'yyyymm'), 5, 2) || '-' || '01' AS ymd
+				FROM (
+				      SELECT TO_DATE(uwy_wrk_ymd, 'yyyymmdd') YMD
+				        FROM uwo_wrk_ymd
+				       WHERE uwy_wrk_ymd &gt;= (SELECT TO_CHAR(UMM_STD_DAT, 'yyyymmdd') FROM uwo_mcy_mtr WHERE umm_man_cyl = #manCyl#)
+				         AND uwy_wrk_ymd &lt;= (SELECT TO_CHAR(umm_end_dat, 'yyyymmdd') FROM uwo_mcy_mtr WHERE umm_man_cyl = #manCyl#)
+				      ) A
+				GROUP BY TO_CHAR(A.YMD, 'yyyymm')
+			) uwy
+			LEFT OUTER JOIN (
+			SELECT
+				grp_key,
+				COALESCE(SUM(ready), 0) AS ready,
+				COALESCE(SUM(delay), 0) AS delay,
+				COALESCE(SUM(comp), 0) AS comp,
+				COALESCE(SUM(ready), 0) + COALESCE(SUM(delay), 0) + COALESCE(SUM(comp), 0) AS total
+			FROM (
+				SELECT
+					grp_key,
+					CASE WHEN wrk_status = 'ready' THEN cnt END ready,
+					CASE WHEN wrk_status = 'delay' THEN cnt END delay,
+					CASE WHEN wrk_status = 'comp' THEN cnt END comp
+				FROM (
+					SELECT grp_key, wrk_status, COUNT(*) cnt
+					FROM (
+						SELECT
+							SUBSTR(TO_CHAR(utw.utw_end_dat, 'yyyymm'), 0, 4) || '년' || TO_NUMBER(SUBSTR(TO_CHAR(utw.utw_end_dat, 'yyyymm'), 5, 2)) || '월' AS grp_key,
+							CASE
+								WHEN utw.utw_wrk_sta = '90' THEN 'comp'
+								WHEN utw.utw_wrk_sta &lt; '90' AND utw_end_dat &lt; SYSDATE THEN 'delay'
+								WHEN utw.utw_wrk_sta &lt; '90' THEN 'ready'
+							END wrk_status
+						FROM
+							uwo_trc_doc utd
+							INNER JOIN uwo_trc_wrk utw ON utd.utd_trc_key = utw.utw_trc_key
+						WHERE
+							utd.utd_bcy_cod = #manCyl#
+							AND utd.utd_del_yn = 'N'
+							AND utw.utw_del_yn = 'N'
+					) t1
+					GROUP BY grp_key, wrk_status
+				) t2
+			) t3
+			GROUP BY grp_key
+		) t ON uwy.ym = t.grp_key
+		ORDER BY uwy.ymd
+	</select>
+
+	<!-- 통제목적별 진행현황
+		 동적쿼리 캐시 안함 remapResults="true"
+	-->
+	<select id="selectWorkCtrStatistics" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			TRIM(ucm.ucm_ctr_cod) AS title_code,
+			TRIM(ucm.ucm_ctr_cod) AS title_name,
+			COALESCE(total, 0) AS total,
+			COALESCE(comp, 0) AS comp,
+			COALESCE(delay, 0) AS delay,
+			COALESCE(ready, 0) AS ready,
+			COALESCE(100 - ROUND((delay + ready) / total * 100, 0), 0) AS per_comp,
+			COALESCE(100 - ROUND((comp + ready) / total * 100, 0), 0) AS per_delay,
+			CASE WHEN comp + delay + ready > 0 THEN
+				100 - COALESCE(100 - ROUND((delay + ready) / total * 100, 0), 0) - COALESCE(100 - ROUND((comp + ready) / total * 100, 0), 0)
+			ELSE 0
+			END per_ready
+		FROM
+			(
+			SELECT
+				ucm_ctr_cod
+			FROM uwo_ctr_mtr
+			WHERE
+				ucm_bcy_cod = #manCyl#
+				AND ucm_ctr_gbn = #standard#
+				AND ucm_1ld_yn = 'N'
+			GROUP BY ucm_ctr_cod
+			) ucm
+			LEFT OUTER JOIN (
+			SELECT
+				grp_key,
+				COALESCE(SUM(ready), 0) AS ready,
+				COALESCE(SUM(delay), 0) AS delay,
+				COALESCE(SUM(comp), 0) AS comp,
+				COALESCE(SUM(ready), 0) + COALESCE(SUM(delay), 0) + COALESCE(SUM(comp), 0) AS total
+			FROM (
+				SELECT
+					grp_key,
+					CASE WHEN wrk_status = 'ready' THEN cnt END ready,
+					CASE WHEN wrk_status = 'delay' THEN cnt END delay,
+					CASE WHEN wrk_status = 'comp' THEN cnt END comp
+				FROM (
+					SELECT grp_key, wrk_status, COUNT(*) cnt
+					FROM (
+						SELECT
+							ucm.ucm_ctr_cod AS grp_key,
+							CASE
+								WHEN utw.utw_wrk_sta = '90' THEN 'comp'
+								WHEN utw.utw_wrk_sta &lt; '90' AND utw_end_dat &lt; SYSDATE THEN 'delay'
+								WHEN utw.utw_wrk_sta &lt; '90' THEN 'ready'
+							END wrk_status
+						FROM
+							uwo_trc_doc utd
+							INNER JOIN uwo_trc_wrk utw ON utd.utd_trc_key = utw.utw_trc_key
+							INNER JOIN uwo_trc_ctr utc ON utd.utd_trc_key = utc.utc_trc_key
+							INNER JOIN uwo_ctr_mtr ucm ON ucm.ucm_ctr_key = utc.utc_ctr_key
+						WHERE
+							utd.utd_bcy_cod = #manCyl#
+							AND utd.utd_del_yn = 'N'
+							AND utw.utw_del_yn = 'N'
+							AND ucm.ucm_ctr_gbn = #standard#
+		<isNotEmpty property="service">
+							AND EXISTS (
+								SELECT * FROM uwo_svc_mtr usm
+								INNER JOIN uwo_ctr_map ucp ON usm.svc_cod = ucp.ucm_svc_cod
+								WHERE ucp.ucm_ctr_key = ucm.ucm_ctr_key
+								AND usm.svc_cod = #service#
+							)
+		</isNotEmpty>
+					) t1
+					GROUP BY grp_key, wrk_status
+				) t2
+			) t3
+			GROUP BY grp_key
+		) t ON ucm.ucm_ctr_cod = t.grp_key
+		ORDER BY LENGTH(ucm.ucm_ctr_cod), LPAD(TRIM(ucm.ucm_ctr_cod), 4, 0)
+	</select>
+
+	<!-- 서비스별 자산현황
+		 동적쿼리 캐시 안함 remapResults="true"
+	-->
+	<select id="selectAssetServiceStatistics" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			usm.svc_sub_cod AS title_code,
+			usm.svc_sub_nam AS title_name,
+		<iterate property="list" conjunction=",">
+        	COALESCE(SUM($list[].code$), 0) AS $list[].code$
+    	</iterate>
+		<iterate property="list" open=",COALESCE(" conjunction="+" close=", 0) AS total">
+			COALESCE(SUM($list[].code$), 0)
+		</iterate>
+		FROM
+			uwo_svc_sub usm
+			LEFT OUTER JOIN
+			(
+				SELECT
+					uar_sub_cod,
+		<iterate property="list" conjunction=",">
+					CASE WHEN uac_cat_cod = #list[].code# THEN cnt END $list[].code$
+		</iterate>
+				FROM
+				(
+					SELECT uar_sub_cod, uac_cat_cod, COUNT(*) AS cnt
+					FROM uwo_ass_mtr uar
+					INNER JOIN uwo_ass_cat uac ON uar.uar_ass_cat = uac.uac_cat_key
+					WHERE uar.uar_use_yn = 'Y'
+						AND uar.uar_bcy_cod = #manCyl#
+					GROUP BY uar_sub_cod, uac_cat_cod
+				) t1
+
+			) uar ON usm.svc_sub_cod = uar.uar_sub_cod
+		GROUP BY usm.svc_sub_cod, usm.svc_sub_nam, usm.sort
+		ORDER BY usm.sort
+	</select>
+
+	<!-- 자산별 서비스 자산현황
+		 동적쿼리 캐시 안함 remapResults="true"
+	-->
+	<select id="selectAssetServiceStatisticsOfAsset" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			uac.uac_cat_cod AS title_code,
+			uac.uac_cat_nam AS title_name,
+		<iterate property="list" conjunction=",">
+        	COALESCE(SUM($list[].code$), 0) AS $list[].code$
+    	</iterate>
+		<iterate property="list" open=",COALESCE(" conjunction="+" close=", 0) AS total">
+			COALESCE(SUM($list[].code$), 0)
+		</iterate>
+		FROM
+			uwo_ass_cat uac
+			LEFT OUTER JOIN
+			(
+				SELECT
+					uac_cat_cod,
+		<iterate property="list" conjunction=",">
+					CASE WHEN uar_sub_cod = #list[].code# THEN cnt END $list[].code$
+		</iterate>
+				FROM
+				(
+					SELECT uac_cat_cod, uar_sub_cod, COUNT(*) AS cnt
+					FROM uwo_ass_mtr uar
+					INNER JOIN uwo_ass_cat uac ON uar.uar_ass_cat = uac.uac_cat_key
+					WHERE uar.uar_use_yn = 'Y'
+						AND uar.uar_bcy_cod = #manCyl#
+					GROUP BY uac_cat_cod, uar_sub_cod
+				) t1
+
+			) uar ON uac.uac_cat_cod = uar.uac_cat_cod
+		WHERE uac_cat_typ = 'A'
+		GROUP BY uac.uac_cat_cod, uac.uac_cat_nam, uac.uac_cat_key
+		ORDER BY uac.uac_cat_key
+	</select>
+
+	<!-- 부서별 자산현황
+		 서비스 매핑 테이블이 아닌 자산에 등록된 데이터를 기반으로 가져옴.
+		 부서 코드가 잘못된 데이터는 DEP_MTR 의 부서코드와 매핑시킴.
+		 동적쿼리 캐시 안함 remapResults="true"
+	-->
+	<select id="selectAssetDepStatistics" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			udm.udm_dep_cod AS title_code,
+			udm.udm_dep_nam AS title_name,
+		<iterate property="list" conjunction=",">
+        	COALESCE(SUM($list[].code$), 0) AS $list[].code$
+    	</iterate>
+		FROM
+			uwo_dep_mtr udm
+			INNER JOIN
+			(
+				SELECT
+					uar_dep_cod,
+					uar_dep_nam,
+		<iterate property="list" conjunction=",">
+        	CASE WHEN uac_cat_cod = #list[].code# THEN cnt END $list[].code$
+    	</iterate>
+				FROM
+				(
+					SELECT
+						uar_dep_cod,
+						uar_dep_nam,
+						uac_cat_cod,
+						COUNT(*) AS cnt
+					FROM uwo_ass_mtr uar
+					INNER JOIN uwo_ass_cat uac ON uar.uar_ass_cat = uac.uac_cat_key
+					WHERE
+						uar.uar_use_yn = 'Y'
+						AND uar.uar_bcy_cod = #manCyl#
+						AND uar.uar_sub_cod = #service#
+					GROUP BY uar_dep_cod, uar_dep_nam, uac_cat_cod
+				) t1
+			) uar ON udm.udm_dep_cod = uar.uar_dep_cod
+		GROUP BY udm.udm_dep_cod, udm.udm_dep_nam
+		ORDER BY udm.udm_dep_nam
+	</select>
+
+	<!-- 자산별 부서 자산현황
+	 	 동적쿼리 캐시 안함 remapResults="true"
+	-->
+	<select id="selectAssetDepStatisticsOfAsset" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			uac.uac_cat_cod AS title_code,
+			uac.uac_cat_nam AS title_name,
+		<iterate property="list" conjunction=",">
+        	COALESCE(SUM($list[].code$), 0) AS $list[].code$
+    	</iterate>
+		FROM
+			uwo_ass_cat uac
+			LEFT OUTER JOIN
+			(
+				SELECT
+					uac_cat_cod,
+		<iterate property="list" conjunction=",">
+        			CASE WHEN uar_dep_cod = #list[].code# THEN cnt END $list[].code$
+    	</iterate>
+				FROM
+				(
+					SELECT uac_cat_cod, uar_dep_cod, COUNT(*) AS cnt
+					FROM uwo_ass_mtr uar
+					INNER JOIN uwo_ass_cat uac ON uar.uar_ass_cat = uac.uac_cat_key
+					WHERE uar.uar_use_yn = 'Y'
+						AND uar.uar_bcy_cod = #manCyl#
+						AND uar.uar_sub_cod = #service#
+					GROUP BY uac_cat_cod, uar_dep_cod
+				) t1
+
+			) uar ON uac.uac_cat_cod = uar.uac_cat_cod
+		WHERE uac_cat_typ = 'A'
+		GROUP BY uac.uac_cat_cod, uac.uac_cat_nam, uac.uac_cat_key
+		ORDER BY uac.uac_cat_key
+	</select>
+
+	<select id="selectAssetCodeList" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			uac_cat_cod AS code,
+			uac_cat_nam AS name
+		FROM UWO_ASS_CAT
+		WHERE
+			uac_use_yn = 'Y'
+			AND uac_cat_typ = 'A'
+		ORDER BY uac_cat_key
+	</select>
+
+	<!-- 서비스의 부서코드
+		 서비스 매핑 테이블이 아닌 자산에 등록된 데이터를 기반으로 가져옴.
+		 부서 코드가 잘못된 데이터는 DEP_MTR 의 부서코드, 부서명과 매핑시킴.
+	      동적쿼리 캐시 안함 remapResults="true"
+	-->
+	<select id="selectDepCodeListOfService" parameterClass="Map" resultClass="egovMap" remapResults="true">
+		SELECT
+			udm.udm_dep_cod AS code,
+			udm.udm_dep_nam AS name
+		FROM
+			uwo_dep_mtr udm
+			INNER JOIN (
+				SELECT
+					DISTINCT uar_dep_cod,
+					uar_dep_nam
+				FROM
+					uwo_ass_mtr uar
+				WHERE
+					uar.uar_use_yn = 'Y'
+					AND uar.uar_bcy_cod = #manCyl#
+					AND uar.uar_sub_cod = #service#
+			) uar ON udm.udm_dep_cod = uar.uar_dep_cod <!-- AND udm.udm_dep_nam = uar.uar_dep_nam -->
+		ORDER BY udm.udm_dep_nam
+	</select>
+
+	<!-- 2017-06-30, 자산유형별 위험도 수
+		 동적쿼리 캐시 안함 remapResults="true"
+	-->
+	<select id="selectRiskCatStatistics" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT 'M' AS title_code,
+		  '관리체계' AS title_name,
+		  NVL(score_h, 0) + NVL(score_m, 0)+ NVL(score_l, 0) AS total,
+		  NVL(score_h, 0) AS score_h,
+		  NVL(score_m, 0) AS score_m,
+		  NVL(score_l, 0) AS score_l,
+		  uac_cat_key
+		FROM
+		  (SELECT uag_ass_cat,
+		    SUM(score_h) AS score_h,
+		    SUM(score_m) AS score_m,
+		    SUM(score_l) AS score_l,
+		    0 AS uac_cat_key
+		  FROM
+		    (SELECT uag_ass_cat,
+		      CASE WHEN rsk_rst = 'H' THEN 1 ELSE 0 END score_h,
+		      CASE WHEN rsk_rst = 'M' THEN 1 ELSE 0 END score_m,
+		      CASE WHEN rsk_rst = 'L' THEN 1 ELSE 0 END score_l
+		    FROM
+		      (SELECT uag_ass_cat,
+		        CASE
+		          WHEN rsk_rst > 6 THEN 'H'
+		          WHEN rsk_rst > 3 THEN 'M'
+		          ELSE 'L'
+		        END rsk_rst
+		      FROM
+		        (SELECT urr.uar_ass_cod AS uag_ass_cat,
+		          MAX(urs.urs_rsk_rst)  AS rsk_rst
+		        FROM uwo_rsk_srl urs
+		        INNER JOIN uwo_rsk_rst urr ON urs.urs_rsk_key = urr.urs_rsk_key
+		        WHERE urs.umm_man_cyl = #manCyl#
+		        AND urs.urs_rsk_rst > 0
+		        AND urs.urs_rsk_typ = 'D'
+		        GROUP BY urr.uar_ass_cod
+		        ) T1
+		      ) T2
+		    ) T3
+		  GROUP BY uag_ass_cat,
+		    0
+		  ) T4
+
+		UNION ALL
+		SELECT uac_cat_cod  AS title_code,
+		  uac_cat_nam AS title_name,
+		  NVL(score_h, 0) + NVL(score_m, 0)+ NVL(score_l, 0) AS total,
+		  NVL(score_h, 0) AS score_h,
+		  NVL(score_m, 0) AS score_m,
+		  NVL(score_l, 0) AS score_l,
+		  uac_cat_key
+		FROM uwo_ass_cat uac
+		LEFT OUTER JOIN
+		  (SELECT uag_ass_cat,
+		    SUM(score_h) AS score_h,
+		    SUM(score_m) AS score_m,
+		    SUM(score_l) AS score_l
+		  FROM
+		    (SELECT uag_ass_cat,
+		      CASE WHEN rsk_rst = 'H' THEN 1 ELSE 0 END score_h,
+		      CASE WHEN rsk_rst = 'M' THEN 1 ELSE 0 END score_m,
+		      CASE WHEN rsk_rst = 'L' THEN 1 ELSE 0 END score_l
+		    FROM
+		      (SELECT uag_ass_cat,
+		        CASE
+		          WHEN rsk_rst > 6 THEN 'H'
+		          WHEN rsk_rst > 3 THEN 'M'
+		          ELSE 'L'
+		        END rsk_rst
+		      FROM
+		        (SELECT urs.uag_grp_cod,
+		          uag.uag_ass_cat,
+		          <!-- MAX(urs.urs_rsk_rst) AS rsk_rst -->
+		          urs.urs_rsk_rst AS rsk_rst
+		        FROM uwo_rsk_srl urs
+		        INNER JOIN uwo_ass_grp uag
+		        ON urs.uag_grp_cod = uag.uag_grp_cod
+		        WHERE urs.umm_man_cyl = #manCyl#
+		        AND urs.urs_rsk_rst > 0
+		        AND urs.urs_rsk_typ = 'A'
+		        AND uag.uag_use_yn = 'Y'
+		        AND EXISTS
+		          (SELECT 'x'
+		          FROM uwo_ass_mtr uar
+		          WHERE uag.uag_grp_cod = uar.uar_grp_cod
+		          AND uar.uar_bcy_cod = #manCyl#
+		          AND uar.uar_use_yn = 'Y'
+		          AND uar.uar_aud_yn = 'Y'
+		          AND uar.uar_smp_yn = 'Y'
+		          )
+		        GROUP BY urs.uag_grp_cod, urs.urs_rsk_rst, uag.uag_ass_cat
+		        ) T1
+		      ) T2
+		    ) T3
+		  GROUP BY uag_ass_cat
+		  ) T4 ON uac.uac_cat_key = T4.uag_ass_cat
+		WHERE uac_cat_typ = 'A'
+		  AND uac_use_yn = 'Y'
+		ORDER BY uac_cat_key
+	</select>
+
+	<!-- 부서별 점검 보안레벨 계산용 -->
+	<select id="getStatisticsSaCal" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			UDM.UDM_DEP_1LV, UDM.UDM_DEP_2LV, DEP2.UDM_DEP_NAM DEP2_NAM, UDM.UDM_DEP_3LV, DEP3.UDM_DEP_NAM DEP3_NAM
+			, UCM.UCM_CTR_KEY, UCM.UCM_3LV_COD
+			, UTW.UTW_WRK_ID, UTW.UTW_DEP_COD, UTW.UTW_WRK_STA, UTW.UTW_WRK_PRG
+			, '' FLE_LVL
+		FROM
+			UWO_TRC_WRK UTW
+			LEFT JOIN UWO_TRC_CTR UTC ON UTC.UTC_TRC_KEY = UTW.UTW_TRC_KEY
+			LEFT JOIN UWO_CTR_MTR UCM ON UCM.UCM_CTR_KEY = UTC.UTC_CTR_KEY
+			LEFT JOIN UWO_DEP_MTR UDM ON UDM.UDM_DEP_COD = UTW.UTW_DEP_COD
+			LEFT JOIN (
+				SELECT UDM_DEP_COD, UDM_DEP_NAM
+				FROM UWO_DEP_MTR
+			) DEP2 ON DEP2.UDM_DEP_COD=UDM.UDM_DEP_2LV
+			LEFT JOIN (
+				SELECT UDM_DEP_COD, UDM_DEP_NAM
+				FROM UWO_DEP_MTR
+			) DEP3 ON DEP3.UDM_DEP_COD=UDM.UDM_DEP_3LV
+		WHERE
+			UTW.UTW_SVC_COD=#service# AND UTW.UTW_PRD_COD=#bcy_cod# AND UTW.UTW_DEL_YN='N'
+			AND UCM.UCM_CTR_GBN=#ucm_ctr_gbn#
+		ORDER BY
+			UDM.UDM_DEP_1LV, UDM.UDM_DEP_2LV, UDM.UDM_DEP_3LV,
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.' )), '.', '' ), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.' ), ''))
+				ELSE ASCII(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'), ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+				ELSE ASCII(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+				END ASC
+	</select>
+
+	<select id="getMCY" resultClass="egovMap">
+		SELECT UMM_MAN_CYL, UMM_MAN_TLE
+		FROM UWO_MCY_MTR
+		WHERE UMM_CFM_YN='Y'
+		ORDER BY UMM_MAN_CYL DESC
+	</select>
+
+	<select id="getQuarterYear" resultClass="String">
+		SELECT UMM_STD_DAT
+		FROM UWO_MCY_MTR
+		WHERE UMM_MAN_CYL=#bcy_cod#
+	</select>
+
+	<select id="getStatisticsPreYear" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+		    UMM.UMM_MAN_CYL, UMM.UMM_MAN_TLE
+		FROM
+		(
+		    SELECT
+		        UMM2.UMM_MAN_CYL, UMM2.UMM_MAN_TLE, UMM2.UMM_STD_DAT
+		    FROM
+		        UWO_MCY_MTR UMM2,
+		        (
+		            SELECT
+		                UMM4.UMM_MAN_CYL, UMM4.UMM_STD_DAT
+		            FROM
+		                UWO_MCY_MTR UMM4
+		            WHERE
+		                UMM4.UMM_MAN_CYL=#bcy_cod#
+                ) UMM3
+		    WHERE
+		        UMM3.UMM_STD_DAT >= UMM2.UMM_STD_DAT
+		        ORDER BY UMM2.UMM_STD_DAT DESC
+        ) UMM
+		WHERE
+		<![CDATA[
+			ROWNUM <= #pre_year_count#
+		]]>
+		ORDER BY UMM.UMM_MAN_CYL
+	</select>
+
+	<select id="getStatisticsSaLv1" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT UCM.UCM_1LV_COD, UCM.UCM_1LV_NAM
+		FROM UWO_TRC_WRK UTW
+			LEFT JOIN UWO_TRC_CTR UTC ON UTC.UTC_TRC_KEY = UTW.UTW_TRC_KEY
+			LEFT JOIN UWO_CTR_MTR UCM ON UCM.UCM_CTR_KEY = UTC.UTC_CTR_KEY
+		WHERE
+			UTW.UTW_SVC_COD=F_SA_SVC_COD() AND UTW.UTW_PRD_COD=#bcy_cod# AND UTW.UTW_DEL_YN='N'
+			AND UCM.UCM_CTR_GBN=F_SA_COMP_COD()
+		GROUP BY
+			UCM_1LV_COD, UCM_1LV_NAM
+		ORDER BY
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.' )), '.', '' ), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				END
+	</select>
+
+	<select id="getStatisticsSaPart1" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			UDM.UDM_DEP_1LV, UDM.UDM_DEP_NAM DEP1_NAM, UDM.UDM_DEP_2LV, DEP2.UDM_DEP_NAM DEP2_NAM, UDM.UDM_DEP_3LV, DEP3.UDM_DEP_NAM DEP3_NAM
+			, UCM.UCM_CTR_KEY, UCM.UCM_1LV_COD, UCM.UCM_1LV_NAM, UCM.UCM_2LV_COD, UCM.UCM_2LV_NAM, UCM.UCM_3LV_COD
+			, UTW.UTW_WRK_ID, UTW.UTW_DEP_COD, UTW.UTW_WRK_STA, UTW.UTW_WRK_PRG
+			, UDS.UDS_SA_LEVEL
+			, UTD.UTD_DOC_CNT
+			, FLE.FLE_CNT
+		FROM
+			UWO_TRC_WRK UTW
+			LEFT JOIN UWO_TRC_DOC UTD ON UTD.UTD_TRC_KEY = UTW.UTW_TRC_KEY
+			LEFT JOIN UWO_TRC_CTR UTC ON UTC.UTC_TRC_KEY = UTW.UTW_TRC_KEY AND UTC.UTC_DEL_YN = 'N'
+			LEFT JOIN UWO_CTR_MTR UCM ON UCM.UCM_CTR_KEY = UTC.UTC_CTR_KEY
+			LEFT JOIN UWO_DEP_MTR UDM ON UDM.UDM_DEP_COD = UTW.UTW_DEP_COD
+			LEFT JOIN UWO_DEP_SA UDS ON UDS.UDS_DEP_COD = UDM.UDM_DEP_COD AND UDS.UDS_BCY_COD=#bcy_cod#
+			LEFT JOIN (
+				SELECT UDM_DEP_COD, UDM_DEP_NAM
+				FROM UWO_DEP_MTR
+			) DEP2 ON DEP2.UDM_DEP_COD=UDM.UDM_DEP_2LV
+			LEFT JOIN (
+				SELECT UDM_DEP_COD, UDM_DEP_NAM
+				FROM UWO_DEP_MTR
+			) DEP3 ON DEP3.UDM_DEP_COD=UDM.UDM_DEP_3LV
+			LEFT JOIN (
+				SELECT UMF_CON_KEY, COUNT(UMF_CON_KEY) FLE_CNT
+				FROM UWO_MNG_FLE
+				GROUP BY UMF_CON_KEY
+			) FLE ON FLE.UMF_CON_KEY= UTW.UTW_WRK_KEY
+		WHERE
+			UTD.UTD_TRC_KEY IS NOT NULL
+			AND UTW.UTW_SVC_COD=F_SA_SVC_COD() AND UTW.UTW_PRD_COD=#bcy_cod# AND UTW.UTW_DEL_YN='N'
+			AND UCM.UCM_CTR_GBN=F_SA_COMP_COD()
+		<isNotEmpty property="quarter_s">
+			<isNotEmpty property="quarter_f">
+				AND (
+					(UTW_WRK_DAT IS NOT NULL AND UTW_WRK_DAT BETWEEN TO_DATE('$quarter_s$', 'yyyy.mm.dd') AND TO_DATE('$quarter_f$ 23:59:59', 'YYYY.MM.DD HH24:MI:SS'))
+					OR (UTW_WRK_DAT IS NULL AND UTW_END_DAT BETWEEN TO_DATE('$quarter_s$', 'yyyy.mm.dd') AND TO_DATE('$quarter_f$ 23:59:59', 'YYYY.MM.DD HH24:MI:SS'))
+				)
+			</isNotEmpty>
+		</isNotEmpty>
+		ORDER BY
+			UDM.UDM_DEP_1LV, UDM.UDM_DEP_2LV, UDM.UDM_DEP_3LV,
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.' )), '.', '' ), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.' ), ''))
+				ELSE ASCII(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'), ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+				ELSE ASCII(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+				END ASC
+	</select>
+
+	<select id="getStatisticsSaPart2" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			UCM.UCM_CTR_KEY, UCM.UCM_1LV_COD, UCM.UCM_2LV_COD, UCM.UCM_3LV_COD
+			, UCM.UCM_1LV_NAM, UCM.UCM_2LV_NAM, UCM.UCM_3LV_NAM
+			, UTW.UTW_WRK_ID, UTW.UTW_DEP_COD, UTW.UTW_WRK_STA, UTW.UTW_WRK_PRG
+		FROM
+			UWO_TRC_WRK UTW
+			LEFT JOIN UWO_TRC_DOC UTD ON UTD.UTD_TRC_KEY = UTW.UTW_TRC_KEY
+			LEFT JOIN UWO_DEP_MTR UDM ON UDM.UDM_DEP_COD = UTW_DEP_COD
+			LEFT JOIN UWO_TRC_CTR UTC ON UTC.UTC_TRC_KEY = UTW.UTW_TRC_KEY AND UTC.UTC_DEL_YN = 'N'
+			LEFT JOIN UWO_CTR_MTR UCM ON UCM.UCM_CTR_KEY = UTC.UTC_CTR_KEY
+		WHERE
+			UTD.UTD_TRC_KEY IS NOT NULL
+			AND UTW.UTW_SVC_COD=F_SA_SVC_COD() AND UTW.UTW_PRD_COD=#bcy_cod# AND UTW.UTW_DEL_YN='N'
+			AND UCM.UCM_CTR_GBN=F_SA_COMP_COD()
+			AND UDM.UDM_DEP_PAT LIKE '%' || #dep# || '%'
+        <isNotEmpty property="quarter_s">
+            <isNotEmpty property="quarter_f">
+                AND (
+					(UTW_WRK_DAT IS NOT NULL AND UTW_WRK_DAT BETWEEN TO_DATE('$quarter_s$', 'yyyy.mm.dd') AND TO_DATE('$quarter_f$ 23:59:59', 'YYYY.MM.DD HH24:MI:SS'))
+					OR (UTW_WRK_DAT IS NULL AND UTW_END_DAT BETWEEN TO_DATE('$quarter_s$', 'yyyy.mm.dd') AND TO_DATE('$quarter_f$ 23:59:59', 'YYYY.MM.DD HH24:MI:SS'))
+				)
+            </isNotEmpty>
+        </isNotEmpty>
+		ORDER BY
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.' )), '.', '' ), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.' ), ''))
+				ELSE ASCII(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'), ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+				ELSE ASCII(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+				END ASC
+	</select>
+
+	<select id="getDepSaLevel" parameterClass="Map" resultClass="int">
+		SELECT COUNT(*) CNT
+		FROM UWO_DEP_SA
+		WHERE UDS_BCY_COD=#bcy_cod# AND UDS_DEP_COD=#dept#
+	</select>
+
+    <insert id="insertDepSaLevel" parameterClass="Map">
+        INSERT INTO UWO_DEP_SA (UDS_BCY_COD, UDS_DEP_COD, UDS_SA_LEVEL, UDS_WRK_KEY, CREATED_AT, UPDATED_AT)
+        VALUES (#bcy_cod#, #dept#, #sa#, #wrk_key#, SYSDATE, SYSDATE)
+    </insert>
+
+    <update id="updateDepSaLevel" parameterClass="Map">
+        UPDATE UWO_DEP_SA
+        SET UDS_SA_LEVEL=#sa#, UPDATED_AT=SYSDATE
+        WHERE UDS_BCY_COD=#bcy_cod# AND UDS_DEP_COD=#dept#
+    </update>
+
+    <delete id="deleteDepSaLevel" parameterClass="Map">
+        DELETE FROM UWO_DEP_SA
+        WHERE UDS_BCY_COD=#bcy_cod# AND UDS_DEP_COD=#dept#
+    </delete>
+
+	<insert id="initCriterion" parameterClass="Map">
+		INSERT INTO UWO_SA_CRITERION (USC_BCY_COD, USC_KIND_COD, USC_KIND_TITLE, USC_KIND_TYPE, USC_USE, CREATED_AT, UPDATED_AT)
+		VALUES (#bcy_cod#, #kind_cod#, #kind_title#, #kind_type#, 'y', SYSDATE, SYSDATE)
+	</insert>
+
+	<select id="getCriterion" parameterClass="Map"  resultClass="egovMap">
+		SELECT USC_BCY_COD, USC_KIND_COD, USC_KIND_TITLE, USC_KIND_TYPE, USC_USE
+		FROM UWO_SA_CRITERION
+		WHERE USC_BCY_COD=#bcy_cod#
+		<isNotEmpty prepend="AND" property="use">
+			USC_USE=#use#
+		</isNotEmpty>
+		ORDER BY USC_KIND_COD ASC
+	</select>
+
+	<select id="getCriterionPoint" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			USC_BCY_COD, USC_KIND_COD, USC_KIND_TITLE, USC_KIND_TYPE, USC_USE
+			, USCP_KIND_POINT, USCP_P1_VAL, USCP_P1_OP, USCP_P2_VAL, USCP_P2_OP
+		FROM UWO_SA_CRITERION USC
+			LEFT JOIN UWO_SA_CRITERION_POINT USCP ON USCP.USCP_KIND_COD = USC.USC_KIND_COD AND USCP.USCP_BCY_COD = USC.USC_BCY_COD
+		WHERE USC_BCY_COD=#bcy_cod#
+		<isNotEmpty prepend="AND" property="use">
+			USC_USE=#use#
+		</isNotEmpty>
+		ORDER BY USCP_KIND_COD, USCP_KIND_POINT ASC
+	</select>
+
+	<insert id="insertCriterionPoint" parameterClass="Map">
+		INSERT INTO UWO_SA_CRITERION_POINT (
+		USCP_BCY_COD, USCP_KIND_COD, USCP_KIND_POINT, USCP_P1_VAL, USCP_P1_OP, USCP_P2_VAL, USCP_P2_OP, CREATED_AT, UPDATED_AT)
+		VALUES (#bcy_cod#, #editKind#, #point#, #point1Val#, #point1Op#, #point2Val#, #point2Op#, SYSDATE, SYSDATE)
+	</insert>
+
+	<update id="updateCriterion" parameterClass="Map">
+		UPDATE UWO_SA_CRITERION
+		SET USC_USE=#editUse#, UPDATED_AT=SYSDATE
+		WHERE USC_BCY_COD=#bcy_cod# AND USC_KIND_COD=#editKind#
+	</update>
+
+	<update id="updateCriterionPoint" parameterClass="Map">
+		UPDATE UWO_SA_CRITERION_POINT
+		SET USCP_P1_VAL=#point1Val#, USCP_P1_OP=#point1Op#, USCP_P2_VAL=#point2Val#, USCP_P2_OP=#point2Op#, UPDATED_AT=SYSDATE
+		WHERE USCP_BCY_COD=#bcy_cod# AND USCP_KIND_COD=#editKind# AND USCP_KIND_POINT=#point#
+		<isNotEmpty prepend="AND" property="kind_cod">
+			USCP_KIND_COD=#kind_cod#
+		</isNotEmpty>
+	</update>
+
+	<select id="getStatisticsSaYears" parameterClass="map" resultClass="egovMap" remapResults="true">
+		WITH TEMP AS (
+			SELECT UTW.UTW_PRD_COD, UTW.UTW_DEP_COD, UDM.UDM_DEP_NAM, UTW.UTW_WRK_PRG, UDS.UDS_SA_LEVEL, UTD.UTD_DOC_CNT, FLE.FLE_CNT
+			FROM UWO_TRC_WRK UTW
+				LEFT JOIN UWO_TRC_DOC UTD ON UTD.UTD_TRC_KEY = UTW.UTW_TRC_KEY
+				LEFT JOIN UWO_TRC_CTR UTC ON UTC.UTC_TRC_KEY = UTW.UTW_TRC_KEY AND UTC.UTC_DEL_YN = 'N'
+				LEFT JOIN UWO_CTR_MTR UCM ON UCM.UCM_CTR_KEY = UTC.UTC_CTR_KEY
+				LEFT JOIN UWO_DEP_MTR UDM ON UDM.UDM_DEP_COD = UTW.UTW_DEP_COD
+				LEFT JOIN UWO_DEP_SA UDS ON UDS.UDS_DEP_COD = UDM.UDM_DEP_COD AND UDS.UDS_BCY_COD = UTW.UTW_PRD_COD
+				LEFT JOIN (SELECT UMF_CON_KEY, COUNT( UMF_CON_KEY ) FLE_CNT FROM UWO_MNG_FLE GROUP BY UMF_CON_KEY ) FLE
+					ON FLE.UMF_CON_KEY = UTW.UTW_WRK_KEY
+			WHERE
+				UTD.UTD_TRC_KEY IS NOT NULL AND UTW.UTW_DEL_YN = 'N' AND UTW.UTW_SVC_COD = F_SA_SVC_COD () AND UCM.UCM_CTR_GBN = F_SA_COMP_COD ()
+				<iterate property="list_bcy" open="AND UTW.UTW_PRD_COD IN (" conjunction=", " close=")">
+					#list_bcy[]#
+				</iterate>
+			ORDER BY UTW.UTW_PRD_COD, UDM.UDM_DEP_1LV, UDM.UDM_DEP_2LV, UDM.UDM_DEP_3LV
+		)
+		SELECT PRD_COD, DEP_COD, DEP_NAM, SA_LEVEL, DOC_CNT, FLE_CNT, P_Y, P_UP, P_LP, P_N, P_NA
+		FROM (
+			SELECT UTW_PRD_COD AS PRD_COD, UTW_DEP_COD AS DEP_COD, UDM_DEP_NAM AS DEP_NAM
+				, MAX(DECODE(UTW_WRK_PRG, -1, PRG_CNT, 0)) AS P_NA, MAX(DECODE(UTW_WRK_PRG, 0, PRG_CNT, 0)) AS P_N
+				, MAX(DECODE(UTW_WRK_PRG, 30, PRG_CNT, 0)) AS P_LP, MAX(DECODE(UTW_WRK_PRG, 70, PRG_CNT, 0)) AS P_UP
+				, MAX(DECODE(UTW_WRK_PRG, 100, PRG_CNT, 0)) AS P_Y
+			FROM (
+				SELECT UTW_PRD_COD, UTW_DEP_COD, UDM_DEP_NAM, UTW_WRK_PRG, COUNT(UTW_WRK_PRG) AS PRG_CNT
+				FROM TEMP
+				GROUP BY UTW_PRD_COD, UTW_DEP_COD, UDM_DEP_NAM, UTW_WRK_PRG
+				ORDER BY UTW_PRD_COD, UTW_DEP_COD, UDM_DEP_NAM, UTW_WRK_PRG
+			)
+			GROUP BY UTW_PRD_COD, UTW_DEP_COD, UDM_DEP_NAM
+			ORDER BY UTW_PRD_COD, UTW_DEP_COD, UDM_DEP_NAM
+		), (
+			SELECT UTW_PRD_COD AS PRD_COD2, UTW_DEP_COD AS DEP_COD2, UDS_SA_LEVEL AS SA_LEVEL, SUM(UTD_DOC_CNT) AS DOC_CNT, SUM(FLE_CNT) AS FLE_CNT
+			FROM TEMP
+			GROUP BY UTW_PRD_COD, UTW_DEP_COD, UDM_DEP_NAM, UDS_SA_LEVEL
+			ORDER BY UTW_PRD_COD DESC,UTW_DEP_COD,UDM_DEP_NAM
+		)
+		WHERE PRD_COD=PRD_COD2 AND DEP_COD = DEP_COD2
+		ORDER BY PRD_COD, DEP_COD, DEP_NAM
+	</select>
+
+	<select id="getStatisticsInfraMpPart1_1" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			UCM_GOL_NO, UCM_1LV_COD, UCM_1LV_NAM, UCM_2LV_COD, IMP.POINT, UIR.UIR_ASW_VAL
+		FROM
+			UWO_CTR_MTR UCM
+			LEFT JOIN UWO_CTR_MTR_EXP_INFRA_MP IMP ON IMP.CTR_KEY = UCM.UCM_CTR_KEY AND IMP.LVL_COD = UCM.UCM_GOL_NO
+			LEFT JOIN UWO_IST_RST UIR ON UIR.UIR_CTR_KEY = UCM.UCM_CTR_KEY
+		WHERE
+			UCM.UCM_BCY_COD=#bcy_cod# AND UCM.UCM_CTR_GBN =#ucm_ctr_gbn# AND UIR.UIR_SVC_COD=#service# AND UIR.UIR_ASW_VAL != 'N/A'
+		ORDER BY
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.' )), '.', '' ), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.' ), ''))
+				ELSE ASCII(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'), ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+				ELSE ASCII(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+				END ASC
+	</select>
+
+	<select id="getStatisticsInfraMpPart1_2" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			UCM.UCM_1LV_COD, UCM.UCM_1LV_NAM, UCM.UCM_BCY_COD, SUM(IMP.POINT) POINT, SUM(IMP.POINT*UIR.UIR_ASW_VAL) ANSWER
+		FROM
+			UWO_CTR_MTR UCM
+			LEFT JOIN UWO_CTR_MTR_EXP_INFRA_MP IMP ON IMP.CTR_KEY = UCM.UCM_CTR_KEY AND IMP.LVL_COD = UCM.UCM_GOL_NO
+			LEFT JOIN UWO_IST_RST UIR ON UIR.UIR_CTR_KEY = UCM.UCM_CTR_KEY
+		WHERE
+			UCM.UCM_CTR_GBN =#ucm_ctr_gbn# AND UIR.UIR_SVC_COD=#service#
+		<iterate property="list_bcy" open="AND UCM.UCM_BCY_COD IN (" conjunction=", " close=")">
+			#list_bcy[]#
+		</iterate>
+		GROUP BY
+			UCM.UCM_BCY_COD, UCM_1LV_COD, UCM_1LV_NAM
+		ORDER BY
+			UCM.UCM_1LV_COD, UCM.UCM_BCY_COD ASC
+	</select>
+
+	<select id="getStatisticsInfraMpPart2" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			UCM_GOL_NO, UCM_1LV_COD, UCM_1LV_NAM, UCM_2LV_COD, UCM_2LV_NAM,
+			IMP.GRADE, IMP.POINT,
+			UIR.UIR_ASW_ID, UIR.UIR_ASW_VAL
+		FROM
+			UWO_CTR_MTR UCM
+			LEFT JOIN UWO_CTR_MTR_EXP_INFRA_MP IMP ON IMP.CTR_KEY = UCM.UCM_CTR_KEY AND IMP.LVL_COD = UCM.UCM_GOL_NO
+			LEFT JOIN UWO_IST_RST UIR ON UIR.UIR_CTR_KEY = UCM.UCM_CTR_KEY
+		WHERE
+			UCM.UCM_BCY_COD=#bcy_cod# AND UCM.UCM_CTR_GBN =#ucm_ctr_gbn# AND UIR.UIR_SVC_COD=#service#
+		ORDER BY
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.' )), '.', '' ), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, 0, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM.UCM_1LV_COD, INSTR(UCM.UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.' ), ''))
+				ELSE ASCII(REPLACE(UCM.UCM_2LV_COD, CONCAT(UCM.UCM_1LV_COD, '.'), ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+				ELSE ASCII(REPLACE(UCM.UCM_3LV_COD, CONCAT(UCM.UCM_2LV_COD, '.'),''))
+				END ASC
+	</select>
+
+	<select id="getStatisticsInfraLaPart1" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			UCM_CTR_KEY, UCM_GOL_NO, UCM_1LV_COD, UCM_1LV_NAM, UCM_2LV_COD, UCM_2LV_NAM, UCM_3LV_COD
+			, UIR.UIR_ASW_ID, UIR.UIR_ASW_VAL
+		FROM UWO_CTR_MTR UCM
+			LEFT JOIN UWO_IST_RST UIR ON UIR.UIR_CTR_KEY = UCM.UCM_CTR_KEY AND UIR.UIR_SVC_COD=#service#
+		WHERE
+			UCM.UCM_BCY_COD=#bcy_cod# AND UCM.UCM_BCY_COD = UIR.UIR_BCY_COD AND UCM.UCM_CTR_GBN =#ucm_ctr_gbn#
+		ORDER BY
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.' )), '.', '' ), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.' ), ''))
+				ELSE ASCII(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.'), ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM_3LV_COD, CONCAT(UCM_2LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM_3LV_COD, CONCAT(UCM_2LV_COD, '.'),''))
+				ELSE ASCII(REPLACE(UCM_3LV_COD, CONCAT(UCM_2LV_COD, '.'),''))
+				END ASC
+	</select>
+
+	<select id="getStatisticsInfraLaPart2" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			UCM.UCM_BCY_COD, UMM.UMM_MAN_TLE,
+			UCM.UCM_1LV_COD, UCM.UCM_1LV_NAM, UCM.UCM_2LV_COD, UCM.UCM_2LV_NAM, UCM.UCM_3LV_COD,
+			UIR.UIR_ASW_VAL
+		FROM
+			UWO_CTR_MTR UCM
+				LEFT JOIN UWO_IST_RST UIR ON UIR.UIR_CTR_KEY=UCM.UCM_CTR_KEY AND UIR.UIR_SVC_COD=#service#
+				LEFT JOIN UWO_MCY_MTR UMM ON UMM.UMM_MAN_CYL=UCM.UCM_BCY_COD
+		WHERE
+			UIR.UIR_BCY_COD=UCM.UCM_BCY_COD AND UCM.UCM_CTR_GBN=#ucm_ctr_gbn#
+		<iterate property="list_bcy" open="AND (" conjunction="OR" close=")">
+			UCM.UCM_BCY_COD=#list_bcy[]#
+		</iterate>
+		ORDER BY
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.' )), '.', '' ), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.' ), ''))
+				ELSE ASCII(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.'), ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM_3LV_COD, CONCAT(UCM_2LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM_3LV_COD, CONCAT(UCM_2LV_COD, '.'),''))
+				ELSE ASCII(REPLACE(UCM_3LV_COD, CONCAT(UCM_2LV_COD, '.'),''))
+				END,
+			UCM.UCM_BCY_COD
+	</select>
+
+	<select id="getStatisticsMsitPart1_1" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			UCM.UCM_CTR_KEY, UCM.UCM_GOL_NO, UCM.UCM_2LV_COD, UCM.UCM_2LV_NAM, MAX(MSIT.POINT) MAX_POINT, MAX(UIR.UIR_ASW_VAL) UIR_ASW_VAL
+		FROM
+			UWO_CTR_MTR UCM
+			LEFT JOIN UWO_CTR_MTR_EXP_MSIT_QST MSIT
+				ON MSIT.CTR_KEY = UCM.UCM_CTR_KEY AND MSIT.POINT != 'N/A'
+			LEFT JOIN UWO_IST_RST UIR
+				ON UIR.UIR_CTR_KEY = UCM.UCM_CTR_KEY
+		WHERE
+			UCM.UCM_BCY_COD=#bcy_cod# AND UCM.UCM_CTR_GBN =#ucm_ctr_gbn# AND UIR.UIR_SVC_COD=#service#
+		GROUP BY
+			UCM.UCM_CTR_KEY, UCM.UCM_GOL_NO, UCM_1LV_COD, UCM.UCM_2LV_COD, UCM.UCM_2LV_NAM, UCM.UCM_3LV_COD
+		ORDER BY
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.' )), '.', '' ), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.' ), ''))
+				ELSE ASCII(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.'), ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM_3LV_COD, CONCAT(UCM_2LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM_3LV_COD, CONCAT(UCM_2LV_COD, '.'),''))
+				ELSE ASCII(REPLACE(UCM_3LV_COD, CONCAT(UCM_2LV_COD, '.'),''))
+				END ASC
+	</select>
+
+	<select id="getStatisticsMsitPart1_2" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			UCM.UCM_CTR_KEY, UCM.UCM_2LV_COD, UCM.UCM_2LV_NAM, UCM.UCM_BCY_COD, UMM.UMM_MAN_TLE, MAX(MSIT.POINT) MAX_POINT, MAX(UIR.UIR_ASW_VAL) UIR_ASW_VAL
+		FROM
+			UWO_CTR_MTR UCM
+			LEFT JOIN UWO_CTR_MTR_EXP_MSIT_QST MSIT
+				ON MSIT.CTR_KEY = UCM.UCM_CTR_KEY AND MSIT.POINT != 'N/A'
+			LEFT JOIN UWO_IST_RST UIR
+				ON UIR.UIR_CTR_KEY = UCM.UCM_CTR_KEY
+			LEFT JOIN UWO_MCY_MTR UMM
+				ON UMM.UMM_MAN_CYL = UCM.UCM_BCY_COD
+		WHERE
+			UCM.UCM_CTR_GBN =#ucm_ctr_gbn# AND UIR.UIR_SVC_COD=#service#
+		<iterate property="list_bcy" open="AND UCM.UCM_BCY_COD IN (" conjunction=", " close=")">
+			#list_bcy[]#
+		</iterate>
+		GROUP BY
+			UCM_1LV_COD, UCM.UCM_2LV_COD, UCM.UCM_2LV_NAM, UCM.UCM_3LV_COD, UCM.UCM_CTR_KEY, UCM.UCM_BCY_COD, UMM.UMM_MAN_TLE
+		ORDER BY
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.' )), '.', '' ), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.' ), ''))
+				ELSE ASCII(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.'), ''))
+				END,
+			UCM_BCY_COD ASC
+	</select>
+
+	<select id="getStatisticsMsitPart2" parameterClass="map" resultClass="egovMap" remapResults="true">
+		SELECT
+			UCM.UCM_CTR_KEY, UCM.UCM_2LV_COD, UCM.UCM_2LV_NAM, UCM.UCM_3LV_COD, UCM.UCM_3LV_NAM
+			, MSIT1.QST_CNT, MSIT2.POINT, MSIT3.NUM, UIR.UIR_ASW_VAL
+		FROM
+			UWO_CTR_MTR UCM
+			LEFT JOIN
+				(
+					SELECT UIR_CTR_KEY, MAX(UIR_ASW_VAL) UIR_ASW_VAL, UIR_SVC_COD
+					FROM UWO_IST_RST
+					GROUP BY UIR_CTR_KEY, UIR_SVC_COD
+				) UIR
+				ON UIR.UIR_CTR_KEY = UCM.UCM_CTR_KEY
+			LEFT JOIN UWO_IST_RST UIR2
+				ON UIR2.UIR_CTR_KEY = UIR.UIR_CTR_KEY AND UIR2.UIR_SVC_COD = UIR.UIR_SVC_COD AND UIR2.UIR_ASW_VAL = UIR.UIR_ASW_VAL
+			LEFT JOIN
+				(
+					SELECT CTR_KEY, COUNT(*) QST_CNT
+					FROM UWO_CTR_MTR_EXP_MSIT_QST
+					GROUP BY CTR_KEY
+				) MSIT1
+				ON MSIT1.CTR_KEY = UCM.UCM_CTR_KEY
+			LEFT JOIN
+				(
+					SELECT CTR_KEY, MAX( POINT ) POINT
+					FROM UWO_CTR_MTR_EXP_MSIT_QST
+					WHERE TO_CHAR(POINT) != 'N/A'
+					GROUP BY CTR_KEY
+				) MSIT2
+				ON MSIT2.CTR_KEY = UCM.UCM_CTR_KEY
+			LEFT JOIN
+				(
+					SELECT MQ_ID, SEQ NUM
+					FROM UWO_CTR_MTR_EXP_MSIT_QST
+				) MSIT3
+				ON MSIT3.MQ_ID = UIR2.UIR_ASW_ID
+		WHERE
+			UCM.UCM_BCY_COD=#bcy_cod# AND UCM.UCM_CTR_GBN =#ucm_ctr_gbn# AND UIR.UIR_SVC_COD=#service#
+		ORDER BY
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.' )), '.', '' ), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM_1LV_COD, 0, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				ELSE ASCII(REPLACE(SUBSTR(UCM_1LV_COD, INSTR(UCM_1LV_COD, '.')), '.', ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.' ), ''))
+				ELSE ASCII(REPLACE(UCM_2LV_COD, CONCAT(UCM_1LV_COD, '.'), ''))
+				END,
+			CASE WHEN REGEXP_INSTR(REPLACE(UCM_3LV_COD, CONCAT(UCM_2LV_COD, '.'),''), '[^0-9]') = 0
+				THEN TO_NUMBER(REPLACE(UCM_3LV_COD, CONCAT(UCM_2LV_COD, '.'),''))
+				ELSE ASCII(REPLACE(UCM_3LV_COD, CONCAT(UCM_2LV_COD, '.'),''))
+				END ASC
+	</select>
+</sqlMap>

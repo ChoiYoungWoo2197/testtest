@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<rule name="ISMS">
+  <ruleStyle id="style01" startRow="6" startCell="2" finishCell="8">
+    <cell order="2" type="String">
+      <regex>[\d]+</regex>
+      <title>No</title>
+    </cell>
+    <cell order="3" type="String">
+      <title>관리과정</title>
+    </cell>
+    <cell order="4" >
+      <regex>[\d]+\.[\d]+</regex>
+      <title>No</title>
+    </cell>
+    <cell order="5" >
+      <title>세부관리과정</title>
+    </cell>
+    <cell order="6" >
+      <title>관리과정상세내용</title>
+    </cell>
+    <cell order="7">
+      <title>점검항목</title>
+    </cell>
+    <cell order="8">
+      <title>설명</title>
+    </cell>
+  </ruleStyle>
+  <ruleStyle id="style02" startRow="6" startCell="2" finishCell="8">
+    <cell order="2" type="String">
+      <regex>[\d]+\.[\d]+</regex>
+      <title>No</title>
+    </cell>
+    <cell order="3" type="String">
+      <title>통제분야</title>
+    </cell>
+    <cell order="4" >
+      <regex>[\d]+\.[\d]+\.[\d]+</regex>
+      <title>No</title>
+    </cell>
+    <cell order="5" >
+      <title>통제항목</title>
+    </cell>
+    <cell order="6" >
+      <title>통제목적</title>
+    </cell>
+    <cell order="7">
+      <title>점검항목</title>
+    </cell>
+    <cell order="8">
+      <title>설명</title>
+    </cell>
+  </ruleStyle>
+
+  <sheets>
+    <sheet ruleStyle="style01" />
+    <sheet ruleStyle="style02" />
+    <sheet ruleStyle="style02" />
+    <sheet ruleStyle="style02" />
+    <sheet ruleStyle="style02" />
+    <sheet ruleStyle="style02" />
+    <sheet ruleStyle="style02" />
+    <sheet ruleStyle="style02" />
+    <sheet ruleStyle="style02" />
+    <sheet ruleStyle="style02" />
+    <sheet ruleStyle="style02" />
+    <sheet ruleStyle="style02" />
+    <sheet ruleStyle="style02" />
+    <sheet ruleStyle="style02" />
+  </sheets>
+</rule>

@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="fmBasic">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="com.uwo.isms.domain.SearchVO"/>
+	<typeAlias  alias="boardVO" type="com.uwo.isms.domain.BoardVO"/>
+	<typeAlias  alias="userVO" type="com.uwo.isms.domain.UserVO"/>
+	
+	<select id="QR_BASIC001_A" resultClass="egovMap" parameterClass="searchVO">
+	SELECT  * 
+	FROM  (
+		SELECT ROWNUM RNUM, ALL_LIST.* 
+		FROM  (
+			SELECT 
+			UBM_BRD_KEY,
+			(SELECT UOM_DIV_NAM FROM UWO_ORG_MTR WHERE UOM_DIV_COD = UBM_DIV_COD AND ROWNUM =1) AS UOM_DIV_NAM,
+			UBM_BRD_TLE,
+			TO_CHAR(UBM_RGT_MDH,'YYYY-MM-DD') AS UBM_RGT_MDH,
+			(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID				  
+		FROM UWO_BRD_MTR 
+		WHERE 1=1
+		AND UBM_BRD_GBN = '3'
+		AND UBM_DEL_YN = 'N'
+		<isNotEmpty prepend="AND" property="division">
+			UBM_DIV_COD = #division#
+		</isNotEmpty>		
+		<isEqual prepend="AND" property="searchCondition" compareValue="0">
+			<![CDATA[(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="1">
+			<![CDATA[UBM_BRD_TLE LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="2">
+			<![CDATA[UBM_BRD_CTS LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		ORDER BY UBM_BRD_KEY DESC
+			) ALL_LIST
+				    )
+			<![CDATA[
+			 WHERE  RNUM  > #firstIndex#
+			   AND  RNUM <= #firstIndex# + #recordCountPerPage#
+			]]>		
+	</select>
+	<select id="QR_BASIC001_B" parameterClass="searchVO" resultClass="int">
+		SELECT count(*) totcnt				  
+		FROM UWO_BRD_MTR 
+		WHERE 1=1
+		AND UBM_DEL_YN = 'N'
+		AND UBM_BRD_GBN = '3'
+		<isNotEmpty prepend="AND" property="division">
+			UBM_DIV_COD = #division#
+		</isNotEmpty>		
+		<isEqual prepend="AND" property="searchCondition" compareValue="0">
+			<![CDATA[(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="1">
+			<![CDATA[UBM_BRD_TLE LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="2">
+			<![CDATA[UBM_BRD_CTS LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+	</select>
+		
+	<select id="QR_BASIC001_C" parameterClass="boardVO" resultClass="boardVO">
+		SELECT UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS, UBM_NTC_YN, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH, UBM_RGT_ID, to_char(UBM_RGT_MDH,'yyyy-mm-dd') as UBM_RGT_MDH
+		FROM UWO_BRD_MTR
+		WHERE UBM_BRD_KEY=#ubm_brd_key#
+		AND UBM_BRD_GBN = '3'
+	
+	</select>
+	
+	<update id="QR_BASIC001_D" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_VST_CNT = (SELECT UBM_VST_CNT+1 FROM UWO_BRD_MTR  WHERE UBM_BRD_KEY = #ubm_brd_key#)
+		WHERE UBM_BRD_GBN = '3'
+		AND UBM_BRD_KEY = #ubm_brd_key#
+	</update>
+	
+	<select id="QR_BASIC002_A" resultClass="egovMap" parameterClass="searchVO">
+	SELECT  * 
+	FROM  (
+		SELECT ROWNUM RNUM, ALL_LIST.* 
+		FROM  (
+			SELECT 
+			UBM_BRD_KEY,
+			(SELECT UOM_DIV_NAM FROM UWO_ORG_MTR WHERE UOM_DIV_COD = UBM_DIV_COD AND ROWNUM =1) AS UOM_DIV_NAM,
+			UBM_BRD_TLE,
+			TO_CHAR(UBM_RGT_MDH,'YYYY-MM-DD') AS UBM_RGT_MDH,
+			(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID				  
+		FROM UWO_BRD_MTR 
+		WHERE 1=1
+		AND UBM_BRD_GBN = '4'
+		AND UBM_DEL_YN = 'N'
+		<isNotEmpty prepend="AND" property="division">
+			UBM_DIV_COD = #division#
+		</isNotEmpty>		
+		<isEqual prepend="AND" property="searchCondition" compareValue="0">
+			<![CDATA[(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="1">
+			<![CDATA[UBM_BRD_TLE LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		ORDER BY UBM_BRD_KEY DESC
+			) ALL_LIST
+				    )
+			<![CDATA[
+			 WHERE  RNUM  > #firstIndex#
+			   AND  RNUM <= #firstIndex# + #recordCountPerPage#
+			]]>		
+	</select>
+	<select id="QR_BASIC002_B" parameterClass="searchVO" resultClass="int">
+		SELECT count(*) totcnt				  
+		FROM UWO_BRD_MTR 
+		WHERE 1=1
+		AND UBM_DEL_YN = 'N'
+		AND UBM_BRD_GBN = '4'
+		<isNotEmpty prepend="AND" property="division">
+			UBM_DIV_COD = #division#
+		</isNotEmpty>		
+		<isEqual prepend="AND" property="searchCondition" compareValue="0">
+			<![CDATA[(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="1">
+			<![CDATA[UBM_BRD_TLE LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+	</select>
+		
+	<select id="QR_BASIC002_C" parameterClass="boardVO" resultClass="boardVO">
+		SELECT UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS, UBM_NTC_YN, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH, UBM_RGT_ID, UBM_RGT_ID, to_char(UBM_RGT_MDH,'yyyy-mm-dd') as UBM_RGT_MDH
+		FROM UWO_BRD_MTR
+		WHERE UBM_BRD_KEY=#ubm_brd_key#
+		AND UBM_BRD_GBN = '4'
+	
+	</select>
+	
+	<update id="QR_BASIC002_D" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_VST_CNT = (SELECT UBM_VST_CNT+1 FROM UWO_BRD_MTR  WHERE UBM_BRD_KEY = #ubm_brd_key#)
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '4'
+	</update>
+	
+	<select id="QR_BASIC003_A" parameterClass="searchVO" resultClass="egovMap">
+	<![CDATA[	SELECT ONE_LEV_COD,
+		       ONE_LEV_NAM,
+		       CTR_COD,
+		       CNT_FIELD,
+		       CNT_REQ,
+		       NVL(FIX_TERM, 0) FIX_TERM_CNT,
+		       NVL(GEN_TERM, 0) GEN_TERM_CNT
+		  FROM (SELECT A.UCM_1LV_COD ONE_LEV_COD,
+		               A.UCM_1LV_NAM ONE_LEV_NAM,
+		               A.UCM_CTR_COD CTR_COD,
+		               COUNT(B.UCM_2LV_COD) CNT_REQ
+		          FROM UWO_CTR_MTR A, UWO_CTR_MTR B
+		         WHERE A.UCM_CTR_KEY = B.UCM_CTR_KEY
+		           AND A.UCM_CTR_GBN = #standard#
+		           AND A.UCM_BCY_COD = #manCyl#
+		           AND A.UCM_DIV_COD = #service#
+		         GROUP BY A.UCM_1LV_COD, A.UCM_1LV_NAM, A.UCM_CTR_COD) A,
+		       (SELECT UCM_1LV_COD, COUNT(UCM_1LV_COD) CNT_FIELD
+		          FROM (SELECT DISTINCT UCM_1LV_COD, UCM_2LV_COD
+		                  FROM UWO_CTR_MTR
+		                 WHERE UCM_BCY_COD = #manCyl#
+		                   AND UCM_CTR_GBN = #standard#
+		                   AND UCM_DIV_COD = #service#)
+		         GROUP BY UCM_1LV_COD) B,
+		       (SELECT UCM_1LV_COD,
+		               UCM_1LV_NAM,
+		               SUM(CASE
+		                     WHEN SUBSTR(UTD_TRM_GBN, 1, 1) <> 'N' THEN
+		                      '1'
+		                     ELSE
+		                      '0'
+		                   END) FIX_TERM,
+		               SUM(CASE
+		                     WHEN SUBSTR(UTD_TRM_GBN, 1, 1) = 'N' THEN
+		                      '1'
+		                     ELSE
+		                      '0'
+		                   END) GEN_TERM
+		          FROM UWO_CTR_MTR, UWO_TRC_DOC, UWO_TRC_CTR
+		         WHERE UCM_CTR_KEY = UTC_CTR_KEY
+		           AND UTC_TRC_KEY = UTD_TRC_KEY		           
+		           AND UCM_CTR_GBN = #standard#
+		           AND UCM_BCY_COD = #manCyl#
+		           AND UCM_DIV_COD = #service#
+		         GROUP BY UCM_1LV_COD, UCM_1LV_NAM) C
+		 WHERE A.ONE_LEV_COD = B.UCM_1LV_COD
+		   AND A.ONE_LEV_COD = C.UCM_1LV_COD(+)
+		 ORDER BY TO_NUMBER(CTR_COD) , ONE_LEV_COD]]>
+	</select>
+	
+	<select id="QR_BASIC003_B" resultClass="egovMap" parameterClass="searchVO">
+		<!-- SELECT UCM_1LV_COD,
+		       UCM_1LV_NAM,
+		       UCM_2LV_COD,
+		       UCM_2LV_NAM,
+		       UCM_3LV_COD,
+		       UCM_3LV_NAM,
+		       UTD_DOC_NAM,
+		       UCM_CTR_KEY,
+		       DECODE(UTD_TRM_GBN, 'N', '비주기','','', '주기') UTD_TRM_GBN,
+		       F_GET_USR_NAME(UTM_WRK_ID) AS USR_NM
+		  FROM UWO_CTR_MTR, UWO_TRC_DOC, UWO_TRC_CTR, UWO_TRC_MAP
+		 WHERE UCM_CTR_KEY = UTC_CTR_KEY(+)
+		   AND UTC_TRC_KEY = UTD_TRC_KEY(+)
+		   AND UCM_CTR_GBN = #standard#
+		   AND UCM_BCY_COD = #manCyl#
+		   AND UCM_DIV_COD = #division#
+		   AND UCM_1LV_COD = #searchKeyword#
+		   AND UTD_TRC_KEY = UTM_TRC_KEY(+)
+		 ORDER BY UCM_1LV_COD,
+		          UCM_2LV_COD,
+          		  UCM_3LV_COD  -->
+		SELECT UCM_1LV_COD, UCM_1LV_NAM, UCM_2LV_COD, UCM_2LV_NAM, UCM_3LV_COD, UCM_3LV_NAM, UTD_DOC_NAM, UCM_CTR_KEY, 
+		DECODE(UTD_TRM_GBN, 'N', '비주기','','', '주기') UTD_TRM_GBN , 
+		(SELECT LISTAGG(F_GET_USR_NAME(UTM_WRK_ID), ',') WITHIN GROUP(ORDER BY UTC_CTR_KEY) WORKER_LIST 
+		  FROM UWO_TRC_MAP ,UWO_TRC_CTR, UWO_CTR_MTR B
+		  WHERE UTM_TRC_KEY = UTC_TRC_KEY(+)
+		  AND UTC_CTR_KEY = B.UCM_CTR_KEY(+)
+		  AND UTM_DEL_YN = 'N' 
+		  AND B.UCM_CTR_GBN = #standard# 
+		AND B.UCM_BCY_COD = #manCyl# 
+		AND UCM_DIV_COD = #service#
+		AND UCM_1LV_COD = #searchKeyword#
+		AND A.UCM_CTR_KEY = B.UCM_CTR_KEY
+		  GROUP BY UTC_CTR_KEY) as USR_NM
+		FROM UWO_CTR_MTR A, UWO_TRC_DOC, UWO_TRC_CTR
+		WHERE A.UCM_CTR_KEY = UTC_CTR_KEY(+) 
+		AND UTC_TRC_KEY = UTD_TRC_KEY(+) 
+		AND A.UCM_CTR_GBN = #standard#
+		AND A.UCM_BCY_COD = #manCyl#
+		AND A.UCM_DIV_COD = #service# 
+		AND A.UCM_1LV_COD = #searchKeyword#
+		ORDER BY A.UCM_1LV_COD, A.UCM_2LV_COD, A.UCM_3LV_COD          		  
+          		   
+	</select>
+	<select id="QR_BASIC003_C" resultClass="egovMap" parameterClass="searchVO">
+		SELECT UCM_2LV_COD, COUNT(UCM_2LV_COD) AS UCM_2LV_CNT
+		  FROM UWO_CTR_MTR
+		 WHERE UCM_CTR_GBN = #standard#
+		   AND UCM_BCY_COD = #manCyl#
+		   AND UCM_DIV_COD = #service#
+		   AND UCM_1LV_COD = #searchKeyword#
+		 GROUP BY UCM_2LV_COD
+	<!-- 	 SELECT UCM_2LV_COD, COUNT(UCM_2LV_COD) AS UCM_2LV_CNT 
+		FROM UWO_CTR_MTR , UWO_TRC_CTR , UWO_TRC_MAP
+		WHERE UCM_CTR_GBN = #standard#
+		   AND UCM_BCY_COD = #manCyl#
+		   AND UCM_DIV_COD = #division#
+		   AND UCM_1LV_COD = #searchKeyword#
+		 AND UCM_CTR_KEY = UTC_CTR_KEY(+)
+		 AND UTC_TRC_KEY = UTM_TRC_KEY(+)
+		GROUP BY UCM_2LV_COD  -->
+		 	
+	</select>
+	
+	<select id="QR_BASIC003_D" resultClass="egovMap" parameterClass="Map">
+		SELECT   UCM_CTR_KEY
+			   , UCM_CTR_GBN
+			   , UCM_GOL_NO
+		       , UCM_1LV_COD
+		       , UCM_1LV_NAM
+		       , UCM_2LV_COD
+		       , UCM_2LV_NAM
+		       , UCM_2LV_DTL
+		       , UCM_3LV_COD
+		       , UCM_3LV_NAM
+		       , UCM_3LV_DTL
+		       , UCM_CTR_KEY
+		       , UCM_ETC
+		  FROM UWO_CTR_MTR
+		  WHERE UCM_CTR_KEY = #ucmCtrKey#
+		  AND 	UCM_DIV_COD = #division#
+	</select>
+	<select id="QR_BASIC003_E" resultClass="egovMap">
+		SELECT UCM_CTR_GBN FROM UWO_CTR_MTR GROUP BY UCM_CTR_GBN
+	</select>
+</sqlMap>

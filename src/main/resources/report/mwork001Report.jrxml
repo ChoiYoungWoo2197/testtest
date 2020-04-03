@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="mwork001Report" language="groovy" pageWidth="842" pageHeight="595" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="7092382a-a9a2-438a-8264-52fbf04b17e2">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<style name="table">
+		<box>
+			<pen lineWidth="1.0" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<field name="sYear" class="java.lang.String"/>
+	<field name="sMonth" class="java.lang.String"/>
+	<field name="day1" class="java.lang.String"/>
+	<field name="day2" class="java.lang.String"/>
+	<field name="day3" class="java.lang.String"/>
+	<field name="day4" class="java.lang.String"/>
+	<field name="day5" class="java.lang.String"/>
+	<field name="text1" class="java.lang.String"/>
+	<field name="text2" class="java.lang.String"/>
+	<field name="text3" class="java.lang.String"/>
+	<field name="text4" class="java.lang.String"/>
+	<field name="text5" class="java.lang.String"/>
+	<field name="text1_1" class="java.lang.String"/>
+	<field name="text2_1" class="java.lang.String"/>
+	<field name="text3_1" class="java.lang.String"/>
+	<field name="text4_1" class="java.lang.String"/>
+	<field name="text5_1" class="java.lang.String"/>
+	<field name="work1" class="java.lang.String"/>
+	<field name="work2" class="java.lang.String"/>
+	<field name="work3" class="java.lang.String"/>
+	<field name="work4" class="java.lang.String"/>
+	<field name="work5" class="java.lang.String"/>
+	<field name="work1_1" class="java.lang.String"/>
+	<field name="work2_1" class="java.lang.String"/>
+	<field name="work3_1" class="java.lang.String"/>
+	<field name="work4_1" class="java.lang.String"/>
+	<field name="work5_1" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="96" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="b74249f7-7311-4c8f-bba2-d22e05c82cd4" x="242" y="0" width="313" height="32"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="20" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[정보보호일정표]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="83ad0111-a6d6-4a19-b97f-c7432be15c8c" x="330" y="32" width="56" height="32"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="20" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sYear}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="a29431aa-f4af-4ed7-8783-6ced0964ac6d" x="406" y="32" width="32" height="32"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="20" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sMonth}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="a9f85eb7-b161-427f-a69f-d465ec907261" x="386" y="32" width="20" height="32"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="20" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[년]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="da7aa489-1c78-4aec-9747-808b204e6f0c" x="438" y="32" width="20" height="32"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="20" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[월]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="6ff86dec-c186-4335-aced-2ab664881fe7" style="table_TH" x="610" y="76" width="140" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[금]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="53ba532a-9bbc-4c0f-b4b6-44f1e2c7147b" style="table_TH" x="50" y="76" width="140" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[월]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="46bdd2e4-a114-4f7a-9b09-983b00cf73ca" style="table_TH" x="190" y="76" width="140" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[화]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="046cff2a-8721-4d68-a915-76a0b105d37c" style="table_TH" x="330" y="76" width="140" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[수]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="a1bb3d59-e2bd-47a4-803f-8079ea9988a4" style="table_TH" x="470" y="76" width="140" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[목]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="73" splitType="Stretch">
+			<rectangle>
+				<reportElement uuid="a790d0a9-e8a5-4c49-8b8c-c57a14e1bcb0" x="50" y="0" width="140" height="73"/>
+				<graphicElement>
+					<pen lineWidth="0.5"/>
+				</graphicElement>
+			</rectangle>
+			<rectangle>
+				<reportElement uuid="c5426f35-10af-4d90-b434-71016c37338e" x="190" y="0" width="140" height="73"/>
+				<graphicElement>
+					<pen lineWidth="0.5"/>
+				</graphicElement>
+			</rectangle>
+			<rectangle>
+				<reportElement uuid="74af91ef-e4ff-4915-bcc7-19d09d499720" x="330" y="0" width="140" height="73"/>
+				<graphicElement>
+					<pen lineWidth="0.5"/>
+				</graphicElement>
+			</rectangle>
+			<rectangle>
+				<reportElement uuid="8c7ed34b-b96c-4106-a2b8-0c91e02a0ec6" x="470" y="0" width="140" height="73"/>
+				<graphicElement>
+					<pen lineWidth="0.5"/>
+				</graphicElement>
+			</rectangle>
+			<rectangle>
+				<reportElement uuid="b6050c16-8816-4949-916a-47f6273756e5" x="610" y="0" width="140" height="73"/>
+				<graphicElement>
+					<pen lineWidth="0.5"/>
+				</graphicElement>
+			</rectangle>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="6dc86d99-edb6-4bdf-9f7c-a37f2f2ece7c" x="50" y="0" width="50" height="20" forecolor="#9999FF"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="10" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph firstLineIndent="3" leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{day1}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="c822f872-126c-4b63-8239-adcac9b7f696" x="190" y="0" width="50" height="20" forecolor="#9999FF"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="10" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph firstLineIndent="3" leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{day2}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="e8ad1a2c-9100-47dd-b805-789300f7f5d6" x="330" y="0" width="50" height="20" forecolor="#9999FF"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="10" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph firstLineIndent="3" leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{day3}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="10ec58c3-526a-42d7-b74a-b9cc262dbf59" x="470" y="0" width="50" height="20" forecolor="#9999FF"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="10" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph firstLineIndent="3" leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{day4}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="372f958b-c4a4-427c-8080-19c26eee6e20" x="610" y="0" width="50" height="20" forecolor="#9999FF"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" size="10" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph firstLineIndent="3" leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{day5}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="cb640b9f-877a-487b-8c50-13ad5d60d07b" x="50" y="19" width="140" height="27"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text1}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="5729ca8c-5ad8-4b9a-acae-f0bf38ee7ecf" x="50" y="46" width="140" height="27"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text1_1}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="5624c109-a9b0-484d-822c-49a666fe4b1f" x="190" y="19" width="140" height="27"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text2}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="5108530a-9f45-4574-a6ff-6c5e7aeb4e28" x="190" y="46" width="140" height="27"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text2_1}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="6491c1df-c54b-4b6a-9356-8ec9a57e890e" x="330" y="19" width="140" height="27"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text3}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="047ac8bb-fb00-42f6-8823-11ae9d492860" x="330" y="46" width="140" height="27"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text3_1}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="511ac129-ee97-47b4-b641-3a1410344421" x="470" y="19" width="140" height="27"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text4}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="6d29b075-81eb-4a1c-b642-69471c5bb026" x="470" y="46" width="140" height="27"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text4_1}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="5ca72300-43d5-4b88-bd49-e721545316d3" x="610" y="19" width="140" height="27"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text5}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="cf8fe5e9-b177-4e21-b458-0d86cb41542a" x="610" y="46" width="140" height="27"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{text5_1}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="34a4300e-1678-43d5-8863-609222ca68cd" x="165" y="0" width="25" height="20" forecolor="#FF6600"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph firstLineIndent="3" leftIndent="3" rightIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{work1}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="0e55f68a-35b0-43cd-85ee-d145a7a5269a" x="445" y="0" width="25" height="20" forecolor="#FF6600"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph firstLineIndent="3" leftIndent="3" rightIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{work3}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="1a9cc40b-a005-4a08-a9a9-7fbf6e859fa7" x="725" y="0" width="25" height="20" forecolor="#FF6600"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph firstLineIndent="3" leftIndent="3" rightIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{work5}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="d167ab8f-eecb-4af7-87b9-a99a6321255d" x="305" y="0" width="25" height="20" forecolor="#FF6600"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph firstLineIndent="3" leftIndent="3" rightIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{work2}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="74eb711f-d495-484d-aea5-fb1fada13f98" x="585" y="0" width="25" height="20" forecolor="#FF6600"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph firstLineIndent="3" leftIndent="3" rightIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{work4}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="818a133c-7be0-4770-acd1-e4b3729c34ea" x="130" y="0" width="35" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph firstLineIndent="3" rightIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{work1_1}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="12c6797b-c0af-4d21-99be-f279d1b45457" x="270" y="0" width="35" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph firstLineIndent="3" rightIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{work2_1}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="002bf388-997d-4d9a-969f-a011585565a9" x="410" y="0" width="35" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph firstLineIndent="3" rightIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{work3_1}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="a1721ea0-d55e-4698-971f-cb0482c2359a" x="550" y="0" width="35" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph firstLineIndent="3" rightIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{work4_1}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="52a68583-afa0-4b71-b15d-be3bc727058f" x="690" y="0" width="35" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph firstLineIndent="3" rightIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{work5_1}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

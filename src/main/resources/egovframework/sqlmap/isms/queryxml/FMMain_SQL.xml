@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="fmMain">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="boardVO" type="com.uwo.isms.domain.BoardVO"/>
+
+	<select id="QR_MAIN_A" resultClass="egovMap" parameterClass="Map">
+
+		SELECT *
+  		FROM (SELECT ROWNUM RNUM, ALL_LIST.*
+        	  FROM (SELECT UBM_BRD_KEY, UBM_BRD_TLE , TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH,	UBM_BRD_GBN
+            	      FROM UWO_BRD_MTR
+                	 WHERE 1 = 1
+                	  AND UBM_NTC_YN='Y'
+					  AND UBM_DEL_YN = 'N'
+					  AND UBM_SEK_ATH <![CDATA[ > ]]> #auth#
+					  <isEqual property="code" compareValue="2">
+					  AND UBM_BRD_GBN = '2'
+					  </isEqual>
+					  <isEqual property="code" compareValue="1">
+					<![CDATA[  AND UBM_BRD_GBN <> '2' ]]>
+					  </isEqual>
+     	            ORDER BY UBM_BRD_KEY DESC) ALL_LIST)
+ 	<![CDATA[	WHERE RNUM < 6	]]>
+	</select>
+
+	<select id="QR_MAIN_B" parameterClass="boardVO" resultClass="boardVO">
+		SELECT UBM_BRD_KEY,
+		       UBM_BRD_GBN,
+		       UBM_VST_CNT,
+		       UBM_BRD_TLE,
+		       UBM_BRD_CTS,
+		       UBM_NTC_YN,
+		       UBM_DEL_YN,
+		       UBM_DIV_COD,
+		       UBM_SEK_ATH,
+		       UBM_DWN_ATH,
+		       UBM_RGT_ID,
+		       UBM_RGT_MDH
+		  FROM UWO_BRD_MTR
+		 WHERE UBM_BRD_KEY = #ubm_brd_key#
+		   AND UBM_BRD_GBN = #ubm_brd_gbn#
+	</select>
+
+	<select id="QR_MAIN_C" parameterClass="Map" resultClass="egovMap">
+		SELECT UTW_WRK_KEY,UTW_TRC_KEY, UTW_STR_DAT, UTW_END_DAT, UTD_DOC_NAM
+		  FROM (SELECT UTW_WRK_KEY,UTW_TRC_KEY,
+		               TO_CHAR(UTW_STR_DAT, 'YY.MM.DD') AS UTW_STR_DAT,
+       				   TO_CHAR(UTW_END_DAT, 'YY.MM.DD') AS UTW_END_DAT,
+		               UTD_DOC_NAM
+		          FROM UWO_TRC_WRK, UWO_TRC_DOC
+		         WHERE UTW_WRK_STA = '10'
+		         <isEqual property="auth" compareValue="P">
+		           AND UTW_WRK_ID = #key#
+		           </isEqual>
+		           <isEqual property="auth" compareValue="V">
+		           AND UTW_DEP_COD = #dept#
+		           </isEqual>
+		           AND UTW_PRD_COD = #manCyl#
+		           AND UTW_TRC_KEY = UTD_TRC_KEY
+		           AND UTW_WRK_KEY NOT IN
+		               (SELECT UAM_WRK_KEY
+		                  FROM UWO_TRC_WRK, UWO_APP_MTR
+		                 WHERE UTW_WRK_KEY = UAM_WRK_KEY
+		                 <isEqual property="auth" compareValue="P">
+		                   AND UTW_WRK_ID = #key#
+		                   </isEqual>
+		                   <isEqual property="auth" compareValue="V">
+		           AND UTW_DEP_COD = #dept#
+		           </isEqual>
+		                   AND UTW_PRD_COD = #manCyl#)
+		        UNION ALL
+		        SELECT UTW_WRK_KEY,UTW_TRC_KEY,
+		               TO_CHAR(UTW_STR_DAT, 'YY.MM.DD') AS UTW_STR_DAT,
+       				   TO_CHAR(UTW_END_DAT, 'YY.MM.DD') AS UTW_END_DAT,
+		               UTD_DOC_NAM
+		          FROM UWO_TRC_WRK, UWO_APP_MTR, UWO_TRC_DOC
+		         WHERE UTW_WRK_KEY = UAM_WRK_KEY
+		           AND UAM_STA_COD IN ('12', '22')
+		           AND UTW_TRC_KEY = UTD_TRC_KEY
+		           <isEqual property="auth" compareValue="P">
+		           AND UTW_WRK_ID = #key#
+		           </isEqual>
+		           <isEqual property="auth" compareValue="V">
+		           AND UTW_DEP_COD = #dept#
+		           </isEqual>
+		           AND UTW_PRD_COD = #manCyl#)
+		 ORDER BY 1
+	</select>
+
+	<select id="QR_MAIN_D" parameterClass="Map" resultClass="egovMap">
+		<!-- SELECT UTW_WRK_KEY,UTW_TRC_KEY, UTW_STR_DAT, UTW_END_DAT, UTD_DOC_NAM
+		  FROM (SELECT UTW_WRK_KEY,UTW_TRC_KEY,
+		               TO_CHAR(UTW_STR_DAT, 'YY.MM.DD') AS UTW_STR_DAT,
+       				   TO_CHAR(UTW_END_DAT, 'YY.MM.DD') AS UTW_END_DAT,
+		               UTD_DOC_NAM
+		          FROM UWO_TRC_WRK, UWO_TRC_DOC
+		         WHERE UTW_WRK_STA = '10'
+		           AND UTW_AGN_ID = #key#
+		           AND UTW_PRD_COD = #manCyl#
+		           AND UTW_TRC_KEY = UTD_TRC_KEY
+		           AND UTW_WRK_KEY NOT IN
+		               (SELECT UAM_WRK_KEY
+		                  FROM UWO_TRC_WRK, UWO_APP_MTR
+		                 WHERE UTW_WRK_KEY = UAM_WRK_KEY
+		                   AND UTW_AGN_ID = #key#
+		                   AND UTW_PRD_COD = #manCyl#)
+		        UNION ALL
+		        SELECT UTW_WRK_KEY,UTW_TRC_KEY,
+		               TO_CHAR(UTW_STR_DAT, 'YY.MM.DD') AS UTW_STR_DAT,
+       				   TO_CHAR(UTW_END_DAT, 'YY.MM.DD') AS UTW_END_DAT,
+		               UTD_DOC_NAM
+		          FROM UWO_TRC_WRK, UWO_APP_MTR, UWO_TRC_DOC
+		         WHERE UTW_WRK_KEY = UAM_WRK_KEY
+		           AND UAM_STA_COD IN ('12', '22')
+		           AND UTW_TRC_KEY = UTD_TRC_KEY
+		           AND UTW_AGN_ID = #key#
+		           AND UTW_PRD_COD = #manCyl#)
+		 ORDER BY 1  -->
+		 SELECT UTW_WRK_KEY,UTW_TRC_KEY, UTW_STR_DAT, UTW_END_DAT, UTD_DOC_NAM
+		  FROM (SELECT UTW_WRK_KEY,UTW_TRC_KEY,
+		               TO_CHAR(UTW_STR_DAT, 'YY.MM.DD') AS UTW_STR_DAT,
+       				   TO_CHAR(UTW_END_DAT, 'YY.MM.DD') AS UTW_END_DAT,
+		               UTD_DOC_NAM
+		          FROM UWO_TRC_WRK, UWO_TRC_DOC
+		         WHERE UTW_WRK_STA = '10'
+		         AND (UTW_WRK_ID = #key# OR UTW_AGN_ID = #key#)
+		         <!--isEqual property="auth" compareValue="P">
+		           AND UTW_WRK_ID = #key#
+		           </isEqual>
+		           <isEqual property="auth" compareValue="V">
+		           AND UTW_DEP_COD = #dept#
+		           </isEqual-->
+		           AND UTW_PRD_COD = #manCyl#
+               AND UTW_END_DAT <![CDATA[ < ]]> SYSDATE
+                AND UTW_DEL_YN = 'N'
+		           AND UTW_TRC_KEY = UTD_TRC_KEY
+		           ORDER BY UTW_STR_DAT
+		           )
+		           <![CDATA[WHERE ROWNUM < 6]]>
+
+	</select>
+
+	<select id="QR_MAIN_E" parameterClass="Map" resultClass="egovMap">
+		<!-- SELECT UTW_WRK_KEY,UTW_TRC_KEY,
+		       TO_CHAR(UTW_STR_DAT, 'YY.MM.DD') AS UTW_STR_DAT,
+       		   TO_CHAR(UTW_END_DAT, 'YY.MM.DD') AS UTW_END_DAT,
+		       UTD_DOC_NAM
+		  FROM UWO_TRC_WRK, UWO_APP_MTR, UWO_TRC_DOC
+		 WHERE UTW_WRK_KEY = UAM_WRK_KEY
+		   AND UAM_STA_COD IN ('11', '21')
+		   AND UTW_TRC_KEY = UTD_TRC_KEY
+		   AND UTW_WRK_ID = #key#
+		   AND UTW_PRD_COD = #manCyl#  -->
+		   SELECT D.*, ROWNUM FROM(
+		 SELECT UTW_WRK_KEY,UTW_TRC_KEY,
+		       TO_CHAR(UTW_STR_DAT, 'YY.MM.DD') AS UTW_STR_DAT,
+       		   TO_CHAR(UTW_END_DAT, 'YY.MM.DD') AS UTW_END_DAT,
+		       UTD_DOC_NAM
+		  FROM UWO_TRC_WRK, UWO_TRC_DOC
+		 WHERE  UTW_TRC_KEY = UTD_TRC_KEY
+		 AND (UTW_WRK_ID = #key# OR UTW_AGN_ID = #key#)
+		 <!--isEqual property="auth" compareValue="P">
+     		AND UTW_WRK_ID = #key#
+     		</isEqual>
+     		<isEqual property="auth" compareValue="V">
+		           AND UTW_DEP_COD = #dept#
+		           </isEqual-->
+		   AND UTW_PRD_COD = #manCyl#
+		   AND UTW_WRK_STA = '10'
+		   AND UTW_END_DAT > SYSDATE
+		   AND UTW_DEL_YN = 'N'
+		   ORDER BY UTW_STR_DAT
+		   ) D
+		   <![CDATA[WHERE ROWNUM < 6]]>
+	</select>
+
+	<select id="QR_MAIN_F" parameterClass="Map" resultClass="egovMap">
+		<!-- SELECT UTW_WRK_KEY, UTW_TRC_KEY,UTW_STR_DAT, UTW_END_DAT, UTD_DOC_NAM
+		  FROM (SELECT UTW_WRK_KEY,UTW_TRC_KEY,
+		               TO_CHAR(UTW_STR_DAT, 'YY.MM.DD') AS UTW_STR_DAT,
+       				   TO_CHAR(UTW_END_DAT, 'YY.MM.DD') AS UTW_END_DAT,
+		               UTD_DOC_NAM
+		          FROM UWO_TRC_WRK, UWO_TRC_DOC
+		         WHERE UTW_WRK_STA = '10'
+		           AND UTW_WRK_ID = #key#
+		           AND UTW_PRD_COD = #manCyl#
+		           AND UTW_TRC_KEY = UTD_TRC_KEY
+		           AND UTW_WRK_KEY NOT IN
+		               (SELECT UAM_WRK_KEY
+		                  FROM UWO_TRC_WRK, UWO_APP_MTR
+		                 WHERE UTW_WRK_KEY = UAM_WRK_KEY
+		                   AND (UTW_WRK_ID = #key# OR UTW_AGN_ID = #key#)
+		                   AND UTW_PRD_COD = #manCyl#)
+		        UNION ALL
+		        SELECT UTW_WRK_KEY,UTW_TRC_KEY,
+		               TO_CHAR(UTW_STR_DAT, 'YY.MM.DD') AS UTW_STR_DAT,
+       				   TO_CHAR(UTW_END_DAT, 'YY.MM.DD') AS UTW_END_DAT,
+		               UTD_DOC_NAM
+		          FROM UWO_TRC_WRK, UWO_APP_MTR, UWO_TRC_DOC
+		         WHERE UTW_WRK_KEY = UAM_WRK_KEY
+		           AND UAM_STA_COD IN ('12', '22')
+		           AND UTW_TRC_KEY = UTD_TRC_KEY
+		           AND (UTW_WRK_ID = #key# OR UTW_AGN_ID = #key#)
+		           AND UTW_PRD_COD = #manCyl#)
+		 ORDER BY 1  -->
+		 SELECT UTW_WRK_KEY,UTW_TRC_KEY,
+		       TO_CHAR(UTW_STR_DAT, 'YY.MM.DD') AS UTW_STR_DAT,
+       		   TO_CHAR(UTW_END_DAT, 'YY.MM.DD') AS UTW_END_DAT,
+		       UTD_DOC_NAM
+		  FROM UWO_TRC_WRK, UWO_TRC_DOC
+		 WHERE  UTW_TRC_KEY = UTD_TRC_KEY
+		 AND (UTW_WRK_ID = #key# OR UTW_AGN_ID = #key#)
+		 <!--isEqual property="auth" compareValue="P">
+     		AND UTW_WRK_ID = #key#
+     		</isEqual>
+     		<isEqual property="auth" compareValue="V">
+		           AND UTW_DEP_COD = #dept#
+		           </isEqual-->
+		   AND UTW_PRD_COD = #manCyl#
+		   AND UTW_WRK_STA = '90'
+		   AND UTW_DEL_YN = 'N'
+		   <![CDATA[AND ROWNUM < 6]]>
+	</select>
+	<select id="QR_MAIN_G" parameterClass="Map" resultClass="egovMap">
+		SELECT UTW_WRK_KEY,
+		       UTW_TRC_KEY,
+		       TO_CHAR(UTW_STR_DAT, 'YY.MM.DD') AS UTW_STR_DAT,
+		       TO_CHAR(UTW_END_DAT, 'YY.MM.DD') AS UTW_END_DAT,
+		       UTD_DOC_NAM
+		  FROM UWO_TRC_WRK, UWO_TRC_DOC
+		 WHERE UTW_TRC_KEY = UTD_TRC_KEY
+		 <isEqual property="auth" compareValue="P">
+		   AND UTW_WRK_ID = #key#
+		   </isEqual>
+		   <isEqual property="auth" compareValue="V">
+		           AND UTW_DEP_COD = #dept#
+		           </isEqual>
+		   AND UTW_PRD_COD = #manCyl#
+		   AND UTW_STR_DAT <![CDATA[ <= ]]> #dateText#
+		   AND UTW_END_DAT <![CDATA[ >= ]]> #dateText#
+	</select>
+	<select id="QR_MAIN_H" parameterClass="Map" resultClass="egovMap">
+		SELECT UNC_NTR_NAM, UTD_TRM_GBN
+		  FROM UWO_TRC_DOC, UWO_TRC_MAP, UWO_NTR_COM
+		 WHERE UTM_TRC_KEY = UTD_TRC_KEY
+		   AND UTD_DEL_YN = 'N'
+		   AND UTM_DEL_YN = 'N'
+		   AND UTD_TRM_GBN LIKE 'N%'
+		   AND UTM_WRK_ID = #key#
+		   AND UNC_BCY_COD = #manCyl#
+		   AND SUBSTR(UTD_TRM_GBN, 2) = UNC_NTR_COD
+		 GROUP BY UNC_NTR_NAM, UTD_TRM_GBN
+	</select>
+	<select id="QR_MAIN_I" parameterClass="Map" resultClass="egovMap">
+		SELECT UNC_NTR_NAM, UTD_TRM_GBN, UTD_DOC_NAM, UTD_TRC_KEY, UTD_WRK_END
+		  FROM UWO_TRC_DOC, UWO_TRC_MAP, UWO_NTR_COM
+		 WHERE UTM_TRC_KEY = UTD_TRC_KEY
+		   AND UTD_DEL_YN = 'N'
+		   AND UTM_DEL_YN = 'N'
+		   AND UTD_TRM_GBN LIKE 'N%'
+		   AND UTM_WRK_ID = #key#
+		   AND SUBSTR(UTD_TRM_GBN, 2) = UNC_NTR_COD
+		   <iterate prepend="AND UTD_TRM_GBN IN" property="npList" open="(" close=")" conjunction=",">
+		   #npList[]#
+		   </iterate>
+		 ORDER BY UTD_TRC_KEY
+	</select>
+	<!--select id="QR_MAIN_J" parameterClass="Map" resultClass="egovMap">
+		SELECT UTD_BCY_COD,UTD_TRM_GBN,UTD_TRC_KEY,UTD_WRK_END
+		  FROM UWO_TRC_DOC, UWO_TRC_MAP, UWO_NTR_COM
+		 WHERE UTM_TRC_KEY = UTD_TRC_KEY
+		   AND UTD_DEL_YN = 'N'
+		   AND UTM_DEL_YN = 'N'
+		   AND UTD_TRM_GBN LIKE 'N%'
+		   AND UTM_WRK_ID = #key#
+		   AND SUBSTR(UTD_TRM_GBN, 2) = UNC_NTR_COD
+		   <iterate prepend="AND UTD_TRC_KEY IN" property="npList" open="(" close=")" conjunction=",">
+		   #npList[]#
+		   </iterate>
+		 ORDER BY UTD_TRC_KEY
+	</select-->
+
+	<insert id="QR_MAIN_K" parameterClass="egovMap">
+		INSERT INTO UWO_TRC_WRK
+		  (UTW_WRK_KEY,
+		   UTW_PRD_COD,
+		   UTW_TRM_COD,
+		   UTW_TRC_KEY,
+		   UTW_WRK_STA,
+		   UTW_STR_DAT,
+		   UTW_END_DAT,
+		   UTW_DIV_COD,
+		   UTW_SVC_COD,
+		   UTW_DEL_YN,
+		   UTW_WRK_ID,
+		   UTW_RGT_ID,
+		   UTW_RGT_MDH,
+		   UTW_DEP_COD,
+		   UTW_WRK_GBN)
+		VALUES
+		  (SEQ_WORK_KEY.NEXTVAL,
+		   #cyl#,
+		   #utdTrmGbn#,
+		   #utdTrcKey#,
+		   '10',
+		   #stdDate#,
+		   (TO_DATE(#stdDate#, 'YYYY.MM.DD') + #utdWrkEnd#),
+		   #div#,
+		   #svc#,
+		   'N',
+		   #key#,
+		   #key#,
+		   SYSDATE,
+		   #dep#,
+		   '2')
+	</insert>
+	<select id="QR_MAIN_L" parameterClass="Map" resultClass="egovMap">
+		SELECT UTW_WRK_KEY,
+		       UTW_TRC_KEY,
+		       TO_CHAR(UTW_STR_DAT, 'YY.MM.DD') AS UTW_STR_DAT,
+		       TO_CHAR(UTW_END_DAT, 'YY.MM.DD') AS UTW_END_DAT,
+		       UTD_DOC_NAM
+		  FROM UWO_TRC_WRK, UWO_TRC_DOC
+		 WHERE UTW_TRC_KEY = UTD_TRC_KEY
+		   AND UTW_WRK_ID = #key#
+		   AND SUBSTR(UTW_TRM_COD, 0, 1) = #prd#
+		   <isNotEmpty prepend="AND" property="keyword">
+		   <![CDATA[UTD_DOC_NAM LIKE '%' || #keyword# || '%']]>
+		   </isNotEmpty>
+	</select>
+	<select id="QR_MAIN_M" parameterClass="Map" resultClass="egovMap">
+		SELECT UTW_WRK_KEY,
+		       UTW_TRC_KEY,
+		       TO_CHAR(UTW_STR_DAT, 'YY.MM.DD') AS UTW_STR_DAT,
+		       TO_CHAR(UTW_END_DAT, 'YY.MM.DD') AS UTW_END_DAT,
+		       UTD_DOC_NAM
+		  FROM UWO_TRC_WRK, UWO_TRC_DOC
+		 WHERE UTW_TRC_KEY = UTD_TRC_KEY
+		   AND UTW_WRK_ID = #key#
+		   AND SUBSTR(UTW_TRM_COD,2,3) = #prd#
+		   <isNotEmpty prepend="AND" property="keyword">
+		   <![CDATA[UTD_DOC_NAM LIKE '%' || #keyword# || '%']]>
+		   </isNotEmpty>
+	</select>
+
+	<select id="QR_MAIN_N" parameterClass="Map" resultClass="egovMap">
+		SELECT 'ALL' AS GBN, COUNT(*) as wc
+		  FROM UWO_TRC_WRK
+		  WHERE UTW_PRD_COD = #manCyl#
+		  AND UTW_WRK_ID = #key#
+		  <!--isEqual property="auth" compareValue="P">
+		 	AND UTW_WRK_ID = #key#
+		  </isEqual>
+		 <isEqual property="auth" compareValue="V">
+		 	AND UTW_DEP_COD = #dept#
+		 </isEqual-->
+		   AND UTW_DEL_YN = 'N'
+		UNION ALL
+		SELECT 'COMP', COUNT(*) as wc
+		  FROM UWO_TRC_WRK
+		 WHERE UTW_PRD_COD = #manCyl#
+		 AND UTW_WRK_ID = #key#
+		  <!--isEqual property="auth" compareValue="P">
+		 	AND UTW_WRK_ID = #key#
+		  </isEqual>
+		 <isEqual property="auth" compareValue="V">
+		 	AND UTW_DEP_COD = #dept#
+		 </isEqual-->
+		   AND UTW_WRK_STA = '90'
+		   AND UTW_DEL_YN = 'N'
+		UNION ALL
+		SELECT 'NON', COUNT(*) as wc
+		  FROM UWO_TRC_WRK
+		 WHERE UTW_PRD_COD = #manCyl#
+		 AND UTW_WRK_ID = #key#
+		  <!--isEqual property="auth" compareValue="P">
+		 	AND UTW_WRK_ID = #key#
+		  </isEqual>
+		 <isEqual property="auth" compareValue="V">
+		 	AND UTW_DEP_COD = #dept#
+		 </isEqual-->
+		   AND UTW_WRK_STA = '10'
+		 <![CDATA[  AND UTW_END_DAT > SYSDATE]]>
+		   AND UTW_DEL_YN = 'N'
+		UNION ALL
+		SELECT 'DELAY', COUNT(*) as wc
+		  FROM UWO_TRC_WRK
+		 WHERE UTW_PRD_COD = #manCyl#
+		 AND UTW_WRK_ID = #key#
+		  <!--isEqual property="auth" compareValue="P">
+		 	AND UTW_WRK_ID = #key#
+		  </isEqual>
+		 <isEqual property="auth" compareValue="V">
+		 	AND UTW_DEP_COD = #dept#
+		 </isEqual-->
+		   AND UTW_WRK_STA = '10'
+		 <![CDATA[  AND UTW_END_DAT < SYSDATE]]>
+		   AND UTW_DEL_YN = 'N'
+	</select>
+
+	<select id="QR_MAIN_O" parameterClass="String" resultClass="egovMap">
+		SELECT UEA_SND_TIT, TO_CHAR(UEA_SND_DAT,'YYYY.MM.DD') AS UEA_SND_DAT FROM UWO_EVT_ARM WHERE UEA_RCV_ID = #key# ORDER BY UEA_ARM_KEY DESC
+	</select>
+
+
+
+	<!-- NEW DESIGN -->
+	<select id="QR_MAIN_NOTI_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT UBM_BRD_KEY, UBM_BRD_TLE , TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH, UBM_BRD_GBN
+		FROM UWO_BRD_MTR
+		WHERE UBM_BRD_GBN = '1'
+		AND UBM_NTC_YN = 'Y'
+		AND UBM_DEL_YN = 'N'
+		<isEqual property="auth" compareValue="A">
+			AND UBM_SEK_ATH IN ('1','2','3')
+		</isEqual>
+		<isEqual property="auth" compareValue="V">
+			AND UBM_SEK_ATH IN ('2','3')
+		</isEqual>
+		<isEqual property="auth" compareValue="P">
+			AND UBM_SEK_ATH = '3'
+		</isEqual>
+		<![CDATA[AND ROWNUM < 6]]>
+		ORDER BY UBM_BRD_KEY DESC
+	</select>
+
+	<select id="QR_MAIN_ALARM_LIST" parameterClass="String" resultClass="egovMap">
+		SELECT TO_CHAR(UEA_SND_DAT,'YYYY.MM.DD') AS UEA_SND_DAT, UEA_SND_TIT
+		FROM UWO_EVT_ARM
+		WHERE UEA_RCV_ID = #key#
+		<![CDATA[AND ROWNUM < 6]]>
+		ORDER BY UEA_ARM_KEY DESC
+	</select>
+
+
+	<!-- 전체 점검 항목 수, 전체 보안 업무 수 -->
+	<select id="selectComplianceAndDocCount" parameterClass="Map" resultClass="egovMap">
+		SELECT
+		(
+			SELECT COUNT(*)
+			FROM (
+				SELECT 1
+				FROM uwo_ctr_mtr
+				WHERE
+					ucm_bcy_cod = #manCyl#
+					AND ucm_3ld_yn = 'N'
+				GROUP BY ucm_ctr_gbn, ucm_3lv_cod
+			) t
+		) AS total_cmp,
+		(
+			SELECT COUNT(*)
+			FROM uwo_trc_doc
+			WHERE
+				utd_bcy_cod = #manCyl#
+				AND utd_del_yn = 'N'
+		) AS total_doc
+		FROM DUAL
+	</select>
+
+	<!-- 정보보호 업무 전체현황(완료,진행,지연) -->
+	<!-- 2017-10-11, remapResults="true" -->
+	<select id="selectProgressWorkCount" parameterClass="Map" resultClass="egovMap" remapResults="true">
+		SELECT
+			COALESCE(SUM(ready), 0) AS ready,
+			COALESCE(SUM(delay), 0) AS delay,
+			COALESCE(SUM(comp), 0) AS comp,
+			COALESCE(SUM(ready), 0) + COALESCE(SUM(delay), 0) + COALESCE(SUM(comp), 0) AS total
+		FROM (
+			SELECT
+				CASE WHEN wrk_status = 'ready' THEN cnt END ready,
+				CASE WHEN wrk_status = 'delay' THEN cnt END delay,
+				CASE WHEN wrk_status = 'comp' THEN cnt END comp
+			FROM (
+				SELECT wrk_status, COUNT(*) cnt
+				FROM (
+					SELECT
+						CASE
+							WHEN utw.utw_wrk_sta = '90' THEN 'comp'
+							WHEN utw.utw_wrk_sta &lt; '90' AND utw_end_dat &lt; SYSDATE THEN 'delay'
+							WHEN utw.utw_wrk_sta &lt; '90' THEN 'ready'
+						END wrk_status
+					FROM
+						uwo_trc_doc utd
+						INNER JOIN uwo_trc_wrk utw ON utd.utd_trc_key = utw.utw_trc_key
+		<isNotEmpty property="standard">
+						INNER JOIN (
+							SELECT utc_trc_key
+							FROM
+						   		uwo_trc_ctr utc
+						    	INNER JOIN uwo_ctr_mtr ucm ON ucm.ucm_ctr_key = utc.utc_ctr_key
+						   WHERE ucm.ucm_ctr_gbn = #standard#
+						   GROUP BY utc_trc_key
+						) utc ON utd.utd_trc_key = utc.utc_trc_key
+		</isNotEmpty>
+					WHERE
+						utd.utd_bcy_cod = #manCyl#
+						AND utd.utd_del_yn = 'N'
+						AND utw.utw_del_yn = 'N'
+		<isNotEmpty property="usrKey">
+						AND (utw.utw_wrk_id = #usrKey# OR utw.utw_agn_id = #usrKey#)
+		</isNotEmpty>
+				) t1
+				GROUP BY wrk_status
+			) t2
+		) t3
+	</select>
+
+	<!-- 정보보호업무 주기/비주기 -->
+	<!-- 2017-10-11, remapResults="true" -->
+	<select id="selectPeriodWorkCount" parameterClass="Map" resultClass="egovMap" remapResults="true">
+		SELECT
+			COALESCE(SUM(none_period), 0) AS none_period,
+			COALESCE(SUM(period), 0) AS period,
+			COALESCE(SUM(none_period), 0) + COALESCE(SUM(period), 0) AS total
+		FROM (
+			SELECT
+				CASE WHEN wrk_period = 0 THEN cnt END none_period,
+				CASE WHEN wrk_period = 1 THEN cnt END period
+			FROM (
+				SELECT wrk_period, COUNT(*) cnt
+				FROM (
+					SELECT
+						CASE
+							WHEN utd.utd_trm_gbn IN ('Y','N') THEN 0
+							ELSE 1
+						END wrk_period
+					FROM
+						uwo_trc_doc utd
+						INNER JOIN uwo_trc_wrk utw ON utd.utd_trc_key = utw.utw_trc_key
+		<isNotEmpty property="standard">
+						INNER JOIN (
+							SELECT utc_trc_key
+							FROM
+						   		uwo_trc_ctr utc
+						    	INNER JOIN uwo_ctr_mtr ucm ON ucm.ucm_ctr_key = utc.utc_ctr_key
+						   WHERE ucm.ucm_ctr_gbn = #standard#
+						   GROUP BY utc_trc_key
+						) utc ON utd.utd_trc_key = utc.utc_trc_key
+		</isNotEmpty>
+					WHERE
+						utd.utd_bcy_cod = #manCyl#
+						AND utd.utd_del_yn = 'N'
+						AND utw.utw_del_yn = 'N'
+		<isNotEmpty property="usrKey">
+						AND (utw.utw_wrk_id = #usrKey# OR utw.utw_agn_id = #usrKey#)
+		</isNotEmpty>
+				) t1
+				GROUP BY wrk_period
+			) t2
+		) t3
+	</select>
+
+
+	<!-- 통제 분야 타이틀. 인줄 알았는데 타이틀은 DB에 없음. 안지우고 일단 놔둠 -->
+	<select id="selectComplianceTitle" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			ucm_ctr_cod,
+			ucm_1lv_nam
+		FROM uwo_ctr_mtr
+		WHERE
+			ucm_bcy_cod = #manCyl#
+			AND ucm_ctr_gbn = #standard#
+			AND ucm_3ld_yn = 'N'
+		GROUP BY ucm_ctr_gbn, ucm_ctr_cod, ucm_1lv_nam
+		ORDER BY LPAD(ucm_ctr_cod, 2, 0)
+	</select>
+
+	<!-- 통제 분야/항목, 점검항목 수 -->
+	<select id="selectComplianceDetailCount" parameterClass="Map" resultClass="egovMap">
+		SELECT
+		(
+			SELECT COUNT(*)
+			FROM (
+				SELECT 1
+				FROM uwo_ctr_mtr
+				WHERE
+					ucm_bcy_cod = #manCyl#
+					AND ucm_ctr_gbn = #standard#
+					AND ucm_1ld_yn = 'N'
+				GROUP BY ucm_ctr_gbn, ucm_1lv_cod
+			) t
+		) AS cmp_cnt1,
+		(
+			SELECT COUNT(*)
+			FROM (
+				SELECT 1
+				FROM uwo_ctr_mtr
+				WHERE
+					ucm_bcy_cod = #manCyl#
+					AND ucm_ctr_gbn = #standard#
+					AND ucm_2ld_yn = 'N'
+				GROUP BY ucm_ctr_gbn, ucm_2lv_cod
+			) t
+		) AS cmp_cnt2,
+		(
+			SELECT COUNT(*)
+			FROM (
+				SELECT 1
+				FROM uwo_ctr_mtr
+				WHERE
+					ucm_bcy_cod = #manCyl#
+				AND ucm_ctr_gbn = #standard#
+				AND ucm_3ld_yn = 'N'
+				GROUP BY ucm_ctr_gbn, ucm_3lv_cod
+			) t
+		) AS cmp_cnt3
+		FROM DUAL
+	</select>
+
+	<!-- 결재 수 -->
+	<!-- 2017-10-11, remapResults="true" -->
+	<select id="selectApprovalCount" parameterClass="Map" resultClass="egovMap" remapResults="true">
+		SELECT
+				COALESCE(SUM(step1), 0) AS step1,
+				COALESCE(SUM(step2), 0) AS step2,
+				COALESCE(SUM(step3), 0) AS step3
+		FROM (
+			SELECT
+				CASE WHEN (uam_cf1_id = #usrKey# AND uam_sta_cod = '11') OR (uam_cf2_id = #usrKey# AND uam_sta_cod = '21') THEN cnt END step1,
+				<!-- 2018-10-12 s,
+				CASE WHEN uam_req_id = #usrKey# AND uam_sta_cod IN(11,21) THEN cnt END step2, -->
+				CASE WHEN (uam_req_id = #usrKey# AND uam_sta_cod IN ('11','21')) OR (uam_cf1_id = #usrKey# AND uam_sta_cod = '21') THEN cnt END step2,
+				CASE WHEN uam_req_id = #usrKey# AND uam_sta_cod IN(12,22) THEN cnt END step3
+			FROM (
+				SELECT
+					uam_sta_cod,
+					COUNT(*) cnt,
+					uam_req_id,
+					uam_cf1_id,
+					uam_cf2_id
+				FROM
+					uwo_trc_wrk utw
+					INNER JOIN uwo_trc_doc utd ON utw.utw_trc_key = utd.utd_trc_key
+					INNER JOIN uwo_app_mtr uam ON utw.utw_wrk_key = uam.uam_wrk_key
+					INNER JOIN (SELECT MAX(uam_app_key) AS max_app_key FROM uwo_app_mtr GROUP BY uam_wrk_key) uam2 ON uam.uam_app_key = uam2.max_app_key
+				WHERE
+					utw.utw_del_yn = 'N'
+					AND utd.utd_del_yn = 'N'
+					AND (uam.uam_req_id = #usrKey# OR uam.uam_cf1_id = #usrKey# OR uam.uam_cf2_id = #usrKey#)
+					<!-- 2018-10-12 s, -->
+					AND utw_prd_cod = #manCyl#
+				GROUP BY uam_sta_cod, uam_req_id, uam_cf1_id, uam_cf2_id
+			) t1
+		) t2
+	</select>
+</sqlMap>

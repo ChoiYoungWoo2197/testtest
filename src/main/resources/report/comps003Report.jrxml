@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="comps003Report" language="groovy" pageWidth="842" pageHeight="595" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="72156b81-5d05-4dfa-8ae5-95f375311d78">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<style name="table">
+		<box>
+			<pen lineWidth="1.0" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<field name="sTitle" class="java.lang.String"/>
+	<field name="mTitle" class="java.lang.String"/>
+	<field name="text1" class="java.lang.String"/>
+	<field name="text2" class="java.lang.String"/>
+	<field name="text3" class="java.lang.String"/>
+	<field name="text4" class="java.lang.String"/>
+	<field name="text5" class="java.lang.String"/>
+	<field name="text6" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="40" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="e3d647a2-13e9-45a3-b1da-9b1163233be3" x="0" y="0" width="802" height="40"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="18" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="2" rightIndent="2" tabStopWidth="80"/>
+				</textElement>
+				<text><![CDATA[통제항목설정]]></text>
+			</staticText>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="40">
+			<staticText>
+				<reportElement uuid="5499313e-e829-47d6-9c82-ef4a9d19f0f6" style="table_TH" x="100" y="0" width="50" height="40"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="10" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="2" rightIndent="2"/>
+				</textElement>
+				<text><![CDATA[통제점검번호]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="03b96216-9629-4c32-9494-25729f48180f" style="table_TH" x="150" y="0" width="200" height="40"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="10" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="2" rightIndent="2"/>
+				</textElement>
+				<text><![CDATA[상세내용]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="8ee7d380-3951-409d-80fb-5e86451a7a61" style="table_TH" x="350" y="0" width="35" height="40"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="10" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="2" rightIndent="2"/>
+				</textElement>
+				<text><![CDATA[수립
+여부]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="9e45d461-aacf-40d8-9e10-d071c63fd94f" style="table_TH" x="702" y="0" width="100" height="40"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="10" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="2" rightIndent="2"/>
+				</textElement>
+				<text><![CDATA[기록(증적자료)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="cf17ef56-9acd-4992-bf1b-02beed8e9a28" style="table_TH" x="602" y="0" width="100" height="40"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="10" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="2" rightIndent="2"/>
+				</textElement>
+				<text><![CDATA[관련문서
+(정책, 지침 등 세부조항번호까지)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="8787c121-a9cb-4b9e-a679-5a7d0a47abf0" style="table_TH" x="0" y="0" width="100" height="40"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="10" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="2" rightIndent="2"/>
+				</textElement>
+				<text><![CDATA[통제항목]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="d45bc5a9-2435-4a3b-a792-e9e51c1de99a" style="table_TH" x="385" y="0" width="217" height="40"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="10" isBold="true" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+					<paragraph leftIndent="2" rightIndent="2"/>
+				</textElement>
+				<text><![CDATA[운영현황]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="45" splitType="Stretch">
+			<elementGroup>
+				<textField isBlankWhenNull="true">
+					<reportElement uuid="a05ce93c-a21e-47fa-9318-0007b47e5945" style="table_TD" x="0" y="0" width="802" height="15" isRemoveLineWhenBlank="true"/>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font fontName="SansSerif" size="10" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+						<paragraph leftIndent="2" rightIndent="2"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{sTitle}]]></textFieldExpression>
+				</textField>
+				<rectangle>
+					<reportElement uuid="a1d851cc-92a8-4168-b011-61cdd526f71a" style="table" stretchType="RelativeToBandHeight" x="0" y="15" width="100" height="30" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+					<graphicElement>
+						<pen lineWidth="0.5"/>
+					</graphicElement>
+				</rectangle>
+				<rectangle>
+					<reportElement uuid="46ae1ac4-7791-4bd4-83ae-ddbf014c1293" style="table" stretchType="RelativeToBandHeight" x="150" y="15" width="200" height="30" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+					<graphicElement>
+						<pen lineWidth="0.5"/>
+					</graphicElement>
+				</rectangle>
+				<rectangle>
+					<reportElement uuid="3d7f2da9-bdcd-48ba-9084-73ed93cc4372" style="table" stretchType="RelativeToBandHeight" x="385" y="15" width="217" height="30" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+					<graphicElement>
+						<pen lineWidth="0.5"/>
+					</graphicElement>
+				</rectangle>
+				<textField isStretchWithOverflow="true" evaluationTime="Auto" isBlankWhenNull="true">
+					<reportElement uuid="1407608a-07e9-499c-97aa-a07c6ca0bea9" stretchType="RelativeToBandHeight" x="0" y="17" width="100" height="26" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+						<paragraph leftIndent="2" rightIndent="2"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{mTitle}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" evaluationTime="Auto" isBlankWhenNull="true">
+					<reportElement uuid="baa8162a-8dc7-4eef-bc32-9e5a19a031cc" stretchType="RelativeToBandHeight" mode="Transparent" x="385" y="17" width="217" height="26" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+						<paragraph lineSpacing="Single" leftIndent="2" rightIndent="2"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{text4}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" evaluationTime="Auto" isBlankWhenNull="true">
+					<reportElement uuid="91bf5a4d-2866-4a47-8683-5bd1610342cd" style="table_TD" stretchType="RelativeToBandHeight" mode="Transparent" x="702" y="15" width="100" height="30" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+						<paragraph lineSpacing="Single" leftIndent="2" rightIndent="2"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{text6}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" evaluationTime="Auto" isBlankWhenNull="true">
+					<reportElement uuid="02143be4-c530-42e3-9983-093913e990ce" stretchType="RelativeToBandHeight" mode="Transparent" x="150" y="17" width="200" height="26" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+						<paragraph lineSpacing="Single" leftIndent="2" rightIndent="2"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{text2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" evaluationTime="Auto" isBlankWhenNull="true">
+					<reportElement uuid="3c99d098-739f-4097-bc78-3733e9026132" style="table_TD" stretchType="RelativeToBandHeight" mode="Transparent" x="100" y="15" width="50" height="30" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+						<paragraph lineSpacing="Single" leftIndent="2" rightIndent="2"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{text1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" evaluationTime="Auto" isBlankWhenNull="true">
+					<reportElement uuid="e95bc585-1998-4cc4-8e88-d3cf25ca3018" style="table_TD" stretchType="RelativeToBandHeight" mode="Transparent" x="350" y="15" width="35" height="30" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+						<paragraph lineSpacing="Single" leftIndent="2" rightIndent="2"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{text3}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" evaluationTime="Auto" isBlankWhenNull="true">
+					<reportElement uuid="b3da15e0-3acb-4f49-b2f0-4dbe6a6b1d02" style="table_TD" stretchType="RelativeToBandHeight" mode="Transparent" x="602" y="15" width="100" height="30" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true"/>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font fontName="SansSerif" size="8" pdfFontName="H2GTRM.TTF" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+						<paragraph lineSpacing="Single" leftIndent="2" rightIndent="2"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{text5}]]></textFieldExpression>
+				</textField>
+			</elementGroup>
+		</band>
+	</detail>
+</jasperReport>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+
+	<bean name="propertiesService" class="egovframework.rte.fdl.property.impl.EgovPropertyServiceImpl" destroy-method="destroy">
+		<property name="properties">
+			<map>
+	            <entry key="pageUnit" value="10"/>
+	            <entry key="pageSize" value="10"/>
+	            <entry key="uploadpath" value="c:\isms\isms3_skb"/>
+	            <entry key="docSampleUploadPath" value="c:\isms\isms3_skb\sampleDoc"/>
+	            <entry key="boardUploadPath" value="c:\isms\isms3_skb\board"/>
+	            <entry key="workUploadPath" value="c:\isms\isms3_skb\work"/>
+	            <entry key="serviceUploadPath" value="c:\isms\isms3_skb\service"/>
+	            <entry key="insptUploadPath" value="c:\isms\isms3_skb\ins"/>
+
+				<!--기반시설 보호대책 수립 가이드 파일 업로드 경로-->
+				<entry key="protectionMeasureGuideUploadPath" value="c:\isms\isms3_skb\protection_measure\guide"/>
+				<!--기반시설 보호대책 수립 중점과제 파일 업로드 경로-->
+				<entry key="protectionMeasureTaskUploadPath" value="c:\isms\isms3_skb\protection_measure\task"/>
+
+	            <!-- <entry key="sendType" value="MAL"/> -->
+	            <entry key="sendType" value="TES"/>
+	            <entry key="company" value="SKB"/>
+	            <entry key="company_div" value="1"/>
+	            <entry key="company_svc" value="1"/>
+	            <entry key="company_dep" value="1"/>
+	            <entry key="smtpInfo" value="nmail.skbroadband.com"/>
+	            <entry key="smtpPort" value="25"/>
+	            <entry key="authUser" value="isams@skbroadband.com"/>
+	            <entry key="authPassword" value="!Sk@broad2300"/>
+	            <!-- <entry key="smtpInfo" value="192.168.229.210"/>
+	            <entry key="smtpPort" value="25"/>
+	            <entry key="authUser" value="root"/>
+	            <entry key="authPassword" value="isms!2016"/> -->
+	            <entry key="sendUser" value="isams@skbroadband.com"/>
+			</map>
+		</property>
+	</bean>
+</beans>

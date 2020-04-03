@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  - Copyright (c) 2012 JOBTOY, Co., Ltd. All rights reserved.
+  - 
+  - Author      :	
+  - Date        :	
+  - @(#)
+  - Description :	
+  -->
+  
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN"
+    "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+
+	<!-- Logging Advice Config -->
+	<bean id="beforeLoggingAdvice" class="com.jobtoy.commons.logging.BeforeLoggingAdvice">
+	</bean>	    
+	    
+	<bean id="afterLoggingAdvice" class="com.jobtoy.commons.logging.AfterLoggingAdvice">
+	</bean>	    
+	    
+	<bean id="proxyCreator" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+		<property name="beanNames">
+			<list>
+				<value>*Svc</value>
+				<value>*Dao</value>
+				<value>*Impl</value>
+			</list>
+		</property>
+		<property name="interceptorNames">
+			<list>
+				<value>beforeLoggingAdvice</value>
+				<value>afterLoggingAdvice</value>
+			</list>
+		</property>
+	</bean>
+
+	<!--
+	  - Message Resource Config
+	  -->
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>resources.messages</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="messageSourceAccessor" class="org.springframework.context.support.MessageSourceAccessor">
+		<constructor-arg index="0">
+			<ref local="messageSource" />
+		</constructor-arg>
+	</bean>
+
+</beans>

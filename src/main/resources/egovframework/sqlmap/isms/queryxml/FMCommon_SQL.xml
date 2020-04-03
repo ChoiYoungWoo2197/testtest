@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="fmCommon">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+
+	<select id="QR_GET_USER_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT UUM_USR_KEY,
+		       UUM_USR_ID,
+		       UUM_USR_NAM,
+		       UUM.UUM_DEP_COD,
+		       (SELECT UDM_DEP_NAM
+		          FROM UWO_DEP_MTR DEP
+		         WHERE DEP.UDM_DEP_COD = UUM.UUM_DEP_COD ) AS UAG_DEP_NAM,
+		       F_GET_COMMON_NAME(UUM_SVC_COD, 'SERVICE') AS UUM_SVC_NAM,
+    	       F_GET_COMMON_NAME(UUM_POS_COD, 'POS') AS UUM_POS_NAM
+		  FROM UWO_USR_MTR UUM
+		  LEFT OUTER JOIN UWO_DEP_MTR UDM ON UDM.UDM_DEP_COD = UUM.UUM_DEP_COD
+		 WHERE UUM_USE_YN = 'Y'
+		 <isNotEmpty property="uumUsrId">
+		   AND UUM.UUM_USR_ID LIKE '%' || #uumUsrId# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="uumUsrNam">
+		   AND UUM.UUM_USR_NAM LIKE '%' || #uumUsrNam# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="stOrg" prepend="AND">
+		   UDM.UDM_DEP_1LV = #stOrg#
+		 </isNotEmpty>
+		 <isNotEmpty property="hqOrg" prepend="AND">
+		   UDM.UDM_DEP_2LV = #hqOrg#
+		 </isNotEmpty>
+		 <isNotEmpty property="gpOrg" prepend="AND">
+		   UDM.UDM_DEP_3LV = #gpOrg#
+		 </isNotEmpty>
+		 <isNotEmpty property="service" prepend="AND">
+		   UUM.UUM_SVC_COD = #service#
+		 </isNotEmpty>
+		 <isEqual property="apvGbn" compareValue="Y">
+		  AND uum.uum_apv_gbn = 'Y'
+		 </isEqual>
+		 <!-- 2018-05-11 s, -->
+		 <isEqual property="apvGbn" compareValue="TY">
+		  AND uum.uum_tra_gbn = 'Y'
+		 </isEqual>
+	</select>
+
+	<select id="GET_WORK_FILES" parameterClass="Map" resultClass="egovMap">
+		SELECT *
+			FROM UWO_MNG_FLE
+		WHERE UMF_CON_GBN = '6'
+			AND UMF_TBL_GBN = 'WRK'
+			AND UMF_DEL_YN = 'N'
+			<isNotEmpty property="bcyCod">
+			AND UMF_BCY_COD = #bcyCod#
+			</isNotEmpty>
+	</select>
+
+</sqlMap>

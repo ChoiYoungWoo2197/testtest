@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<decorators defaultdir="/WEB-INF">
+   <excludes>
+      <pattern>/index.do</pattern>
+      <pattern>/*popup.do*</pattern>
+      <pattern>/*excelSave.do</pattern>
+      <pattern>/debug/*</pattern>
+      <pattern>/*async.do*</pattern>
+   </excludes>
+   
+   <decorator name="_layout" page="include/layout.jsp">
+      <pattern>/*.do</pattern>
+   </decorator>
+</decorators>

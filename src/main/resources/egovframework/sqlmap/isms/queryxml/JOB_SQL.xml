@@ -1,0 +1,884 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL MAP 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="JOB">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+
+	<!-- 인사정보 -->
+
+	<!-- 부서 -->
+	<select id="LEGACY_DEPT_LIST" resultClass="egovMap">
+	<![CDATA[
+		SELECT GROUP_ID,
+			   GROUP_NAME,
+			   PARENTGROUP_ID,
+			   CASE
+				   WHEN (GROUP_LVL1 = GROUP_LVL2) AND (GROUP_LVL2 = GROUP_LVL3) THEN '1'
+				   WHEN GROUP_LVL2 = GROUP_LVL3 THEN '2'
+				   ELSE '3' END AS LVL,
+			   GROUP_FULL,
+			   GROUP_LVL1,
+			   CASE WHEN GROUP_LVL1 = GROUP_LVL2 THEN '' ELSE GROUP_LVL2 END
+								AS GROUP_LVL2,
+			   CASE WHEN GROUP_LVL2 = GROUP_LVL3 THEN '' ELSE GROUP_LVL3 END
+								AS GROUP_LVL3,
+			   GROUP_PATH
+		FROM (
+				 SELECT GROUP_ID,
+						GROUP_NAME,
+						PARENTGROUP_ID,
+						GROUP_FULL,
+						GROUP_LVL0,
+						GROUP_LVL1,
+						GROUP_LVL2,
+						CASE
+							WHEN SUBSTRING(GROUP_PATH2, 1, case
+															   when (CHARINDEX('^', GROUP_PATH2) - 1) < 0 then 0
+															   else (CHARINDEX('^', GROUP_PATH2) - 1) end)
+								= ''
+								THEN
+								GROUP_PATH2
+							ELSE
+								SUBSTRING(GROUP_PATH2, 1, case
+															  when (CHARINDEX('^', GROUP_PATH2) - 1) < 0 then 0
+															  else (CHARINDEX('^', GROUP_PATH2) - 1) end)
+							END
+							AS GROUP_LVL3,
+						SUBSTRING(GROUP_PATH2,
+								  CHARINDEX('^', GROUP_PATH2) + 1,
+								  LEN(GROUP_PATH2))
+							AS GROUP_PATH2,
+						GROUP_PATH
+				 FROM (
+						  SELECT GROUP_ID,
+								 GROUP_NAME,
+								 PARENTGROUP_ID,
+								 GROUP_FULL,
+								 GROUP_LVL0,
+								 GROUP_LVL1,
+								 CASE
+									 WHEN SUBSTRING(GROUP_PATH2,
+													1,
+													case
+														when (CHARINDEX('^', GROUP_PATH2) - 1) < 0 then 0
+														else (CHARINDEX('^', GROUP_PATH2) - 1) end)
+										 = ''
+										 THEN
+										 GROUP_PATH2
+									 ELSE
+										 SUBSTRING(GROUP_PATH2,
+												   1,
+												   case
+													   when (CHARINDEX('^', GROUP_PATH2) - 1) < 0 then 0
+													   else (CHARINDEX('^', GROUP_PATH2) - 1) end)
+									 END
+									 AS GROUP_LVL2,
+								 SUBSTRING(GROUP_PATH2,
+										   CHARINDEX('^', GROUP_PATH2) + 1,
+										   LEN(GROUP_PATH2))
+									 AS GROUP_PATH2,
+								 GROUP_PATH
+						  FROM (
+								   SELECT GROUP_ID,
+										  GROUP_NAME,
+										  PARENTGROUP_ID,
+										  GROUP_FULL,
+										  GROUP_LVL0,
+										  CASE
+											  WHEN SUBSTRING(GROUP_PATH2,
+															 1,
+															 case
+																 when (CHARINDEX('^', GROUP_PATH2) - 1) < 0 then 0
+																 else (CHARINDEX('^', GROUP_PATH2) - 1) end)
+												  = ''
+												  THEN
+												  GROUP_PATH2
+											  ELSE
+												  SUBSTRING(GROUP_PATH2,
+															1,
+															case
+																when (CHARINDEX('^', GROUP_PATH2) - 1) < 0 then 0
+																else (CHARINDEX('^', GROUP_PATH2) - 1) end)
+											  END
+											  AS GROUP_LVL1,
+										  SUBSTRING(GROUP_PATH2,
+													CHARINDEX('^', GROUP_PATH2) + 1,
+													LEN(GROUP_PATH2))
+											  AS GROUP_PATH2,
+										  GROUP_PATH
+								   FROM (
+											SELECT GROUP_ID,
+												   GROUP_NAME,
+												   PARENTGROUP_ID,
+												   GROUP_FULL,
+												   CASE
+													   WHEN SUBSTRING(
+																	GROUP_PATH2,
+																	1,
+																	case
+																		when (CHARINDEX('^', GROUP_PATH2) - 1) < 0 then 0
+																		else (CHARINDEX('^', GROUP_PATH2) - 1) end)
+														   = ''
+														   THEN
+														   GROUP_PATH2
+													   ELSE
+														   SUBSTRING(
+																   GROUP_PATH2,
+																   1,
+																   case
+																	   when (CHARINDEX('^', GROUP_PATH2) - 1) < 0 then 0
+																	   else (CHARINDEX('^', GROUP_PATH2) - 1) end)
+													   END
+															   AS GROUP_LVL0,
+												   SUBSTRING(GROUP_PATH2,
+															 CHARINDEX('^', GROUP_PATH2) + 1,
+															 LEN(GROUP_PATH2))
+															   AS GROUP_PATH2,
+												   GROUP_PATH2 AS GROUP_PATH
+											FROM (
+													 SELECT groupId   AS GROUP_ID,
+															CASE
+																WHEN groupId = 'ST1100000' THEN 'STOA_CEO'
+																ELSE groupName END AS GROUP_NAME,
+															CASE
+																/* SK브로드밴드 CEO 와 외주용역업체 그룹을 최상위 루트에 위치시킨다. */
+																WHEN parentGroupId = 'SKBDOMAIN' THEN groupId
+																/* SK브로드밴드 CEO 의 자식 그룹들을 최상위 루트에 위치시킨다. */
+																WHEN parentGroupId = 'SKBA0000' THEN groupId
+																/* SK스토아 CEO 그룹을 최상위 루트에 위치시킨다. */
+																WHEN parentGroupId = 'STDOMAIN' THEN groupId
+																ELSE parentGroupId
+																END AS PARENTGROUP_ID,
+															CASE
+																WHEN groupPath LIKE 'SECURITYDOMAIN^전체조직^SK브로드밴드^CEO%'
+																	THEN SUBSTRING(groupPath, 33, LEN(groupPath))
+																WHEN groupPath LIKE 'SECURITYDOMAIN^전체조직^SK브로드밴드^외주용역업체%'
+																	THEN SUBSTRING(groupPath, 29, LEN(groupPath))
+																/* STOA^CEO 와 같이 경로를 설정한다. */
+																WHEN groupPath LIKE 'SECURITYDOMAIN^전체조직^STOA 사용자 그룹^CEO%'
+																	THEN 'STOA^' + SUBSTRING(groupPath, 33, LEN(groupPath))
+																END AS GROUP_FULL,
+															CASE
+																WHEN groupPath LIKE 'SECURITYDOMAIN^전체조직^SK브로드밴드^CEO%'
+																	THEN SUBSTRING(groupPath2, 31, LEN(groupPath))
+																WHEN groupPath LIKE 'SECURITYDOMAIN^전체조직^SK브로드밴드^외주용역업체%'
+																	THEN 'SKBA0000^' + SUBSTRING(groupPath2, 31, LEN(groupPath))
+																/* STOA^CEO 와 같이 경로를 설정한다. */
+																WHEN groupPath LIKE 'SECURITYDOMAIN^전체조직^STOA 사용자 그룹^CEO%'
+																	THEN 'STOA^' + SUBSTRING(groupPath2, 30, LEN(groupPath))
+																END GROUP_PATH2
+													 FROM VIEW_GROUPINFO VG
+													 WHERE (VG.groupPath2 LIKE '%SKBA0000%' OR VG.groupPath2 LIKE '%SKBZSKBO%' OR VG.groupPath2 LIKE '%ST1100000%') AND VG.statusF = 'N'
+												 ) A
+										) B
+							   ) C
+					  ) D
+			 ) E
+		ORDER BY GROUP_LVL1 DESC, GROUP_LVL2 DESC, GROUP_LVL3 DESC
+	]]>
+	</select>
+
+	<!-- 직책 -->
+	<select id="LEGACY_POS_LIST" resultClass="egovMap">
+	<![CDATA[
+		SELECT
+			dutyId AS Duty_ID,
+			CASE
+				WHEN dutyId = 'HTEL0D11' THEN '매니저'
+				WHEN dutyId = 'HTEL0H10' THEN '팀원(H10)'
+				WHEN dutyId = 'HTEL0H11' THEN '팀원(H11)'
+				WHEN dutyId = 'HTEL0K11' THEN '팀원(K11)'
+				ELSE SUBSTRING(dutyName, 4, LEN(dutyName))
+			END Duty_Name
+		FROM
+			View_DutyInfo VD
+		WHERE
+			EXISTS (
+				SELECT *
+				FROM View_GroupInfo VG
+				INNER JOIN View_UserInfo VU ON VG.groupId = VU.groupId
+				WHERE
+					VD.dutyId = VU.dutyId
+					AND VG.groupId LIKE 'SKB%'
+					AND (VG.groupPath2 LIKE '%SKBA0000%' OR VG.groupPath2 LIKE '%SKBZSKBO%' OR VG.groupPath2 LIKE '%ST1100000%')
+					AND VG.statusF = 'N'
+			)
+			AND dutyId <> ''
+		ORDER BY dutyId
+	]]>
+	</select>
+
+
+	<!-- 직원 -->
+	<select id="LEGACY_USER_LIST" resultClass="egovMap">
+		SELECT
+			RIGHT(VU.userId, LEN(VU.userId) - 3) AS User_ID,
+			VU.userName AS User_Name,
+			VU.email AS EMail,
+			VU.groupId AS Group_Id,
+			VU.dutyId AS Duty_Id,
+			VU.userMobileNumber AS UserMobile_Number,
+			(SELECT TOP 1 RIGHT(VU2.userId, LEN(VU2.userId) - 3) FROM View_UserInfo VU2 WHERE VU2.groupId = VU.groupId AND VU.dutyId LIKE 'HTEL0[^ABC]%' AND VU2.dutyId = 'HTEL0C11') AS Manager_Id,
+			1 AS isNew
+		 FROM
+			View_GroupInfo VG
+			INNER JOIN View_UserInfo VU ON VG.groupId = VU.groupId
+		WHERE
+			(VG.groupPath2 LIKE '%SKBA0000%' OR VG.groupPath2 LIKE '%SKBZSKBO%' OR VG.groupPath2 LIKE '%ST1100000%')
+			AND VG.statusF = 'N'
+		ORDER BY VU.groupId, VU.dutyId
+	</select>
+
+	<select id="LOCAL_USER_LIST" resultClass="egovMap">
+		SELECT uum_usr_id
+		FROM UWO_USR_MTR
+	</select>
+
+	<select id="LOCAL_POS_LIST" resultClass="egovMap">
+		SELECT *
+		FROM UWO_COM_COD
+		WHERE UCC_FIR_COD = 'POS'
+	</select>
+
+	<update id="UPDATE_POS" parameterClass="egovMap">
+		UPDATE
+			UWO_COM_COD
+		SET
+			UCC_SND_NAM = #dutyName#
+		WHERE
+			UCC_FIR_COD = 'POS'
+			AND UCC_SND_COD = #dutyId#
+	</update>
+
+	<select id="GET_USER_COUNT" parameterClass="egovMap" resultClass="int">
+		SELECT COUNT(*) FROM UWO_USR_MTR WHERE UUM_USR_ID = substr(#userId#,4)
+	</select>
+
+	<select id="GET_POS_COUNT" parameterClass="egovMap" resultClass="int">
+		SELECT COUNT(*) FROM UWO_COM_COD WHERE UCC_FIR_COD = 'POS' AND UCC_SND_COD = #dutyId#
+	</select>
+
+	<update id="UPDATE_AUTH">
+		UPDATE
+			UWO_USR_MTR
+		SET
+			UUM_AUH_KEY = '9'
+		WHERE
+			UUM_POS_COD IN('HTEL0A21','HTEL0A51','HTEL0A61','HTEL0A71','HTEL0A81','HTEL0A84','HTEL0A87','HTEL0C11')
+	</update>
+
+	<!-- update -->
+	<update id="updateDept" parameterClass="Map">
+		MERGE INTO uwo_dep_mtr
+		USING DUAL
+		   ON (udm_dep_cod = #groupId#)
+		WHEN MATCHED THEN
+			UPDATE SET
+				udm_dep_nam = #groupName#,
+				udm_dep_ful = #groupFull#,
+				udm_dep_lvl = #lvl#,
+				udm_dep_1lv = #groupLvl1#,
+				udm_dep_2lv = #groupLvl2#,
+				udm_dep_3lv = #groupLvl3#,
+				udm_dep_pat = #groupPath#
+		WHEN NOT MATCHED THEN
+			INSERT
+			(
+				udm_dep_cod,
+				udm_dep_nam,
+				udm_dep_ful,
+				udm_dep_lvl,
+				udm_dep_1lv,
+				udm_dep_2lv,
+				udm_dep_3lv,
+				udm_dep_pat,
+				udm_rgt_mdh
+			)
+			VALUES
+			(
+				#groupId#,
+				#groupName#,
+				#groupFull#,
+				#lvl#,
+				#groupLvl1#,
+				#groupLvl2#,
+				#groupLvl3#,
+				#groupPath#,
+				SYSDATE
+			)
+	</update>
+
+	<delete id="deleteDept">
+		DELETE FROM uwo_dep_mtr
+	</delete>
+
+	<insert id="insertDept" parameterClass="Map">
+		INSERT INTO uwo_dep_mtr
+		(
+			udm_dep_cod,
+			udm_dep_nam,
+			udm_dep_ful,
+			udm_dep_lvl,
+			udm_dep_1lv,
+			udm_dep_2lv,
+			udm_dep_3lv,
+			udm_dep_pat,
+			udm_rgt_mdh
+		)
+		VALUES
+		(
+			#groupId#,
+			#groupName#,
+			#groupFull#,
+			#lvl#,
+			#groupLvl1#,
+			#groupLvl2#,
+			#groupLvl3#,
+			#groupPath#,
+			SYSDATE
+		)
+	</insert>
+
+	<update id="updatePos" parameterClass="Map">
+		MERGE INTO uwo_com_cod
+		USING DUAL
+		   ON (ucc_fir_cod = 'POS' AND ucc_snd_cod = #dutyId#)
+		WHEN MATCHED THEN
+			UPDATE SET
+				ucc_snd_nam = #dutyName#
+		WHEN NOT MATCHED THEN
+			INSERT
+			(
+				ucc_fir_cod,
+				ucc_fir_nam,
+				ucc_snd_cod,
+				ucc_snd_nam,
+				ucc_use_yn,
+				ucc_rgt_id,
+				ucc_rgt_mdh
+			)
+			VALUES
+			(
+				'POS',
+				'직급',
+				#dutyId#,
+				#dutyName#,
+				'Y',
+				'43',
+				SYSDATE
+			)
+	</update>
+
+	<update id="updateUser" parameterClass="Map">
+		MERGE INTO uwo_usr_mtr
+		USING DUAL
+		   ON (uum_usr_id = #userId#)
+		WHEN MATCHED THEN
+			UPDATE SET
+				uum_usr_nam = #userName#,
+				uum_mal_ads = #email#,
+				uum_dep_cod = #groupId#,
+				uum_pos_cod = #dutyId#,
+				uum_cel_num = #usermobileNumber#,
+				<!-- 2018-05-11 s, 주석처리
+				uum_apv_one = #managerId#, -->
+				uum_upt_id = '43',
+				uum_upt_mdh = SYSDATE,
+				uum_use_yn = 'Y'
+	</update>
+
+	<!-- 2017-09-12, 비밀번호 초기화 -->
+	<update id="updateUserPassword" parameterClass="Map">
+		UPDATE uwo_usr_mtr
+		SET uum_usr_pwd = #userPwd#
+		WHERE uum_usr_id = #userId#
+		  AND uum_chg_mdh IS NULL
+	</update>
+
+	<!-- 2018-03-21 s, uum_apv_gbn 추가 -->
+	<insert id="insertUser" parameterClass="Map">
+		INSERT INTO uwo_usr_mtr
+		(
+			uum_usr_key,
+			uum_usr_id,
+			uum_usr_pwd,
+			uum_usr_nam,
+			uum_mal_ads,
+			uum_dep_cod,
+			uum_pos_cod,
+			uum_cel_num,
+			uum_use_yn,
+			uum_pwd_fai,
+			uum_rgt_id,
+			uum_rgt_mdh,
+			uum_auh_key,
+			uum_apv_gbn,
+			uum_apv_one,
+			uum_apv_two,
+			uum_usr_num,
+			uum_upt_id,
+			uum_upt_mdh,
+			uum_bat_yn
+		)
+		VALUES
+		(
+			seq_uwo_usr_mtr.NEXTVAL,
+			#userId#,
+			#userPwd#,
+			#userName#,
+			#email#,
+			#groupId#,
+			#dutyId#,
+			#usermobileNumber#,
+			'Y',
+			0,
+			'43',
+			SYSDATE,
+			'8',
+			<!-- 2018-05-11 s, 주석처리
+			CASE WHEN REGEXP_LIKE (#dutyId#, 'HTEL0[ABC]') THEN 'Y' ELSE 'N' END -->
+			'N',
+			#apvOne#,
+			#apvTwo#,
+			#userId#,
+			'43',
+			SYSDATE,
+			'Y'
+		)
+	</insert>
+
+	<!-- 2018-03-21 s, uum_apv_gbn 추가 -->
+	<update id="updateUserInfo">
+		UPDATE uwo_usr_mtr uum
+		SET
+			<!-- 2018-05-11 s, 주석처리
+			uum_apv_one = (SELECT uum_usr_key FROM uwo_usr_mtr uum2 WHERE uum.uum_apv_one = uum2.uum_usr_id), -->
+		  	uum_div_cod = (SELECT uom_div_cod FROM uwo_org_mtr uom WHERE uum.uum_dep_cod = uom.uom_dep_cod),
+  			uum_svc_cod = (SELECT uom_svc_cod FROM uwo_org_mtr uom WHERE uum.uum_dep_cod = uom.uom_dep_cod),
+  			uum_apv_gbn = CASE WHEN REGEXP_LIKE (uum_pos_cod, 'HTEL0[ABC]') THEN 'Y' ELSE 'N' END
+	</update>
+
+	<!-- 30분 내로 업데이트가 되지 않은 배치건 사용안함 처리 -->
+	<update id="disableUser" parameterClass="Map">
+		UPDATE uwo_usr_mtr
+		SET
+			uum_use_yn = 'N'
+		WHERE
+			uum_upt_mdh <![CDATA[<]]> SYSDATE - 30/1440
+			AND uum_bat_yn = 'Y'
+	</update>
+
+	<!-- //인사정보 -->
+
+
+	<!-- ISC 자산정보 -->
+	<!-- 자산 -->
+	<select id="selectLegacyAssetList" resultClass="egovMap">
+		SELECT
+			serviceCode,
+			assetTypeCode,
+			assetCode,
+			assetClassficationCode,
+			assetSvcDetl,
+			assetName,
+			hostname,
+			representativeIP,
+			totalIP,
+			manufacturer,
+			productlName,
+			producVersion,
+			OSName,
+			OSVersion,
+			APPURL,
+			useDetail,
+			equipSite,
+			locattionDetail,
+			svcTypeCode,
+			personalDataYN,
+			operateDeptCode,
+			SUBSTRING(operateChargeUserID, 4, LEN(operateChargeUserID)) AS operateChargeUserID,
+			SUBSTRING(operateOfficerUserID, 4, LEN(operateOfficerUserID)) AS operateOfficerUserID,
+			manageDeptCode,
+			SUBSTRING(manageChargeUserID, 4, LEN(manageChargeUserID)) AS manageChargeUserID,
+			SUBSTRING(manageOfficerUserID, 4, LEN(manageOfficerUserID)) AS manageOfficerUserID,
+			useYN,
+			SUBSTRING(createID, 4, LEN(createID)) AS createID,
+			CONVERT(VARCHAR(20), createDate, 20) AS createDate,
+			SUBSTRING(updateID, 4, LEN(updateID)) AS updateID,
+			CONVERT(VARCHAR(20), updateDate, 20) AS updateDate,
+			diagnosisResult,
+			assetAmount,
+			confidentiality,
+			integrity,
+			fusibility,
+			ISAMSYN,
+			samplingYN,
+			infrastructureYN,
+			T2.groupName AS manageDeptName
+		FROM
+			dbo.View_InfomationAssetMaster T1 WITH(NOLOCK)
+			INNER JOIN dbo.View_GroupInfo T2 WITH(NOLOCK) ON T1.manageDeptCode = T2.groupId
+		<!-- WHERE
+			updateDate > DATEADD(DAY, -1, CONVERT(VARCHAR(10), GETDATE(), 120)) -->
+		ORDER BY assetCode
+	</select>
+
+	<select id="selectAssetInfo" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			uar_ass_key,
+			CASE WHEN uar_upt_mdh &lt; TO_DATE(#uarUptMdh#, 'yyyy-mm-dd hh24:mi:ss') THEN 'true'
+			ELSE 'false'
+			END updated
+		FROM uwo_ass_mtr
+		WHERE
+			uar_ass_cod = #uarAssCod#
+			AND uar_bcy_cod = #uarBcyCod#
+	</select>
+
+	<insert id="insertAsset" parameterClass="Map">
+		INSERT
+		INTO UWO_ASS_MTR(
+			UAR_ASS_KEY
+			,UAR_BCY_COD
+			,UAR_ASS_COD
+			,UAR_GRP_COD
+			,UAR_GRP_NAM
+			,UAR_ASS_CAT
+			,UAR_SVR_COD
+			,UAR_SVR_NAM
+			,UAR_SVR_ETC
+			,UAR_SUB_COD
+			,UAR_SUB_NAM
+			,UAR_DEP_LV1
+			,UAR_DEP_LV2
+			,UAR_DEP_COD
+			,UAR_DEP_NAM
+			,UAR_OWN_ID
+			,UAR_OWN_NAM
+			,UAR_ADM_ID
+			,UAR_ADM_NAM
+			,UAR_OPR_LV1
+			,UAR_OPR_LV2
+			,UAR_OPR_COD
+			,UAR_OPR_NAM
+			,UAR_USE_ID
+			,UAR_USE_NAM
+			,UAR_PIC_ID
+			,UAR_PIC_NAM
+			,UAR_ASS_GBN
+			,UAR_ASS_NAM
+			,UAR_EQP_NAM
+			,UAR_DTL_EXP
+			,UAR_ADM_POS
+			,UAR_RSK_GRP
+			,UAR_RSK_NAM
+			,UAR_APP_CON
+			,UAR_APP_ITG
+			,UAR_APP_AVT
+			,UAR_APP_TOT
+			,UAR_ASS_LVL
+			,UAR_AUD_YN
+			,UAR_SMP_YN
+			,UAR_INF_YN
+			,UAR_PRV_YN
+			,UAR_USE_YN
+			,UAR_VAL_CL0
+			,UAR_VAL_CL1
+			,UAR_VAL_CL2
+			,UAR_VAL_CL3
+			,UAR_VAL_CL4
+			,UAR_VAL_CL5
+			,UAR_VAL_CL6
+			,UAR_VAL_CL7
+			,UAR_VAL_CL8
+			,UAR_VAL_CL9
+			,UAR_RGT_ID
+			,UAR_RGT_MDH
+			,UAR_UPT_ID
+			,UAR_UPT_MDH
+			,uar_ip
+			,uar_host
+			,uar_os
+		)
+		SELECT
+			SEQ_UWO_ASS_MTR.NEXTVAL
+			,#uarBcyCod#
+			,#uarAssCod#
+			,#uarGrpCod#
+			,#uarGrpNam#
+			,A.UAC_CAT_KEY
+			,(SELECT svc_cod FROM uwo_svc_sub WHERE svc_sub_cod = #uarSubCod#)
+			,(SELECT svc_nam FROM uwo_svc_mtr c1 INNER JOIN uwo_svc_sub c2 ON c1.svc_cod = c2.svc_cod WHERE c2.svc_sub_cod = #uarSubCod#)
+			,#uarSvrEtc#
+			,#uarSubCod#
+			,#uarSubNam#
+			,(select udm_dep_1lv from uwo_dep_mtr where udm_dep_cod = #uarDepCod#)
+			,(select udm_dep_2lv from uwo_dep_mtr where udm_dep_cod = #uarDepCod#)
+			,#uarDepCod#
+			,(select udm_dep_nam from uwo_dep_mtr where udm_dep_cod = #uarDepCod#)
+			,#uarOwnId#
+			,(select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarOwnId#)
+			,#uarAdmId#
+			,(select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarAdmId#)
+			,(select udm_dep_1lv from uwo_dep_mtr where udm_dep_cod = #uarOprCod#)
+			,(select udm_dep_2lv from uwo_dep_mtr where udm_dep_cod = #uarOprCod#)
+			,#uarOprCod#
+			,(select udm_dep_nam from uwo_dep_mtr where udm_dep_cod = #uarOprCod#)
+			,#uarUseId#
+			,(select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarUseId#)
+			,#uarPicId#
+			,(select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarPicId#)
+			,#uarAssGbn#
+			,(select UCC_SND_NAM from UWO_COM_COD where UCC_SND_COD = #uarAssGbn#)
+			,#uarEqpNam#
+			,#uarDtlExp#
+			,#uarAdmPos#
+			,#uarRskGrp#
+			,#uarRskNam#
+			,#uarAppCon#
+			,#uarAppItg#
+			,#uarAppAvt#
+			,#uarAppTot#
+			,#uarAssLvl#
+			,DECODE(#uarAudYn#, NULL, 'N', #uarAudYn#)
+			,DECODE(#uarSmpYn#, NULL, 'N', #uarSmpYn#)
+			,DECODE(#uarInfYn#, NULL, 'N', #uarInfYn#)
+			,DECODE(#uarPrvYn#, NULL, 'N', #uarPrvYn#)
+			,DECODE(#uarUseYn#, NULL, 'N', #uarUseYn#)
+			,#uarValCl0#
+			,#uarValCl1#
+			,#uarValCl2#
+			,#uarValCl3#
+			,#uarValCl4#
+			,#uarValCl5#
+			,#uarValCl6#
+			,#uarValCl7#
+			,#uarValCl8#
+			,#uarValCl9#
+			,#uarRgtId#
+			,TO_DATE(#uarRgtMdh#, 'yyyy-mm-dd hh24:mi:ss')
+			,#uarUptId#
+			,TO_DATE(#uarUptMdh#, 'yyyy-mm-dd hh24:mi:ss')
+			,#uarIp#
+			,#uarHost#
+			,#uarOs#
+			FROM
+			UWO_ASS_CAT A
+		WHERE
+			UAC_CAT_COD = #uarCatCod#
+	</insert>
+
+	<update id="updateAsset" parameterClass="Map">
+		UPDATE UWO_ASS_MTR
+		   SET
+				UAR_SUB_COD = #uarSubCod#
+				, UAR_SUB_NAM = #uarSubNam#
+				, UAR_SVR_COD = (SELECT svc_cod FROM uwo_svc_sub WHERE svc_sub_cod = #uarSubCod#)
+				, UAR_SVR_NAM = (SELECT svc_nam FROM uwo_svc_mtr c1 INNER JOIN uwo_svc_sub c2 ON c1.svc_cod = c2.svc_cod WHERE c2.svc_sub_cod = #uarSubCod#)
+				, UAR_GRP_COD = #uarGrpCod#
+				, UAR_GRP_NAM = #uarGrpNam#
+				, UAR_ASS_GBN = #uarAssGbn#
+				, UAR_ASS_NAM = (SELECT UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_SND_COD = #uarAssGbn#)
+				, UAR_DEP_LV1 = (SELECT UDM_DEP_1LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = #uarDepCod#)
+				, UAR_DEP_LV2 = (SELECT UDM_DEP_2LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = #uarDepCod#)
+				, UAR_DEP_COD = #uarDepCod#
+				, UAR_DEP_NAM = (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR WHERE UDM_DEP_COD = #uarDepCod#)
+				, UAR_OWN_ID = #uarOwnId#
+				, UAR_OWN_NAM = (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_ID = #uarOwnId#)
+				, UAR_ADM_ID = #uarAdmId#
+				, UAR_ADM_NAM = (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_ID = #uarAdmId#)
+				, UAR_OPR_LV1 = (SELECT UDM_DEP_1LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = #uarOprCod#)
+				, UAR_OPR_LV2 = (SELECT UDM_DEP_2LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = #uarOprCod#)
+				, UAR_OPR_COD = #uarOprCod#
+				, UAR_OPR_NAM = (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR WHERE UDM_DEP_COD = #uarOprCod#)
+				, UAR_USE_ID = #uarUseId#
+				, UAR_USE_NAM = (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_ID = #uarUseId#)
+				, UAR_PIC_ID = #uarPicId#
+				, UAR_PIC_NAM = (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_ID = #uarPicId#)
+				, UAR_EQP_NAM = #uarEqpNam#
+				, UAR_ADM_POS = #uarAdmPos#
+				, UAR_AUD_YN = DECODE(#uarAudYn#, NULL, 'N', #uarAudYn#)
+				, UAR_SMP_YN = DECODE(#uarSmpYn#, NULL, 'N', #uarSmpYn#)
+				, UAR_INF_YN = DECODE(#uarInfYn#, NULL, 'N', #uarInfYn#)
+				, UAR_PRV_YN = DECODE(#uarPrvYn#, NULL, 'N', #uarPrvYn#)
+				, UAR_SVR_ETC = #uarSvrEtc#
+				, UAR_DTL_EXP = #uarDtlExp#
+				, UAR_APP_CON = #uarAppCon#
+				, UAR_APP_ITG = #uarAppItg#
+				, UAR_APP_AVT = #uarAppAvt#
+				, UAR_APP_TOT = #uarAppTot#
+				, UAR_ASS_LVL = #uarAssLvl#
+				, UAR_USE_YN = DECODE(#uarUseYn#, NULL, 'N', #uarUseYn#)
+				, UAR_VAL_CL0 = #uarValCl0#
+				, UAR_VAL_CL1 = #uarValCl1#
+				, UAR_VAL_CL2 = #uarValCl2#
+				, UAR_VAL_CL3 = #uarValCl3#
+				, UAR_VAL_CL4 = #uarValCl4#
+				, UAR_VAL_CL5 = #uarValCl5#
+				, UAR_VAL_CL6 = #uarValCl6#
+				, UAR_VAL_CL7 = #uarValCl7#
+				, UAR_VAL_CL8 = #uarValCl8#
+				, UAR_VAL_CL9 = #uarValCl9#
+				, UAR_RSK_GRP = #uarRskGrp#
+				, UAR_RSK_NAM = #uarRskNam#
+				, UAR_UPT_ID = #uarUatId#
+				, UAR_UPT_MDH = TO_DATE(#uarUptMdh#, 'yyyy-mm-dd hh24:mi:ss')
+				, uar_ip = #uarIp#
+				, uar_host = #uarHost#
+				, uar_os = #uarHost#
+		 WHERE UAR_ASS_KEY = #uarAssKey#
+	</update>
+
+	<insert id="insertAssetGroup" parameterClass="Map">
+		INSERT INTO UWO_ASS_GRP
+		(
+		  UAG_GRP_KEY
+		  , UAG_BCY_COD
+		  , UAG_SVR_COD
+		  , UAG_SVR_NAM
+		  , UAG_SUB_COD
+		  , UAG_SUB_NAM
+		  , UAG_DEP_COD
+		  , UAG_DEP_NAM
+		  , UAG_ADM_ID
+		  , UAG_ADM_NAM
+		  , UAG_ASS_CAT
+		  , UAG_CAT_NAM
+		  , UAG_GRP_COD
+		  , UAG_GRP_NAM
+		  , UAG_GRP_DES
+		  , UAG_GRP_LVL
+		  , UAG_USE_YN
+		  , UAG_RGT_ID
+		  , UAG_RGT_MDH
+		  , UAG_UPT_ID
+		  , UAG_UPT_MDH
+		)
+		VALUES
+		(
+		  #uagGrpKey#
+		  , #uarBcyCod#
+		  , (SELECT svc_cod FROM uwo_svc_sub WHERE svc_sub_cod = #uarSubCod#)
+		  , (SELECT svc_nam FROM uwo_svc_mtr c1 INNER JOIN uwo_svc_sub c2 ON c1.svc_cod = c2.svc_cod WHERE c2.svc_sub_cod = #uarSubCod#)
+		  , #uarSubCod#
+		  , (SELECT svc_sub_nam FROM uwo_svc_sub WHERE svc_sub_cod = #uarSubCod#)
+		  , #uarDepCod#
+		  , (select UDM_DEP_NAM from UWO_DEP_MTR where UDM_DEP_COD = #uarDepCod#)
+		  , #uarAdmId#
+		  , (select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarAdmId#)
+		  , (select UAC_CAT_KEY from UWO_ASS_CAT where uac_cat_cod = #uarCatCod#)
+		  , (select UAC_CAT_NAM from UWO_ASS_CAT where uac_cat_cod = #uarCatCod#)
+		  , #uarGrpCod#
+		  , #uarGrpNam#
+		  , ''
+		  , #uarAssLvl#
+		  , 'Y'
+		  , NULL
+		  , SYSDATE
+		  , NULL
+		  , SYSDATE
+		)
+	</insert>
+
+
+	<!-- ISC SSR 진단 정보 -->
+	<!-- SSR 진단 코드 -->
+	<select id="selectLegacyDiagnosisItemInfoList" resultClass="egovMap">
+		SELECT
+			diagnosisITemplateNo,
+			diagnosisItemCode,
+			assetClass,
+			diagnosisItemName,
+			diagnosisItemRiskGrade,
+			userCode,
+			userClass
+		FROM View_SecurityDiagnosisItemInfo WITH(NOLOCK)
+		ORDER BY userCode
+	</select>
+
+	<!-- SSR 진단 결과 -->
+	<select id="selectLegacyDiagnosisResultList" resultClass="egovMap">
+		SELECT
+			T3.assetCode,
+			T2.diagnosisItemCode,
+			MAX(T2.diagnosisResult) AS diagnosisResult
+		FROM
+			View_infomationAssetSSRLink T1 WITH(NOLOCK)
+			INNER JOIN View_securityDiagnosisItemResult T2 WITH(NOLOCK) ON T1.SSRAssetCode = T2.objectNo
+			INNER JOIN View_infomationAssetMaster T3 WITH(NOLOCK) ON T1.serviceCode = T3.serviceCode AND T1.assetTypeCode = T3.assetTypeCode AND T1.assetCode = T3.assetCode
+			INNER JOIN View_securityDiagnosisItemInfo T4 WITH(NOLOCK) ON T2.diagnosisItemCode = T4.diagnosisItemCode
+         WHERE 1=1
+		 GROUP BY T3.assetCode,T2.diagnosisItemCode
+		 ORDER BY T3.assetCode, T2.diagnosisItemCode
+	</select>
+
+	<select id="getAssetGroupCode" parameterClass="Map" resultClass="String">
+		SELECT uar_grp_cod
+		FROM UWO_ASS_MTR
+		WHERE
+			uar_ass_cod = #uarAssCod#
+			AND uar_bcy_cod = '0'
+	</select>
+
+	<!-- 진단 업데이트 -->
+	<update id="updateUwoRskVlb" parameterClass="java.util.List">
+		MERGE INTO uwo_rsk_vlb urv
+		USING
+		(
+		<iterate conjunction="UNION ALL">
+			SELECT
+	        	#[].urvVlbCod# AS urv_vlb_cod,
+	        	#[].urvRskItm# AS urv_rsk_itm,
+	        	#[].urvRskDiv# AS urv_rsk_div,
+	        	#[].urvRskImp# AS urv_rsk_imp,
+	        	#[].urvRskSrc# AS urv_rsk_src,
+	        	#[].urvRskOrd# AS urv_rsk_ord,
+	        	#[].urvRgtId# AS urv_rgt_id
+			FROM DUAL
+		</iterate>
+		) u ON (
+			urv.urv_vlb_cod = u.urv_vlb_cod
+			AND urv.urv_rsk_src = u.urv_rsk_src
+		)
+    	WHEN MATCHED THEN
+		UPDATE SET
+			urv_rsk_itm = u.urv_rsk_itm,
+			urv_rsk_div = u.urv_rsk_div,
+			urv_rsk_imp = u.urv_rsk_imp,
+			urv_upt_id =  u.urv_rgt_id,
+			urv_rsk_ord = u.urv_rsk_ord,
+			urv_upt_mdh = SYSDATE
+		WHEN NOT MATCHED THEN
+		INSERT
+		(
+			urv_rsk_key,
+				urv_vlb_cod,
+				urv_rsk_itm,
+				urv_rsk_div,
+				urv_rsk_imp,
+				urv_rsk_ord,
+				urv_rgt_id,
+				urv_rgt_mdh,
+				urv_upt_id,
+				urv_upt_mdh,
+				urv_use_yn,
+				urv_rsk_src
+		)
+		VALUES
+		(
+			SEQ_NEXTVAL_ON_DEMAND('SEQ_UWO_RSK_VLB'),
+			u.urv_vlb_cod,
+			u.urv_rsk_itm,
+			u.urv_rsk_div,
+			u.urv_rsk_imp,
+			u.urv_rsk_ord,
+			u.urv_rgt_id,
+			SYSDATE,
+			u.urv_rgt_id,
+			SYSDATE,
+			'Y',
+			u.urv_rsk_src
+		)
+	</update>
+</sqlMap>

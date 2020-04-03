@@ -1,0 +1,2692 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="fmRiskm">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="com.uwo.isms.domain.SearchVO"/>
+
+	<!-- 위험관리 -->
+	<sql id="QR_RISKM003_WHERE">
+
+	</sql>
+
+	<select id="QR_RISKM003_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT *
+		  FROM (
+				SELECT m.*,
+			     	(SELECT uac_cat_nam FROM UWO_ASS_CAT c WHERE c.uac_cat_key = m.uar_ass_Cat) AS uar_cat_nam,
+			     	(SELECT DECODE(count(*), 0, 'N', 'Y')  FROM  uwo_rsk_srl srl
+			     	  WHERE m.uar_grp_cod = srl.uag_grp_cod
+			     	    <isNotEmpty property="ursMngKey">
+						  AND srl.urs_mes_mng = #ursMngKey#
+						</isNotEmpty>
+						  AND REPLACE(URS_RSK_RST, 'NA', 0) >= #doa#
+						<isEqual property="doaGrd" compareValue="H">
+						  AND REPLACE(URS_RSK_RST, 'NA', 0) IN (7,8,9)
+						</isEqual>
+						<isEqual property="doaGrd" compareValue="M">
+						  AND REPLACE(URS_RSK_RST, 'NA', 0) IN (4,5,6)
+						</isEqual>
+						<isEqual property="doaGrd" compareValue="L">
+						  AND REPLACE(URS_RSK_RST, 'NA', 0) IN (1,2,3)
+						</isEqual>
+					) rsk_yn
+				  FROM (SELECT mtr.uar_dep_cod         AS uar_dep_cod,
+				           mtr.uar_svr_cod			AS uar_svr_cod,
+			               mtr.uar_dep_nam          AS uar_dep_nam,
+				           mtr.uar_svr_nam          AS uar_svr_nam,
+				           mtr.uar_ass_cat			AS uar_ass_cat,
+				           count(uar_ass_cod)		AS uar_ass_cnt,
+				           mtr.uar_grp_cod			AS uar_grp_cod,
+				           mtr.uar_grp_nam			AS uar_grp_nam,
+				           mtr.uar_ass_lvl			AS uar_ass_lvl,
+				           <!-- 2017-06-30, uar_use_id 에서 uag_adm_id 로 -->
+				           grp.uag_adm_id			AS uar_use_id,
+				           grp.uag_adm_nam			AS uar_use_nam
+				  	  FROM uwo_ass_mtr mtr,
+					       uwo_ass_grp grp
+					 WHERE grp.uag_grp_cod = mtr.uar_grp_cod
+					 <!-- AND mtr.uar_bcy_cod = grp.uag_bcy_cod -->
+					   AND uar_bcy_cod = #bcyCod#
+					   AND uag_use_yn = 'Y'
+					 <isNotEmpty property="smpYn">
+					   AND uar_smp_yn = #smpYn#
+					 </isNotEmpty>
+					 <isNotEmpty property="assCat">
+					   AND uar_ass_cat = #assCat#
+					 </isNotEmpty>
+				     <isNotEmpty property="service">
+				        AND uar_svr_cod = #service#
+				     </isNotEmpty>
+					 <isNotEmpty property="groupName">
+					    AND uag_grp_nam like '%' || #groupName# || '%'
+					 </isNotEmpty>
+				     <isNotEmpty property="assGbn">
+				        AND UAR_ASS_GBN = #assGbn#
+				     </isNotEmpty>
+					 <isNotEmpty property="assLvl">
+				        AND UAR_ASS_LVL = #assLvl#
+				     </isNotEmpty>
+				     <isNotEmpty property="operMngId">
+				        AND UAR_USE_ID = #operMngId#
+				     </isNotEmpty>
+				     <isNotEmpty property="operMngNm">
+				        AND UAR_USE_NAM like '%' || #operMngNm# || '%'
+				     </isNotEmpty>
+				     <!-- 2017-06-08, 타부서의 담당자에게 할당될 수 있기 때문에 담당자 데이터가 있을경우 부서 검색을 하지 않음 -->
+				     <isEmpty property="ursMngKey">
+					     <isNotEmpty property="stOrg">
+					        AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_1lv = #stOrg#)
+					     </isNotEmpty>
+					     <isNotEmpty property="hqOrg">
+					        AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_2lv = #hqOrg#)
+					     </isNotEmpty>
+					     <isNotEmpty property="gpOrg">
+					        AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_3lv = #gpOrg#)
+					     </isNotEmpty>
+					 </isEmpty>
+					 <!-- 2017-06-08, 처리상태 -->
+					 <isNotEmpty property="rskSta">
+						AND EXISTS (
+							SELECT * FROM uwo_rsk_srl srl
+							WHERE grp.uag_grp_cod = srl.uag_grp_cod
+								AND srl.urs_sta_cod = #rskSta#)
+					 </isNotEmpty>
+				      GROUP BY mtr.uar_dep_cod,
+			              mtr.uar_dep_nam,
+					          mtr.uar_svr_cod,
+					          mtr.uar_svr_nam,
+					          mtr.uar_ass_cat,
+					          mtr.uar_grp_cod,
+					          mtr.uar_grp_nam,
+					          mtr.uar_ass_lvl,
+					          grp.uag_adm_id,
+					          grp.uag_adm_nam,
+					          mtr.uar_opr_cod
+				) m
+			)
+		WHERE 1=1
+		<isNotEmpty property="rskYn">
+		  AND rsk_yn = #rskYn#
+		</isNotEmpty>
+		<isNotEmpty property="doa">
+		 AND uar_ass_cnt > 0
+		</isNotEmpty>
+	</select>
+
+	<!-- 위험관리 내역 -->
+	<select id="QR_RISKM003_RSK_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT srl.urs_rsk_key,
+			   srl.uag_grp_cod,
+		       grp.uag_grp_nam,
+		       srl.uag_svr_cod,
+		       srl.uag_svr_nam,
+		       urv.urv_rsk_div,
+		       urv.urv_rsk_itm,
+		       srl.urs_rsk_rst,
+		       srl.urs_rsk_chk,
+		       F_GET_COMMON_NAME(srl.urs_rsk_chk, 'DIARST') AS urs_chk_nam,
+		       urv.urv_rsk_grd AS uso_rsk_grd,
+		       F_GET_COMMON_NAME(urv.urv_rsk_grd, 'VLBGRD') AS uso_grd_nam,
+		       urv.urv_rsk_grd AS uso_rsk_pnt,
+		       srl.urs_sta_cod,
+		       F_GET_COMMON_NAME(srl.urs_sta_cod, 'RSLSTATUS') AS urs_sta_nam
+		  FROM
+		  	uwo_rsk_srl srl
+			INNER JOIN uwo_rsk_vlb urv ON urv.urv_vlb_cod = srl.urv_vlb_cod
+			INNER JOIN uwo_ass_grp grp ON grp.uag_grp_cod = srl.uag_grp_cod
+			INNER JOIN (
+			  SELECT uar_grp_cod, uar_opr_cod, uar_ass_gbn, uar_smp_yn
+			  FROM uwo_ass_mtr
+			  WHERE uar_bcy_cod = #bcyCod#
+			  	AND uar_use_yn = 'Y'
+			  GROUP BY uar_grp_cod, uar_opr_cod, uar_ass_gbn, uar_smp_yn
+			) uar ON grp.uag_grp_cod = uar.uar_grp_cod
+		WHERE srl.umm_man_cyl = #bcyCod#
+			AND uag_use_yn = 'Y'
+		 <isNotEmpty property="grpKey">
+		    AND srl.uag_grp_Cod = #grpKey#
+		 </isNotEmpty>
+		 <isNotEmpty property="ursMngKey">
+		    AND srl.urs_mes_mng = #ursMngKey#
+		 </isNotEmpty>
+		 <isNotEmpty property="doa">
+		    AND REPLACE(URS_RSK_RST, 'NA', 0) >= #doa#
+		 </isNotEmpty>
+		 <isEqual property="doaGrd" compareValue="H">
+		   AND REPLACE(URS_RSK_RST, 'NA', 0) IN (7,8,9)
+		 </isEqual>
+		 <isEqual property="doaGrd" compareValue="M">
+		   AND REPLACE(URS_RSK_RST, 'NA', 0) IN (4,5,6)
+		 </isEqual>
+		 <isEqual property="doaGrd" compareValue="L">
+		   AND REPLACE(URS_RSK_RST, 'NA', 0) IN (1,2,3)
+		 </isEqual>
+		 <isNotEmpty property="assCat">
+		    AND uag_ass_cat = #assCat#
+		 </isNotEmpty>
+	     <isNotEmpty property="service">
+	        AND uag_svr_cod = #service#
+	     </isNotEmpty>
+	     <isNotEmpty property="groupName">
+		    AND uag_grp_nam like '%' || #groupName# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="assLvl">
+	        AND uag_grp_lvl = #assLvl#
+	     </isNotEmpty>
+	     <isNotEmpty property="assGbn">
+	        AND uar_ass_gbn = #assGbn#
+	     </isNotEmpty>
+		 <isNotEmpty property="smpYn">
+	        AND uar_smp_yn = #smpYn#
+		 </isNotEmpty>
+	     <!-- 2017-06-08, 타부서의 담당자에게 할당될 수 있기 때문에 담당자 데이터가 있을경우 부서 검색을 하지 않음 -->
+		 <isEmpty property="ursMngKey">
+		     <isNotEmpty property="stOrg">
+		        AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_1lv = #stOrg#)
+		     </isNotEmpty>
+		     <isNotEmpty property="hqOrg">
+		        AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_2lv = #hqOrg#)
+		     </isNotEmpty>
+		     <isNotEmpty property="gpOrg">
+		        AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_3lv = #gpOrg#)
+		     </isNotEmpty>
+		 </isEmpty>
+		 <!-- 2017-06-08, 처리상태 -->
+		 <isNotEmpty property="rskSta">
+			AND srl.urs_sta_cod = #rskSta#
+		 </isNotEmpty>
+		 ORDER BY urv.urv_rsk_ord, urv.urv_vlb_cod
+	</select>
+
+	<!-- 위험조치계획서 리포트 내역 -->
+	<select id="QR_RISKM003_REPORT_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT grp.uag_grp_cod                                                           AS uag_grp_cod,
+			   grp.uag_grp_nam                                                           AS uag_grp_nam,
+			   grp.uag_cat_nam                                                           AS uag_cat_nam,
+			   srl.urv_vlb_cod                                                           AS uso_coc_cod,
+			   coc.urv_coc_des                                                           AS uso_coc_des,
+			   srl.urs_mes_des                                                           AS urs_mes_des,
+			   CASE coc.urv_rsk_grd
+			    WHEN 'U'    THEN 'H'
+			    WHEN 'M'    THEN 'M'
+			    WHEN 'D'    THEN 'L'
+			                ELSE ''  END                                                 AS uso_rsk_grd_chg,
+			   NVL2(srl.urs_rsk_prc, F_GET_COMMON_NAME(srl.urs_rsk_prc, 'RSKPRC'), '' )  AS rsk,
+			   TO_CHAR(srl.urs_req_mdh, 'YYYY-MM-DD')                                    AS urs_req_mdh,
+			   (SELECT (SELECT udm_dep_nam  FROM uwo_dep_mtr dep
+			             WHERE dep.udm_dep_cod = usr.uum_dep_cod)
+			      FROM uwo_usr_mtr usr
+			     WHERE usr.uum_usr_key = srl.URS_MNG_KEY)                                AS mng_dep_nam,
+			   srl.urs_lim_des                                                           AS urs_lim_des
+		  FROM uwo_rsk_srl srl,
+		       uwo_rsk_vlb coc,
+  			   uwo_ass_grp grp
+		 WHERE coc.urv_vlb_cod = srl.urv_vlb_cod
+		   AND grp.uag_grp_cod = srl.uag_grp_cod
+		   AND srl.uag_svr_cod = #svr#
+		   AND srl.umm_man_cyl = #manCyl#
+		   AND grp.uag_Ass_cat = #uacCatKey#
+		   AND REPLACE(urs_rsk_rst, 'NA', 0) >= (SELECT ucc_snd_cod FROM uwo_com_cod
+			                   WHERE ucc_fir_Cod = 'DOA'
+			                     AND ucc_etc = 'Y')
+		 ORDER BY srl.urv_vlb_cod
+	</select>
+
+	<!-- 위험조치계획서 리포트 시트 리스트-->
+	<select id="QR_RISKM003_REPORT_TYPE" parameterClass="Map" resultClass="egovMap">
+		SELECT uac_cat_key,
+		       uac_cat_nam,
+		       uac_cat_cod
+		  FROM uwo_ass_Cat
+		 WHERE uac_cat_Cod NOT IN ('MT', 'MG', 'MP')
+		   AND uac_use_yn = 'Y'
+	</select>
+
+	<!-- 서비스 리스트 조회 -->
+	<select id="QR_RISKM003_SVR_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			svc_cod AS cod,
+			svc_nam AS nam
+		  FROM uwo_svc_mtr
+		 WHERE use_yn = 'Y'
+		 ORDER BY sort
+	</select>
+
+	<!-- 서비스 명 조회 -->
+	<select id="QR_RISKM003_SVR_NAME" parameterClass="Map" resultClass="String">
+		SELECT distinct ucc_fir_nam as ucc_fir_nam
+		  FROM uwo_com_cod
+		 WHERE ucc_fir_cod = #svr#
+	</select>
+
+	<!-- 위험관리 내역 -->
+	<select id="QR_RISKM003_RSK_INFO" parameterClass="Map" resultClass="egovMap">
+		SELECT srl.urs_rsk_key,
+			  srl.uag_grp_cod,
+			  srl.uag_svr_cod,
+			  srl.uag_svr_nam,
+			  grp.uag_grp_nam,
+			  grp.uag_dep_cod,
+        	  grp.uag_dep_nam,
+			  urv.urv_rsk_div,
+			  urv.urv_rsk_itm,
+			  srl.urs_rsk_rst,
+			  srl.urs_rsk_chk,
+			  F_GET_COMMON_NAME(srl.urs_rsk_chk, 'DIARST') AS urs_chk_nam,
+			  urv.urv_rsk_grd,
+			  F_GET_COMMON_NAME(urv.urv_rsk_grd, 'VLBGRD') AS uso_grd_nam,
+			  urv.urv_rsk_pnt,
+			  srl.urs_sta_cod,
+			  F_GET_COMMON_NAME(srl.urs_sta_cod, 'RSLSTATUS') AS urs_sta_nam,
+			  srl.urs_mng_key,
+			  srl.urs_mes_mng,
+			  srl.urs_mng_nam,
+			  srl.urs_mes_des,
+			  srl.urs_mes_usr,
+			  srl.urs_cof_mdh,
+			  srl.urs_cof_usr,
+			  srl.urs_lim_des,
+			  srl.urs_rst_des,
+			  srl.urs_rst_mdh,
+			  srl.urs_rst_usr,
+			  TO_CHAR(srl.urs_rco_mdh, 'YYYY-MM-DD') AS urs_rco_mdh,
+			  srl.urs_rco_usr,
+			  srl.urs_rsk_prc,
+			  NVL2(srl.urs_rsk_prc, F_GET_COMMON_NAME(srl.urs_rsk_prc, 'RSKPRC'), '') AS urs_prc_nam,
+			  TO_CHAR(srl.urs_req_mdh, 'YYYY-MM-DD') AS urs_req_mdh,
+			  grp.uag_cat_nam,
+			  COALESCE(srl.urs_mes_mng, (SELECT TO_CHAR(uum_usr_key) FROM uwo_usr_mtr WHERE uum_usr_id = grp.uag_adm_id)) AS uag_adm_id,
+			  CASE WHEN srl.urs_mes_mng IS NOT NULL THEN F_GET_USR_NAME(srl.urs_mes_mng)
+			  ELSE grp.uag_adm_nam
+			  END uag_adm_nam,
+			  srl.urs_pln_sta,
+			  srl.urs_end_sta,
+			  TO_CHAR(srl.urs_mes_mdh, 'yyyy-mm-dd hh24:mi') AS urs_mes_mdh,
+			  TO_CHAR(srl.urs_pln_mdh, 'yyyy-mm-dd') AS urs_pln_mdh,
+			  TO_CHAR(srl.urs_end_mdh, 'yyyy-mm-dd') AS urs_end_mdh
+		 FROM uwo_rsk_srl srl
+		INNER JOIN uwo_rsk_vlb urv ON srl.urv_vlb_cod = urv.urv_vlb_cod
+		INNER JOIN uwo_ass_grp grp ON srl.uag_grp_cod = grp.uag_grp_cod
+		WHERE srl.urs_rsk_key	= #ursRskKey#
+	</select>
+
+
+	<select id="QR_RISKM003_INFO" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			F_GET_COMMON_NAME(UAG_SVC_COD, 'SERVICE') AS  UAG_SVC_NAM
+			, F_GET_COMMON_NAME(UAG_DEP_COD, 'DEPT') AS  UAG_DEP_NAM
+			, F_GET_USR_NAME(UAG_MNG_ID) AS UAG_MNG_NAM
+			, (SELECT COUNT(UAR_ASS_KEY) FROM UWO_ASS_MTR WHERE UAR_GRP_KEY = UAG_GRP_KEY AND uar_bcy_cod = uag_bcy_cod) UAG_ASS_CNT
+			, UAG_GRP_NAM
+			, UAG_GRP_KEY
+			, UAG_GRP_COD
+			, UAC_CAT_NAM AS UAG_CAT_NAM
+			, DECODE(UAG_GRP_LVL, 1, '1등급', 2, '2등급', '3등급') GRP_LVL_TXT
+		  FROM
+		  	UWO_ASS_GRP,
+			UWO_ASS_CAT,
+			UWO_RSK_MNG
+		 WHERE
+		 	UAC_CAT_KEY = UAG_CAT_KEY
+		 	AND UAG_GRP_KEY = URG_GRP_KEY(+)
+		 	AND UAG_BCY_COD = #bcyCod#
+		 	AND UAG_GRP_KEY = #grpKey#
+		 GROUP BY UAG_GRP_KEY, UAG_SVC_COD, UAG_DEP_COD, UAG_MNG_ID,UAG_GRP_COD,
+		 	UAG_GRP_NAM, UAC_CAT_NAM, UAG_GRP_LVL
+	</select>
+
+	<insert id="QR_RISKM003_INSERT" parameterClass="Map">
+		INSERT
+			INTO UWO_RSK_MNG (
+				URG_RSK_KEY
+				, URG_BCY_COD
+				, URG_DIV_COD
+				, URG_SVC_COD
+				, URG_DEP_COD
+				, URG_GRP_KEY
+				, URG_COC_KEY
+				, URG_COC_MDH
+				, URG_COC_USR
+				, URG_ASS_VAL
+				, URG_RSK_CHK
+				, URG_RSK_PNT
+				, URG_RSK_LVL
+				, URG_RSK_PRC
+				, URG_MES_DES
+				, URG_MES_MDH
+				, URG_MES_USR
+				, URG_MES_DEP
+				, URG_MES_YN
+				, URG_PRC_MDH
+				, URG_COF_MDH
+				, URG_COF_USR
+				, URG_LIM_DES
+				, URG_RST_DES
+				, URG_RST_MDH
+				, URG_RST_USR
+				, URG_RST_YN
+				, URG_RCO_MDH
+				, URG_RCO_USR
+				, URG_STA_COD
+				, URG_SRO_KEY
+				, URG_RGT_ID
+				, URG_RGT_MDH
+				, URG_UPT_ID
+				, URG_UPT_MDH
+		) VALUES (
+				SEQ_UWO_RSK_MNG.NEXTVAL
+				,#urgBcyCod#
+				,#urgDivCod#
+				,#urgSvcCod#
+				,#urgDepCod#
+				,#urgGrpKey#
+				,#urgCocKey#
+				,SYSDATE
+				,#urgMngId#
+				,#urgAssVal#
+				,#urgRskChk#
+				,#urgRskPnt#
+				,#urgRskLvl#
+				,#urgRskPrc#
+				,#urgMesDes#
+				,SYSDATE
+				,#urgMngId#
+				,#urgMesDep#
+				,NVL(#urgMesYn#, 'N')
+				,DECODE(#urgMesYn#, 'Y', SYSDATE, NULL)
+				,DECODE(#urgMesYn#, 'Y', SYSDATE, NULL)
+				,#urgRgtId#
+				,#urgLimDes#
+				,#urgRstDes#
+				,SYSDATE
+				,#urgMngId#
+				,NVL(#urgRstYn#, 'N')
+				,DECODE(#urgRstYn#, 'Y', SYSDATE, NULL)
+				,DECODE(#urgRstYn#, 'Y', #urgRgtId#, NULL)
+				,#urgStaCod#
+				,#urgSroKey#
+				,#urgRgtId#
+				,SYSDATE
+				,#urgRgtId#
+				,SYSDATE
+		)
+	</insert>
+
+	<!-- 위험관리 삭제 -->
+	<update id="QR_RISKM003_UPDATE" parameterClass="Map">
+		UPDATE  UWO_RSK_MNG
+			SET
+				URG_GRP_KEY = #urgGrpKey#
+				, URG_COC_KEY = #urgCocKey#
+				, URG_ASS_VAL = #urgAssVal#
+				, URG_RSK_CHK = #urgRskChk#
+				, URG_RSK_PNT = #urgRskPnt#
+				, URG_RSK_LVL = #urgRskLvl#
+				, URG_RSK_PRC = #urgRskPrc#
+				, URG_MES_DES = #urgMesDes#
+				, URG_LIM_DES = #urgLimDes#
+				, URG_RST_DES = #urgRstDes#
+				, URG_STA_COD = #urgStaCod#
+				, URG_SRO_KEY = #urgSroKey#
+				, URG_UPT_ID = #urgUptId#
+				, URG_UPT_MDH = SYSDATE
+			<isNotEqual property="authKey" compareValue="P">
+				, URG_MES_MDH = SYSDATE
+				, URG_MES_USR = #urgUptId#
+				, URG_MES_YN = #urgMesYn#
+				, URG_RCO_MDH = SYSDATE
+				, URG_RCO_USR = #urgUptId#
+				, URG_RST_MDH = SYSDATE
+				, URG_RST_USR = #urgUptId#
+				, URG_RST_YN = #urgRstYn#
+				, URG_PRC_MDH = #urgPrcMdh#
+				, URG_COF_MDH = SYSDATE
+				, URG_COF_USR = #urgUptId#
+			</isNotEqual>
+		WHERE URG_RSK_KEY = #urgRskKey#
+	</update>
+
+	<select id="QR_RISKM003_PNT" parameterClass="String" resultClass="egovMap">
+		SELECT
+			USO_COC_PNT,
+			USO_FRQ_PNT,
+			USO_RSK_PNT
+		FROM
+			UWO_RSK_COC
+		WHERE
+			USO_COC_KEY = #cocKey#
+	</select>
+
+	<select id="QR_RISKM003_GRP_INFO" parameterClass="Map" resultClass="egovMap">
+		SELECT
+           UAG_GRP_KEY
+           ,UAG_SVC_COD
+           ,UAG_MNG_ID
+           ,UAG_DEP_COD
+           ,UAG_GRP_LVL
+           ,(SELECT	USO_COC_KEY FROM UWO_RSK_COC
+           		WHERE USO_COC_COD = #cocCod#) UAG_COC_KEY
+           ,(SELECT UCC_SND_COD FROM UWO_COM_COD
+           		WHERE UCC_FIR_COD = 'RSKPRC' AND UCC_SND_NAM = #rskPrcNam#) UAG_RSK_PRC
+		FROM
+            UWO_ASS_GRP
+        WHERE
+			UAG_GRP_COD = #grpCod#
+	</select>
+
+	<select id="QR_RISKM003_ETC_INFO" parameterClass="Map" resultClass="egovMap">
+		SELECT
+		    USM_SRO_KEY
+		    ,(SELECT UCC_SND_COD FROM UWO_COM_COD
+		    	WHERE UCC_FIR_COD = 'RSKPRC'
+		    	AND UCC_SND_NAM = #rskPrcNam#) USM_RSK_PRC
+		    ,(SELECT USO_COC_KEY FROM UWO_RSK_COC
+		    	WHERE USO_COC_COD = #cocCod#) USM_COC_KEY
+		FROM UWO_SRO_MTR
+		WHERE USM_SRO_COD = #sroCod#
+	</select>
+
+	<select id="QR_RISKM003_BCY_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			UMM_MAN_CYL AS CODE,
+			TO_CHAR(UMM_STD_DAT, 'YYYY.MM.DD') || '~' || TO_CHAR(UMM_END_DAT, 'YYYY.MM.DD') AS NAME
+		FROM
+			UWO_MCY_MTR,
+			UWO_ASS_GRP
+		WHERE UAG_BCY_COD = UMM_MAN_CYL
+			AND UAG_USE_YN = 'Y'
+			AND UAG_GRP_KEY = #grpKey#
+		GROUP BY UMM_MAN_CYL, UMM_STD_DAT, UMM_END_DAT
+	</select>
+
+	<!-- 위험데첵자 지정-->
+	<update id="QR_RISKM003_MNG_SAVE" parameterClass="Map">
+		UPDATE uwo_rsk_srl
+		   SET urs_mes_mng = #ursMesMng#,
+		       urs_sta_cod = 'S',
+		       urs_req_mdh = TO_DATE(#ursReqMdh#),
+		       urs_upt_id  = #ursUptId#,
+		       urs_upt_mdh = SYSDATE
+		 WHERE urs_rsk_key = #ursRskKey#
+	</update>
+
+	<!-- 위험데첵 저장-->
+	<update id="QR_RISKM003_RSK_REQ" parameterClass="Map">
+		UPDATE uwo_rsk_srl
+		   SET urs_upt_mdh = SYSDATE,
+		   <isNotEmpty property="urrMesDes">
+		       urs_mes_des = #urrMesDes#,
+		   </isNotEmpty>
+		   <isEqual property="newUrsStaCod" compareValue="P">
+		       urs_mes_mdh = SYSDATE,
+		   </isEqual>
+		   <isEqual property="newUrsStaCod" compareValue="P">
+		       urs_mes_usr = #ursUptId#,
+		   </isEqual>
+		   <isNotEmpty property="urrLimDes">
+		       urs_lim_des = #urrLimDes#,
+		   </isNotEmpty>
+		   <isNotEmpty property="urrRstDes">
+		       urs_rst_des = #urrRstDes#,
+		   </isNotEmpty>
+		   <isEqual property="newUrsStaCod" compareValue="V">
+		       urs_rst_mdh = #ursRstMdh#,
+		   </isEqual>
+		   <isEqual property="newUrsStaCod" compareValue="V">
+		       urs_rst_usr = #ursUptId#,
+		   </isEqual>
+			<isNotEmpty property="urrPlnMdh">
+		       urs_pln_mdh = #urrPlnMdh#,
+		   </isNotEmpty>
+		   <isNotEmpty property="urrEndMdh">
+		       urs_end_mdh = #urrEndMdh#,
+		   </isNotEmpty>
+		   <isNotEmpty property="urrPlnSta">
+		       urs_pln_sta = #urrPlnSta#,
+		   </isNotEmpty>
+		   <isNotEmpty property="urrEndSta">
+		       urs_end_sta = #urrEndSta#,
+		   </isNotEmpty>
+		   <isNotEmpty property="newUrrStaCod">
+		       urr_sta_cod = #newUrrStaCod#,
+		   </isNotEmpty>
+		   <isNotEmpty property="newUrsStaCod">
+		       urs_sta_cod = #newUrsStaCod#,
+		   </isNotEmpty>
+		       urs_upt_id  = #ursUptId#
+		 WHERE urs_rsk_key = #ursRskKey#
+	</update>
+
+	<!-- 위험데첵 승인-->
+	<update id="QR_RISKM003_RSK_APPR" parameterClass="Map">
+		UPDATE uwo_rsk_srl
+		   SET urs_upt_mdh = SYSDATE,
+		   <isEqual property="newUrsStaCod" compareValue="C">
+		       urs_cof_mdh = SYSDATE,
+		   </isEqual>
+		   <isEqual property="newUrsStaCod" compareValue="C">
+		       urs_cof_usr = #ursUptId#,
+		   </isEqual>
+		   <isEqual property="newUrsStaCod" compareValue="A">
+		       urs_rco_mdh = SYSDATE,
+		   </isEqual>
+		   <isEqual property="newUrsStaCod" compareValue="A">
+		       urs_rco_usr = #ursUptId#,
+		   </isEqual>
+		   <isNotEmpty property="urrRskPrc">
+		       urs_rsk_prc = #urrRskPrc#,
+		   </isNotEmpty>
+		       urs_upt_id  = #ursUptId# ,
+		       urs_sta_cod = #newUrsStaCod#
+		 WHERE urs_rsk_key = #ursRskKey#
+	</update>
+
+	<!-- 위험데첵 반려-->
+	<update id="QR_RISKM003_RSK_REJ" parameterClass="Map">
+		UPDATE uwo_rsk_srl
+		   SET urs_upt_mdh = SYSDATE,
+		       urs_upt_id  = #ursUptId# ,
+		       urs_sta_cod = #newUrsStaCod#
+		 WHERE urs_rsk_key = #ursRskKey#
+	</update>
+
+	<select id="QR_RISKM004_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			USO_COC_KEY
+			,USO_BCY_COD
+			,USO_COC_GBN
+			,USO_COC_NAM
+			,USO_COC_COD
+			,USO_COC_DES
+			,DECODE(USO_ASS_CAT, '99', '관리체계', UAC_CAT_NAM) AS USO_ASS_CAT
+			,USO_FIR_CAT
+			,USO_SEC_CAT
+			,USO_SCR_COD
+			,USO_COC_GRD
+			,DECODE(USO_COC_GRD, 'H', '상', 'M', '중', '하') AS USO_COC_TXT
+			,USO_COC_PNT
+			,USO_FRQ_GRD
+			,DECODE(USO_FRQ_GRD, 'H', '상', 'M', '중', '하') AS USO_FRQ_TXT
+			,USO_FRQ_PNT
+			,USO_SUM_PNT
+			,USO_RSK_GRD
+			,F_GET_COMMON_NAME(USO_RSK_GRD, 'VLBGRD')    AS USO_RSK_TXT
+			,USO_RSK_PNT
+			,USO_GBN_NAM
+			,USO_USE_YN
+			,USO_RGT_ID
+			,USO_RGT_MDH
+			,USO_UPT_ID
+			,USO_UPT_MDH
+		FROM
+			UWO_RSK_COC,
+			UWO_ASS_CAT
+		WHERE USO_ASS_CAT = UAC_CAT_KEY(+)
+		<isNotEmpty property="usoAssCat">
+			AND USO_ASS_CAT = #usoAssCat#
+		</isNotEmpty>
+		<isNotEmpty property="usoFirCat">
+			AND USO_FIR_CAT LIKE '%' || #usoFirCat# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="usoSecCat">
+			AND USO_SEC_CAT LIKE '%' || #usoSecCat# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="usoCocCod">
+			AND USO_COC_COD LIKE '%' || #usoCocCod# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="usoScrCod">
+			AND USO_SCR_COD LIKE '%' || #usoScrCod# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="usoRskGrd">
+			AND USO_RSK_GRD = #usoRskGrd#
+		</isNotEmpty>
+		<isNotEmpty property="usoFrqGrd">
+			AND USO_FRQ_GRD = #usoFrqGrd#
+		</isNotEmpty>
+		<isNotEmpty property="usoCocGrd">
+			AND USO_COC_GRD = #usoCocGrd#
+		</isNotEmpty>
+		<isNotEmpty property="usoRskPnt">
+			AND USO_RSK_PNT = #usoRskPnt#
+		</isNotEmpty>
+		<isNotEmpty property="usoCocNam">
+			AND USO_COC_NAM LIKE '%' || #usoCocNam# || '%'
+		</isNotEmpty>
+		ORDER BY UAC_CAT_KEY, USO_COC_COD, USO_COC_KEY
+	</select>
+
+	<select id="QR_RISKM004_INFO" parameterClass="String" resultClass="egovMap">
+		SELECT
+			USO_COC_KEY
+			,USO_BCY_COD
+			,USO_COC_GBN
+			,USO_COC_NAM
+			,USO_COC_COD
+			,USO_COC_DES
+			,USO_ASS_CAT
+			,USO_FIR_CAT
+			,USO_SEC_CAT
+			,USO_SCR_COD
+			,USO_COC_GRD
+			,USO_COC_PNT
+			,USO_FRQ_GRD
+			,USO_FRQ_PNT
+			,USO_SUM_PNT
+			,USO_RSK_GRD
+			,USO_RSK_PNT
+			,USO_GBN_NAM
+			,USO_USE_YN
+			,USO_RGT_ID
+			,USO_RGT_MDH
+			,USO_UPT_ID
+			,USO_UPT_MDH
+		FROM
+			UWO_RSK_COC
+		WHERE
+			USO_COC_KEY = #usoCocKey#
+	</select>
+
+	<!-- 기술적 위험조치관리 일괄 대책수립 할당 -->
+	<update id="QR_RISKM003_UPDATE_URS_STA_COD_S" parameterClass="Map">
+		UPDATE uwo_rsk_srl urs
+		SET urs_sta_cod = 'S',
+			urs_req_mdh = #ursReqMdh#,
+			urs_upt_id = #uptId#,
+			urs_upt_mdh = SYSDATE,
+			urs_mes_mdh = SYSDATE
+		WHERE urs.urs_sta_cod = 'Q'
+			AND urs.urs_rsk_typ = 'A'
+			AND urs.uag_grp_cod = #uagGrpCod#
+			AND urs.umm_man_cyl = #manCyl#
+			AND REPLACE(urs.urs_rsk_rst, 'NA', 0) >= #doa#
+	</update>
+
+	<insert id="QR_RISKM004_INSERT" parameterClass="Map">
+		INSERT
+			INTO UWO_RSK_COC (
+				USO_COC_KEY
+				,USO_BCY_COD
+				,USO_COC_GBN
+				,USO_COC_NAM
+				,USO_COC_COD
+				,USO_COC_DES
+				,USO_ASS_CAT
+				,USO_FIR_CAT
+				,USO_SEC_CAT
+				,USO_SCR_COD
+				,USO_COC_GRD
+				,USO_COC_PNT
+				,USO_FRQ_GRD
+				,USO_FRQ_PNT
+				,USO_SUM_PNT
+				,USO_RSK_GRD
+				,USO_RSK_PNT
+				,USO_GBN_NAM
+				,USO_USE_YN
+				,USO_RGT_ID
+				,USO_RGT_MDH
+				,USO_UPT_ID
+				,USO_UPT_MDH
+		) VALUES (
+			SEQ_UWO_RSK_COC.NEXTVAL
+			,#usoBcyCod#
+			,#usoCocGbn#
+			,#usoCocNam#
+			,#usoCocCod#
+			,#usoCocDes#
+			,#usoAssCat#
+			,#usoFirCat#
+			,#usoSecCat#
+			,#usoScrCod#
+			,#usoCocGrd#
+			,#usoCocPnt#
+			,#usoFrqGrd#
+			,#usoFrqPnt#
+			,#usoSumPnt#
+			,#usoRskGrd#
+			,#usoRskPnt#
+			,#usoGbnNam#
+			,#usoUseYn#
+			,#usoRgtId#
+			,SYSDATE
+			,#usoRgtId#
+			,SYSDATE
+		)
+	</insert>
+
+	<insert id="QR_RISKM004_UPDATE" parameterClass="Map">
+		UPDATE UWO_RSK_COC
+			SET
+				USO_COC_NAM = #usoCocNam#
+				,USO_COC_DES = #usoCocDes#
+				,USO_ASS_CAT = #usoAssCat#
+				,USO_FIR_CAT = #usoFirCat#
+				,USO_SEC_CAT = #usoSecCat#
+				,USO_SCR_COD = #usoScrCod#
+				,USO_COC_GRD = #usoCocGrd#
+				,USO_COC_PNT = #usoCocPnt#
+				,USO_FRQ_GRD = #usoFrqGrd#
+				,USO_FRQ_PNT = #usoFrqPnt#
+				,USO_SUM_PNT = #usoSumPnt#
+				,USO_RSK_GRD = #usoRskGrd#
+				,USO_RSK_PNT = #usoRskPnt#
+				,USO_GBN_NAM = #usoGbnNam#
+				,USO_USE_YN = #usoUseYn#
+				,USO_UPT_ID = #usoUptId#
+				,USO_UPT_MDH =  SYSDATE
+		WHERE
+			USO_COC_KEY = #usoCocKey#
+	</insert>
+
+	<select id="QR_RISKM005_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			USM_SRO_KEY
+			, USM_SRO_COD
+			, USM_SRO_LV0
+			, USM_SRO_LV1
+			, USM_SRO_LV2
+			, USM_SRO_DES
+			, USM_COC_KEY
+			, USM_REF_COD
+			, USM_USE_YN
+		FROM
+			UWO_SRO_MTR
+		WHERE  1=1
+<!-- 		    AND USM_BCY_COD = #bcyCod# -->
+		<isNotEmpty property="usmSroLv2">
+			AND USM_SRO_LV2 LIKE '%' || #usmSroLv2# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="usmCocKey">
+			AND USM_COC_KEY = #usmCocKey#
+		</isNotEmpty>
+		<isNotEmpty property="usmRefCod">
+			AND USM_REF_COD LIKE '%' || #usmRefCod# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="usmSroCod">
+			AND USM_SRO_COD LIKE '%' || #usmSroCod# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="usmSroDes">
+			AND USM_SRO_DES LIKE '%' || #usmSroDes# || '%'
+		</isNotEmpty>
+		ORDER BY to_number(substr(USM_SRO_cod, 8, 10))
+	</select>
+
+	<select id="QR_RISKM005_INFO" parameterClass="String" resultClass="egovMap">
+		SELECT
+			USM_SRO_KEY
+			,USM_SRO_COD
+			,USM_SRO_LV0
+			,USM_SRO_LV1
+			,USM_SRO_LV2
+			,USM_COC_KEY
+			,USM_REF_COD
+			,USM_SRO_DES
+			, USM_USE_YN
+		FROM
+			UWO_SRO_MTR
+		WHERE
+			USM_SRO_KEY = #usmSroKey#
+	</select>
+
+	<insert id="QR_RISKM005_INSERT" parameterClass="Map">
+		INSERT
+			INTO UWO_SRO_MTR (
+				USM_SRO_KEY
+				,USM_SRO_COD
+				,USM_BCY_COD
+				,USM_SRO_LV0
+				,USM_SRO_LV1
+				,USM_SRO_LV2
+				,USM_SRO_DES
+				,USM_REF_COD
+				,USM_RGT_ID
+				,USM_RGT_MDH
+				,USM_UPT_ID
+				,USM_UPT_MDH
+				,USM_USE_YN
+		) VALUES (
+			SEQ_UWO_SRO_MTR.NEXTVAL
+			,#usmSroCod#
+			,#usmBcyCod#
+			,#usmSroLv0#
+			,#usmSroLv1#
+			,#usmSroLv2#
+			,#usmSroDes#
+			,#usmRefCod#
+			,#usmRgtId#
+			,SYSDATE
+			,#usmRgtId#
+			,SYSDATE
+			,#usmUseYn#
+		)
+	</insert>
+
+	<update id="QR_RISKM005_UPDATE" parameterClass="Map">
+		UPDATE UWO_SRO_MTR
+			SET
+				USM_SRO_LV0 = #usmSroLv0#
+				,USM_SRO_LV1 = #usmSroLv1#
+				,USM_SRO_LV2 = #usmSroLv2#
+				,USM_COC_KEY = #usmCocKey#
+				,USM_REF_COD = #usmRefCod#
+				,USM_SRO_DES = #usmSroDes#
+				,USM_UPT_ID = #usoUptId#
+				,USM_UPT_MDH =  SYSDATE
+				,USM_USE_YN = #usmUseYn#
+		WHERE
+			USM_SRO_KEY = #usmSroKey#
+	</update>
+
+	<select id="QR_RISKM003_REPORT" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			URG_RSK_KEY
+			,DECODE(USO_ASS_CAT, '99', '관리체제', UAC_CAT_NAM) USO_ASS_CAT
+			,USO_FIR_CAT
+			,USO_SEC_CAT
+			,USO_COC_COD
+			,USO_COC_NAM
+			,USO_FRQ_GRD
+			,USO_RSK_GRD
+			,USO_COC_GRD
+			,USO_COC_DES
+			,USO_FRQ_PNT
+			,USO_COC_PNT
+			,USO_RSK_PNT
+			,USO_SUM_PNT
+			,DECODE(USO_FRQ_GRD, 'H', '상', 'M', '중', '하') AS USO_FRQ_TXT
+			,DECODE(USO_RSK_GRD, 'H', '상', 'M', '중', '하') AS USO_RSK_TXT
+			,DECODE(USO_COC_GRD, 'H', '상', 'M', '중', '하') AS USO_COC_TXT
+			,DECODE(URG_ASS_VAL, '3', '1등급', '2', '2등급', '3등급') AS URG_ASS_VAL
+			,DECODE(URG_RSK_CHK, 'N', '미흡', 'P', '부분미흡', 'Y', '양호', 'N/A') AS URG_RSK_CHK
+			,UCC_SND_NAM AS URG_RSK_PRC
+			,URG_MES_DES
+			,URG_RSK_PNT
+			,DECODE(URG_MES_YN, 'Y', '승인', '미승인') AS URG_MES_YN
+			,URG_RST_DES
+			,DECODE(URG_RST_YN, 'Y', '승인', '미승인') AS URG_RST_YN
+			,USM_SRO_COD
+			,USM_SRO_DES
+			,TO_CHAR(URG_RGT_MDH,'YYYY.MM.DD') AS URG_RGT_MDH
+			,(
+				SELECT
+					UCC_SND_NAM
+				FROM UWO_COM_COD
+				WHERE UCC_FIR_COD = 'DEPT'
+				AND UCC_SND_COD = UWO_RSK_MNG.URG_DEP_COD
+			) AS UAG_DEP_NAM
+			,UAG_GRP_DES
+			,UAG_GRP_NAM
+			,URG_LIM_DES
+		FROM
+			UWO_RSK_MNG
+			,UWO_ASS_GRP
+			,UWO_RSK_COC
+			,UWO_SRO_MTR
+			,UWO_ASS_CAT
+			,(
+				SELECT
+					UCC_SND_COD
+					,UCC_SND_NAM
+				 FROM UWO_COM_COD
+				 WHERE UCC_FIR_COD = 'RSKPRC'
+			)
+		WHERE
+			URG_COC_KEY = USO_COC_KEY
+			AND UCC_SND_COD = URG_RSK_PRC
+			AND URG_SRO_KEY = USM_SRO_KEY(+)
+			AND USO_ASS_CAT = UAC_CAT_KEY(+)
+			AND UAG_GRP_KEY = URG_GRP_KEY(+)
+			AND URG_GRP_KEY $grpKey$
+		<isNotEmpty property="cocGrd">
+		 	AND USO_COC_GRD = #cocGrd#
+		</isNotEmpty>
+		<isNotEmpty property="frqGrd">
+		 	AND USO_FRQ_GRD = #frqGrd#
+		</isNotEmpty>
+		<isNotEmpty property="rskGrd">
+		 	AND USO_RSK_GRD = #rskGrd#
+		</isNotEmpty>
+		<isNotEmpty property="staCod">
+		 	AND URG_STA_COD = #staCod#
+		</isNotEmpty>
+		<isNotEmpty property="assVal">
+		 	AND URG_ASS_VAL = #assVal#
+		</isNotEmpty>
+		<isNotEmpty property="rskChk">
+		 	AND URG_RSK_CHK = #rskChk#
+		</isNotEmpty>
+		ORDER BY USO_ASS_CAT ASC
+	</select>
+
+	<select id="QR_RISKM003_T_REPORT" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			URG_RSK_KEY
+			,DECODE(USO_ASS_CAT, '99', '관리체제', UAC_CAT_NAM) USO_ASS_CAT
+			,USO_FIR_CAT
+			,USO_SEC_CAT
+			,USO_COC_COD
+			,USO_COC_NAM
+			,USO_FRQ_GRD
+			,USO_RSK_GRD
+			,USO_COC_GRD
+			,USO_COC_DES
+			,USO_FRQ_PNT
+			,USO_COC_PNT
+			,USO_RSK_PNT
+			,USO_SUM_PNT
+			,DECODE(USO_FRQ_GRD, 'H', '상', 'M', '중', '하') AS USO_FRQ_TXT
+			,DECODE(USO_RSK_GRD, 'H', '상', 'M', '중', '하') AS USO_RSK_TXT
+			,DECODE(USO_COC_GRD, 'H', '상', 'M', '중', '하') AS USO_COC_TXT
+			,DECODE(URG_ASS_VAL, '3', '1등급', '2', '2등급', '3등급') AS URG_ASS_VAL
+			,DECODE(URG_RSK_CHK, 'N', '미흡', 'P', '부분미흡', 'Y', '양호', 'N/A') AS URG_RSK_CHK
+			,UCC_SND_NAM AS URG_RSK_PRC
+			,URG_MES_DES
+			,URG_RSK_PNT
+			,DECODE(URG_MES_YN, 'Y', '승인', '미승인') AS URG_MES_YN
+			,URG_RST_DES
+			,DECODE(URG_RST_YN, 'Y', '승인', '미승인') AS URG_RST_YN
+			,USM_SRO_COD
+			,USM_SRO_DES
+			,TO_CHAR(URG_RGT_MDH,'YYYY.MM.DD') AS URG_RGT_MDH
+			,(
+				SELECT
+					UCC_SND_NAM
+				FROM UWO_COM_COD
+				WHERE UCC_FIR_COD = 'DEPT'
+				AND UCC_SND_COD = UWO_RSK_MNG.URG_DEP_COD
+			) AS UAG_DEP_NAM
+			,UAG_GRP_DES
+			,UAG_GRP_NAM
+			,UAG_GRP_GBN
+			,UAG_SVC_COD
+			,UAG_DEP_COD
+			,UAG_MNG_ID
+			,UAG_CAT_KEY
+			,URG_LIM_DES
+		FROM
+			UWO_RSK_MNG
+			,UWO_ASS_GRP
+			,UWO_RSK_COC
+			,UWO_SRO_MTR
+			,UWO_ASS_CAT
+			,(
+				SELECT
+					UCC_SND_COD
+					,UCC_SND_NAM
+				 FROM UWO_COM_COD
+				 WHERE UCC_FIR_COD = 'RSKPRC'
+			)
+		WHERE
+			URG_COC_KEY = USO_COC_KEY
+			AND UCC_SND_COD = URG_RSK_PRC
+			AND URG_SRO_KEY = USM_SRO_KEY(+)
+			AND USO_ASS_CAT = UAC_CAT_KEY(+)
+			AND UAG_GRP_KEY = URG_GRP_KEY(+)
+			AND URG_GRP_KEY $grpKey$
+		<isNotEmpty property="groupGbn">
+		 	AND UAG_GRP_GBN = #groupGbn#
+		 </isNotEmpty>
+		 <isNotEmpty property="groupName">
+		 	<![CDATA[AND UAG_GRP_NAM LIKE '%' || #groupName# || '%']]>
+		 </isNotEmpty>
+		 <isNotEmpty property="service">
+		 	AND UAG_SVC_COD = #service#
+		 </isNotEmpty>
+		 <isNotEmpty property="dept">
+		 	AND UAG_DEP_COD = #dept#
+		 </isNotEmpty>
+		 <isNotEmpty property="worker">
+		 	AND UAG_MNG_ID = #worker#
+		 </isNotEmpty>
+		 <isNotEmpty property="assCat">
+		 	AND UAG_CAT_KEY = #assCat#
+		</isNotEmpty>
+		ORDER BY USO_ASS_CAT ASC
+	</select>
+
+
+	<!-- 2016-10-05 -->
+	<sql id="QR_RISKM006_WHERE">
+		AND am.uar_smp_yn = 'Y'
+		AND am.uar_bcy_cod = #ummManCyl#
+		<isNotEmpty property="service">
+		   AND uar_svr_cod = #service#
+		</isNotEmpty>
+		<isNotEmpty property="stOrg">
+		   AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_1lv = #stOrg#)
+		</isNotEmpty>
+		<isNotEmpty property="hqOrg">
+		   AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_2lv = #hqOrg#)
+		</isNotEmpty>
+		<isNotEmpty property="gpOrg">
+		   AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_3lv = #gpOrg#)
+		</isNotEmpty>
+		<isNotEmpty property="assGbn">
+		   AND UAR_ASS_GBN = #assGbn#
+		</isNotEmpty>
+		<isNotEmpty property="assCat">
+		   AND UAR_ASS_CAT = #assCat#
+		</isNotEmpty>
+		<isNotEmpty property="assLvl">
+		   AND UAR_ASS_LVL = #assLvl#
+		</isNotEmpty>
+		<isNotEmpty property="operMngId">
+		   AND UAR_USE_ID = #operMngId#
+		</isNotEmpty>
+		<isNotEmpty property="operMngNm">
+		   AND UAR_USE_NAM like '%' || #operMngNm# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="groupName">
+		   AND ag.uag_grp_nam like '%' || #groupName# || '%'
+		</isNotEmpty>
+		<isEqual property="rstYn" compareValue="Y">
+		   AND EXISTS (
+             SELECT *
+             FROM uwo_rsk_rst rr
+             WHERE
+              am.uar_ass_cod = rr.uar_ass_cod
+              AND rr.urr_rsk_typ = 'A'
+           )
+		</isEqual>
+		<isEqual property="rstYn" compareValue="N">
+		   AND NOT EXISTS (
+             SELECT *
+             FROM uwo_rsk_rst rr
+             WHERE
+              am.uar_ass_cod = rr.uar_ass_cod
+              AND rr.urr_rsk_typ = 'A'
+           )
+		</isEqual>
+		<isNotEmpty property="assNam">
+			<![CDATA[
+			AND (
+				UPPER(uar_eqp_nam) LIKE '%'|| UPPER(#assNam#) || '%'
+				OR UPPER(uar_host) LIKE '%'|| UPPER(#assNam#) || '%'
+				OR UPPER(uar_ip) LIKE '%'|| UPPER(#assNam#) || '%'
+				OR UPPER(uar_ass_cod) LIKE '%'|| UPPER(#assNam#) || '%'
+			)
+			]]>
+		</isNotEmpty>
+	</sql>
+
+	<select id="QR_RISKM006_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT * FROM  (
+			SELECT ROWNUM RNUM, ALL_LIST.*,
+				(SELECT DECODE(COUNT(*), 0,'N','Y') FROM uwo_rsk_rst rr WHERE ALL_LIST.uar_ass_cod = rr.uar_ass_cod AND rr.urr_rsk_typ = 'A') AS rst_yn
+			FROM  (
+				SELECT am.uar_ass_key,
+					   am.uar_grp_cod,
+					   ag.uag_grp_nam,
+					   am.uar_dep_nam,
+					   am.uar_ass_cod,
+					   am.uar_ass_nam,
+					   am.uar_ip,
+					   am.uar_host,
+					   am.uar_os,
+					   am.uar_adm_pos,
+					   am.uar_dtl_exp,
+					   am.uar_use_nam,
+					   am.uar_ass_lvl
+				  FROM uwo_ass_mtr am,
+					  uwo_ass_grp ag,
+					  uwo_ass_cat ac
+				 WHERE am.uar_grp_cod = ag.uag_grp_cod
+				   AND am.uar_ass_cat   = ac.uac_cat_key
+		<include refid="QR_RISKM006_WHERE" />
+		ORDER BY UAR_ASS_KEY DESC
+			) ALL_LIST
+		)
+		<![CDATA[
+		WHERE RNUM > #firstIndex#
+		AND RNUM <= #firstIndex# + #recordCountPerPage#
+		]]>
+ 	</select>
+
+ 	<select id="QR_RISKM006_CNT" parameterClass="Map" resultClass="int">
+		SELECT COUNT(*) totcnt
+		  FROM uwo_ass_mtr am,
+			   uwo_ass_grp ag,
+			   uwo_ass_cat ac
+		 WHERE am.uar_grp_cod = ag.uag_grp_cod
+		   AND am.uar_ass_cat = ac.uac_cat_key
+		<include refid="QR_RISKM006_WHERE" />
+ 	</select>
+
+	<select id="QR_RISKM006_RST_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT vlb.urv_rsk_div                         		AS urv_rsk_div,
+			  vlb.urv_rsk_itm                               AS urv_rsk_itm,
+			  F_GET_COMMON_NAME(vlb.urv_rsk_imp, 'VLBGRD')  AS urv_rsk_imp,
+			  rst.urr_rsk_rst                               AS urr_rsk_rst
+		  FROM uwo_rsk_vlb vlb,
+			  uwo_rsk_rst rst
+		 WHERE rst.urv_vlb_cod = vlb.urv_vlb_cod
+		   AND vlb.urv_use_yn  = 'Y'
+		   AND rst.uar_ass_cod = #uarAssCod#
+		   AND rst.umm_man_cyl = #ummManCyl#
+		 ORDER BY vlb.urv_rsk_ord, vlb.urv_vlb_cod
+ 	</select>
+
+ 	<select id="QR_RISKM006_RST_ASS_LIST" parameterClass="Map" resultClass="egovMap">
+ 		SELECT uar_ass_cod,
+		 	   uar_dep_nam,
+			   uar_own_nam,
+			   uar_host,
+			   uar_ip,
+			   uar_os,
+			   CASE uar_ass_cat
+		            WHEN '6' THEN uar_val_cl3
+		            WHEN '7' THEN uar_val_cl4
+		            WHEN '8' THEN uar_val_cl3
+		            WHEN '9' THEN uar_val_cl2
+		            WHEN '10' THEN ''
+		            WHEN '11' THEN uar_val_cl3
+		            WHEN '12' THEN ''
+		            WHEN '13' THEN ''
+		            ELSE '' END AS cat1,
+	           CASE uar_ass_cat
+		            WHEN '6' THEN uar_val_cl4
+		            WHEN '7' THEN ''
+		            WHEN '8' THEN ''
+		            WHEN '9' THEN ''
+		            WHEN '10' THEN ''
+		            WHEN '11' THEN uar_val_cl5
+		            WHEN '12' THEN ''
+		            WHEN '13' THEN ''
+		            ELSE '' END AS cat2,
+	         CASE uar_ass_cat
+		            WHEN '6' THEN ''
+		            WHEN '7' THEN ''
+		            WHEN '8' THEN ''
+		            WHEN '9' THEN ''
+		            WHEN '10' THEN ''
+		            WHEN '11' THEN uar_val_cl2
+		            WHEN '12' THEN ''
+		            WHEN '13' THEN ''
+	                ELSE '' END AS cat3
+ 		  FROM uwo_ass_mtr
+		 WHERE uar_smp_yn = 'Y'
+		   AND uar_grp_cod = #uagGrpCod#
+		   AND uar_bcy_cod = #ummManCyl#
+		<isNotEmpty property="service">
+		   AND uar_svr_cod = #service#
+		</isNotEmpty>
+		<isNotEmpty property="assCat">
+  	  	   AND uar_ass_cat = #assCat#
+		</isNotEmpty>
+		<isNotEmpty property="assGbn">
+		   AND uar_ass_gbn = #assGbn#
+		</isNotEmpty>
+ 	</select>
+
+ 	<select id="QR_RISKM006_RST_ASS_SUM_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT rsk.*,
+		      CASE WHEN rsk.rr = 'NA' THEN '-'
+		           WHEN rsk.rr >= 7 THEN 'H'
+		           WHEN rsk.rr >= 5 THEN 'M'
+		           WHEN rsk.rr >= 3 THEN 'L'
+		           ELSE '-' END AS rsk
+		FROM (SELECT r.*, DECODE(RS, 'NA', 'NA',
+		                    (DECODE(RS, 'Y', 0,
+		                      CASE WHEN uar_Ass_lvl = 'L(1)' THEN 3
+		                           WHEN uar_ass_lvl = 'M(2)' THEN 2
+		                           ELSE 1 END  + + (SELECT urv_rsk_pnt * 2 FROM uwo_rsk_vlb v WHERE v.urv_vlb_cod =  r.urv_vlb_cod) ))) AS RR
+		    	FROM (SELECT urv_vlb_cod ,
+				              uar_ass_lvl,
+				              CASE
+				                WHEN SUM(DECODE(urr_rsk_rst, 'NA', 1, 0)) = COUNT(urr_rsk_rst)
+				                THEN 'NA'
+				                WHEN SUM(DECODE(urr_rsk_rst, 'N',1,0)) = (COUNT(urr_rsk_rst) - SUM(DECODE(urr_rsk_rst, 'NA', 1, 0)))
+				                THEN 'N'
+				                WHEN SUM(DECODE(urr_rsk_rst, 'N',1,0)) >= 1
+				                THEN 'P'
+				                WHEN SUM(DECODE(urr_rsk_rst, 'Y',1,0)) = (COUNT(urr_rsk_rst) - SUM(DECODE(urr_rsk_rst, 'NA', 1, 0)))
+				                THEN 'Y'
+				                ELSE 'NA'
+				              END AS rs
+		            FROM uwo_ass_mtr ass,
+		              uwo_rsk_rst rst
+		            WHERE ass.uar_ass_cod = rst.uar_ass_cod
+		            AND uar_grp_Cod       =  #uagGrpCod#
+		            <isNotEmpty property="downType">
+		            AND rst.urr_rsk_typ   = #downType#
+		            </isNotEmpty>
+		            GROUP BY urv_vlb_cod, uar_ass_lvl ) r) rsk
+ 	</select>
+
+ 	<select id="QR_RISKM006_RST_DOWN_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT vlb.urv_rsk_div                         		AS urv_rsk_div,
+			  vlb.urv_rsk_itm                               AS urv_rsk_itm,
+			  F_GET_COMMON_NAME(vlb.urv_rsk_imp, 'VLBGRD')  AS urv_rsk_imp,
+			  rst.urr_rsk_rst                               AS urr_rsk_rst,
+			  rst.urv_vlb_cod								AS urv_vlb_cod,
+			  rst.uar_ass_cod								AS uar_ass_cod
+		  FROM uwo_rsk_vlb vlb,
+			  uwo_rsk_rst rst
+		 WHERE rst.urv_vlb_cod = vlb.urv_vlb_cod
+		   AND vlb.urv_use_yn  = 'Y'
+		   AND rst.uar_ass_cod = #uarAssCod#
+		   AND rst.umm_man_cyl = #ummManCyl#
+		 <isNotEmpty property="downType">
+		   AND rst.urr_rsk_typ = #downType#
+		 </isNotEmpty>
+		 ORDER BY vlb.urv_vlb_cod
+ 	</select>
+
+	<!-- 2017-06-01 -->
+	<sql id="QR_RISKM006_EXCEL_WHERE">
+		AND uar_bcy_cod = #manCyl#
+		AND uar_smp_yn = 'Y'
+		<isNotEmpty property="service">
+		   AND am.uar_svr_cod = #service#
+		 </isNotEmpty>
+		 <isNotEmpty property="assCat">
+		   AND am.uar_ass_cat = #assCat#
+		 </isNotEmpty>
+		 <isNotEmpty property="assGbn">
+		   AND am.uar_ass_gbn = #assGbn#
+		 </isNotEmpty>
+		<isNotEmpty property="stOrg">
+		    AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_1lv = #stOrg#)
+		</isNotEmpty>
+		<isNotEmpty property="hqOrg">
+		    AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_2lv = #hqOrg#)
+		</isNotEmpty>
+		<isNotEmpty property="gpOrg">
+		    AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_3lv = #gpOrg#)
+		</isNotEmpty>
+		<isNotEmpty property="worker">
+			AND UAR_OWN_NAM = LIKE '%' || #worker# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="assLvl">
+		    AND UAR_ASS_LVL = #assLvl#
+		</isNotEmpty>
+		<isNotEmpty property="assCod">
+			<![CDATA[AND UAR_ASS_COD LIKE '%'|| #assCod# || '%']]>
+		</isNotEmpty>
+		<isNotEmpty property="assNam">
+			<![CDATA[
+			AND (
+				UPPER(uar_eqp_nam) LIKE '%'|| UPPER(#assNam#) || '%'
+				OR UPPER(uar_host) LIKE '%'|| UPPER(#assNam#) || '%'
+				OR UPPER(uar_ip) LIKE '%'|| UPPER(#assNam#) || '%'
+				OR UPPER(uar_ass_cod) LIKE '%'|| UPPER(#assNam#) || '%'
+			)
+			]]>
+		</isNotEmpty>
+		<isNotEmpty property="smpYn">
+			AND UAR_SMP_YN = #smpYn#
+		</isNotEmpty>
+		<isNotEmpty property="groupName">
+		    <![CDATA[AND UAG_GRP_NAM LIKE '%'|| #groupName# || '%']]>
+		</isNotEmpty>
+		<isNotEmpty property="useYn">
+			AND UAR_USE_YN = #useYn#
+		</isNotEmpty>
+		<isEqual property="rstYn" compareValue="Y">
+		   AND EXISTS (
+             SELECT *
+             FROM uwo_rsk_rst rr
+             WHERE
+              am.uar_ass_cod = rr.uar_ass_cod
+              AND rr.urr_rsk_typ = 'A'
+           )
+		</isEqual>
+		<isEqual property="rstYn" compareValue="N">
+		   AND NOT EXISTS (
+             SELECT *
+             FROM uwo_rsk_rst rr
+             WHERE
+              am.uar_ass_cod = rr.uar_ass_cod
+              AND rr.urr_rsk_typ = 'A'
+           )
+		</isEqual>
+	</sql>
+
+	<select id="QR_RISKM006_EXCEL_CHECK_TARGET" parameterClass="Map" resultClass="egovMap">
+		SELECT ag.uag_grp_cod			AS uag_grp_cod,
+			   ag.uag_dep_nam			AS uag_dep_nam,
+			   am.uar_ip,
+			   am.uar_host,
+			   am.uar_os,
+			   am.uar_adm_pos			AS uar_adm_pos,
+			   am.uar_svr_nam			AS uar_svr_nam,
+			   am.uar_dtl_exp			AS uar_dtl_exp,
+			   am.uar_use_nam			AS uar_use_nam,
+			   am.uar_ass_lvl			AS uar_ass_lvl,
+			   '' 						AS rem
+		  FROM uwo_ass_grp ag,
+		  		uwo_ass_mtr am,
+		  		uwo_ass_cat ac
+		 WHERE ag.uag_grp_cod = am.uar_grp_cod
+		   AND am.uar_ass_cat   = ac.uac_cat_key
+		 <include refid="QR_RISKM006_EXCEL_WHERE" />
+		 ORDER BY ag.uag_grp_cod
+	</select>
+
+	<select id="QR_RISKM006_EXCEL_TARGET_GROUP" parameterClass="Map" resultClass="egovMap">
+		SELECT ag.uag_grp_cod AS uag_grp_cod,
+			   ag.uag_grp_nam,
+			   MAX(am.uar_rsk_grp) AS uar_rsk_grp
+		 FROM uwo_ass_grp ag,
+		  		uwo_ass_mtr am
+		 WHERE ag.uag_grp_cod = am.uar_grp_cod
+		   AND am.uar_bcy_cod = #manCyl#
+		 <include refid="QR_RISKM006_EXCEL_WHERE" />
+		 GROUP BY ag.uag_grp_cod, ag.uag_grp_nam
+		 ORDER BY ag.uag_grp_cod
+	</select>
+
+	<select id="QR_RISKM006_RISKVLB_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT urv_vlb_cod,
+		       urv_rsk_div,
+		       urv_rsk_itm,
+		       urv_rsk_typ,
+		       F_GET_COMMON_NAME(urv_rsk_imp, 'VLBGRD') urv_rsk_imp
+		  FROM uwo_rsk_vlb
+		 WHERE <!-- urv_rsk_typ IN (SELECT MAX(am.uar_rsk_grp) AS uar_rsk_grp
+								 FROM uwo_ass_grp ag, uwo_ass_mtr am
+								WHERE ag.uag_grp_cod = am.uar_grp_cod
+								  AND am.uar_bcy_cod = ag.uag_bcy_cod
+								  AND uar_smp_yn       = 'Y'
+								<isNotEmpty property="assCat">
+								  AND am.uar_ass_cat = #assCat#
+								</isNotEmpty>
+								<isNotEmpty property="assGbn">
+								  AND am.uar_rsk_grp = #assGbn#
+								</isNotEmpty>
+								GROUP BY am.uar_ass_gbn, ag.uag_grp_cod)
+		   AND --> urv_use_yn  = 'Y'
+
+		 ORDER BY <!-- 2017-06-14, urv_rsk_cod --> urv_rsk_ord, urv_vlb_cod
+	</select>
+
+	<select id="QR_RISKM006_EXCEL_ASS_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT uar_ass_cod,
+			   uar_eqp_nam,
+			   uar_grp_cod,
+			   uar_val_cl0,
+			   uar_val_cl1,
+			   uar_val_cl2,
+			   uar_val_cl3,
+			   uar_val_cl4,
+			   uar_val_cl5,
+			   uar_val_cl6,
+			   uar_rsk_grp,
+			   uar_dep_nam,
+			   uar_own_nam,
+			   uar_opr_nam,
+     		   uar_pic_nam,
+			   uar_ip,
+	           uar_host,
+	           uar_os
+		  FROM uwo_ass_mtr am
+		 WHERE uar_smp_yn = 'Y'
+		  AND uar_bcy_cod = #manCyl#
+		<isNotEmpty property="assCat">
+		  AND am.uar_ass_cat = #assCat#
+		</isNotEmpty>
+		<!-- 2017-06-08, uar_rsk_grp -> uar_ass_gbn -->
+		<isNotEmpty property="assGbn">
+		  AND am.uar_ass_gbn = #assGbn#
+		</isNotEmpty>
+	</select>
+
+	<!--
+		// 		6.전자정보			7/8.서버/네트워크		9.정보보호시스템		11. 소프트웨어		SW001.모바일 		SW012.홈페이지		12.단말기
+		// 1	uar_dep_nam			uar_dep_nam			uar_dep_nam			uar_dep_nam													uar_dep_nam
+		// 2	uar_val_cl1			uar_val_cl3			uar_val_cl2			uar_val_cl2			uar_dep_nam			uar_dep_nam
+		// 3	uar_val_cl2			uar_eqp_nam			uar_eqp_nam			uar_eqp_nam			uar_dtl_exp			uar_val_cl1			uar_eqp_nam
+		// 4	uar_ass_nam			uar_ass_nam								uar_ass_nam			uar_ass_nam			uar_ass_nam			uar_ass_nam
+		// 5											uar_ass_nam
+ 	-->
+ 	<!-- 2017-03-21, 수동 업로드 원복 -->
+ 	<sql id="QR_RISKM006_ASSET_WHERE">
+ 		<!--
+		<isEqual property="assCat" compareValue="6">
+			AND uar_ass_cat = #assCat#
+			AND uar_val_cl1 LIKE '%' || #cmpVal1# || '%'
+			AND UPPER(uar_val_cl2) = UPPER(#cmpVal2#)
+			AND UPPER(uar_ass_nam) = UPPER(#assNam#)
+		</isEqual>
+		<isEqual property="assCat" compareValue="7">
+			AND uar_ass_cat = #assCat#
+			AND uar_val_cl3 LIKE '%' || #cmpVal1# || '%'
+			AND UPPER(uar_eqp_nam) = UPPER(#cmpVal2#)
+		</isEqual>
+		<isEqual property="assCat" compareValue="8">
+			AND uar_ass_cat = #assCat#
+			AND uar_val_cl3 LIKE '%' || #cmpVal1# || '%'
+			AND UPPER(uar_eqp_nam) = UPPER(#cmpVal2#)
+		</isEqual>
+		<isEqual property="assCat" compareValue="9">
+			AND uar_ass_cat = #assCat#
+			AND uar_val_cl2 LIKE '%' || #cmpVal1# || '%'
+			AND UPPER(uar_eqp_nam) = UPPER(#cmpVal2#)
+		</isEqual>
+		<isEqual property="assCat" compareValue="11">
+			AND uar_ass_cat = #assCat#
+			AND uar_val_cl2 LIKE '%' || #cmpVal1# || '%'
+			AND UPPER(uar_eqp_nam) = UPPER(#cmpVal2#)
+			AND UPPER(uar_ass_nam) = UPPER(#assNam#)
+		</isEqual>
+		<isEqual property="assCat" compareValue="SW012">
+			AND uar_ass_cat = 11
+			AND uar_ass_gbn = #assCat#
+			AND UPPER(uar_dtl_exp) = UPPER(#cmpVal1#)
+			AND UPPER(uar_ass_nam) = UPPER(#assNam#)
+		</isEqual>
+		<isEqual property="assCat" compareValue="SW001">
+			AND uar_ass_cat = 11
+			AND uar_ass_gbn = #assCat#
+			AND UPPER(uar_val_cl1) = UPPER(#cmpVal1#)
+			AND UPPER(uar_ass_nam) = UPPER(#assNam#)
+		</isEqual>
+		<isEqual property="assCat" compareValue="12">
+			AND uar_ass_cat = #assCat#
+			AND UPPER(uar_eqp_nam) = UPPER(#cmpVal1#)
+		</isEqual>
+		 -->
+		 AND urr.uar_ass_cod = #assCod#
+	</sql>
+
+	<select id="QR_RISKM006_ASSET_EXISTS" parameterClass="Map" resultClass="int">
+		SELECT COUNT(*) cnt
+		FROM uwo_ass_mtr
+		WHERE 1=1
+		<include refid="QR_RISKM006_ASSET_WHERE" />
+	</select>
+
+	<select id="QR_RISKM006_EXISTS" parameterClass="Map" resultClass="int">
+		SELECT COUNT(*) cnt
+		FROM
+			uwo_rsk_rst urr
+			INNER JOIN uwo_ass_mtr uar ON urr.uar_ass_cod = uar.uar_ass_cod
+		WHERE
+			urr.umm_man_cyl = #manCyl#
+		<include refid="QR_RISKM006_ASSET_WHERE" />
+	</select>
+
+	<select id="QR_RISKM006_ASSET_CODE_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			uar_ass_cod,
+			uar_grp_cod
+		FROM uwo_ass_mtr
+		WHERE 1=1
+		<include refid="QR_RISKM006_ASSET_WHERE" />
+	</select>
+
+	<insert id="QR_RISKM006_INSERT" parameterClass="Map">
+		MERGE INTO uwo_rsk_rst a
+		USING (SELECT #manCylKey# AS manycyl,
+					#assCod# AS asscod,
+					#vlbCod# AS vlbcod
+				 FROM DUAL) b
+		   ON (a.umm_man_cyl = b.manycyl
+		   		AND a.uar_ass_cod = b.asscod
+		   		AND a.urv_vlb_cod = b.vlbcod)
+		WHEN MATCHED THEN
+			UPDATE SET
+				urr_rsk_rst = #rst#,
+				urr_upt_id = #urrRgtId#,
+				urr_rsk_typ = #urrRskTyp#,
+				urr_upt_mdh = SYSDATE
+		WHEN NOT MATCHED THEN
+			INSERT
+				(urr_rsk_key,
+				 umm_man_cyl,
+				 uar_ass_cod,
+				 urv_vlb_cod,
+				 urr_rsk_rst,
+				 urr_use_yn,
+				 urr_rgt_id,
+				 urr_rgt_mdh,
+				 urr_upt_id,
+				 urr_upt_mdh,
+				 urr_rsk_typ,
+				 urr_sta_cod)
+			VALUES
+				(SEQ_NEXTVAL_ON_DEMAND('SEQ_UWO_RSK_RST'),
+				 #manCylKey#,
+				 #assCod#,
+				 #vlbCod#,
+				 #rst#,
+				 'Y',
+				 #urrRgtId#,
+				 SYSDATE,
+				 #urrRgtId#,
+				 SYSDATE,
+				 #urrRskTyp#,
+				 'Q')
+	</insert>
+
+	<!-- 자산 위험관리는 일괄적으로 부모키를 등록함  -->
+	<update id="QR_RISKM006_AFTER_INSERT">
+		UPDATE uwo_rsk_rst urr
+		SET urs_rsk_key = (
+   			SELECT urs.urs_rsk_key
+		    FROM uwo_rsk_srl urs, uwo_rsk_dep urd
+		    WHERE urs.uag_svr_cod = urd.uag_svr_cod
+		    	AND urs.umm_man_cyl = urd.umm_man_cyl
+		   	 	AND urd.udm_dep_cod = urr.uar_ass_cod
+		    	AND urs.urv_vlb_cod = urr.urv_vlb_cod
+		)
+   		WHERE
+    		urr.urr_rsk_typ = 'D'
+    		<!-- AND urr.urs_rsk_key IS NULL -->
+	</update>
+
+	<update id="QR_RISKM006_ASSET_SMP_UPDATE_Y">
+		UPDATE uwo_ass_mtr
+		SET
+			uar_smp_yn = 'Y',
+			uar_upt_id = #uarUptId#,
+			uar_upt_mdh = SYSDATE
+		WHERE
+			uar_ass_cod = #uarAssCod#
+	</update>
+
+
+	<delete id="QR_RISKM006_SRL_DELETE" parameterClass="Map">
+		DELETE FROM uwo_rsk_srl
+		 WHERE umm_man_cyl = #manCylKey#
+		   AND uag_grp_cod = #uagGrpCod#
+		   AND urs_rsk_typ = 'A'
+	</delete>
+
+	<insert id="QR_RISKM006_SRL_INSERT" parameterClass="Map">
+		MERGE INTO uwo_rsk_srl srl
+		USING (
+    		SELECT
+ 				MAX(umm_man_cyl) AS man_cyl,
+  				MAX(uag_grp_cod) AS grp_cod,
+ 				MAX(uag_dep_cod) AS dep_cod,
+  				MAX(uag_sub_cod) AS svr_cod,
+				MAX(uag_sub_nam) AS svr_nam,
+  				urv_vlb_cod AS vlb_cod,
+				<!-- N 이 존재하는 경우: 자산중요도 + Concern Value * 2 -->
+				CASE
+					WHEN SUM(rst_n) > 0 THEN TO_CHAR(MAX(uag_grp_lvl) + NVL(MAX(urv_rsk_pnt),0) * 2)
+    				WHEN SUM(rst_y) = COUNT(*) - SUM(rst_na) THEN '0'
+					ELSE 'NA'
+				END rsk_rst,
+				<!-- N만 있을 경우 N, N이 존재할 경우 P, 모두 Y일 경우 Y, 그 외에 NA -->
+				CASE
+				    WHEN SUM(rst_n) > 0 AND SUM(rst_n) = COUNT(*) - SUM(rst_na) THEN 'N'
+					WHEN SUM(rst_n) > 0 THEN 'P'
+					WHEN SUM(rst_y) > 0 AND SUM(rst_y) = COUNT(*) - SUM(rst_na) THEN 'Y'
+					ELSE 'NA'
+				END rsk_chk
+			FROM (
+				SELECT
+					urr.umm_man_cyl,
+					uag.uag_grp_cod,
+					uag.uag_dep_cod,
+					uag.uag_sub_cod,
+					uag.uag_sub_nam,
+					urv.urv_vlb_cod,
+					urv.urv_rsk_pnt,
+					CASE
+				   		WHEN uag.uag_grp_lvl = 'H(3)' then 3
+						WHEN uag.uag_grp_lvl = 'M(2)' then 2
+				    	ELSE 1
+					END uag_grp_lvl,
+					CASE WHEN urr_rsk_rst = 'Y' THEN 1 ELSE 0 END rst_y,
+					CASE WHEN urr_rsk_rst = 'N' THEN 1 ELSE 0 END rst_n,
+				 	CASE WHEN urr_rsk_rst = 'NA' THEN 1 ELSE 0 END rst_na
+				FROM
+					uwo_ass_grp uag
+					INNER JOIN uwo_ass_mtr uar ON uag.uag_grp_cod = uar.uar_grp_cod
+					INNER JOIN uwo_rsk_rst urr ON uar.uar_ass_cod = urr.uar_ass_cod
+					INNER JOIN uwo_rsk_vlb urv ON urr.urv_vlb_cod = urv.urv_vlb_cod
+				WHERE
+					uag.uag_grp_cod = #uagGrpCod#
+					AND urr.umm_man_cyl = #manCylKey#
+			) t1
+			GROUP BY urv_vlb_cod
+		) u
+		ON (
+			srl.umm_man_cyl = u.man_cyl
+		    AND srl.uag_grp_cod = u.grp_cod
+			AND srl.urv_vlb_cod = u.vlb_cod
+		)
+		WHEN MATCHED THEN
+			UPDATE SET
+        		urs_rsk_rst = u.rsk_rst,
+      			urs_rsk_chk = u.rsk_chk,
+     			urs_upt_id = #uarUptId#,
+    			urs_upt_mdh = SYSDATE
+		WHEN NOT MATCHED THEN
+			INSERT
+			(
+				urs_rsk_key,
+				umm_man_cyl,
+				uag_svr_cod,
+				uag_svr_nam,
+				uag_dep_cod,
+				uag_grp_cod,
+				urv_vlb_cod,
+				urs_rsk_rst,
+				urs_rsk_chk,
+				urs_sta_cod,
+				urs_rsk_typ,
+				urs_rgt_id,
+				urs_rgt_mdh,
+				urs_upt_id,
+				urs_upt_mdh
+			)
+			VALUES
+			(
+				SEQ_NEXTVAL_ON_DEMAND('seq_uwo_rsk_srl'),
+				u.man_cyl,
+				u.svr_cod,
+				u.svr_nam,
+				u.dep_cod,
+				u.grp_cod,
+				u.vlb_cod,
+				u.rsk_rst,
+				u.rsk_chk,
+				'Q',
+				#urrRskTyp#,
+				#uarUptId#,
+				SYSDATE,
+				#uarUptId#,
+				SYSDATE
+			)
+
+	<!-- 2017-03-21, 복잡한 쿼리 개선 및 MERGE INTO 문으로 변경
+		INSERT INTO uwo_rsk_srl
+			(urs_rsk_key,
+			umm_man_cyl,
+			uag_svr_cod,
+			uag_svr_nam,
+			uag_dep_cod,
+			uag_grp_cod,
+			urv_vlb_cod,
+			uso_coc_cod,
+			urs_rsk_rst,
+			urs_rsk_chk,
+			urs_sta_cod,
+			urs_rsk_typ,
+			urs_rgt_mdh)
+		SELECT seq_uwo_rsk_srl.nextval,
+		       #manCylKey#,
+		       r.uag_svr_cod,
+		       r.uag_svr_nam,
+		       r.uag_dep_cod,
+		       r.uar_grp_cod,
+		       r.urv_vlb_cod,
+		       r.uso_coc_cod,
+			   DECODE(RS, 'NA', 'NA',
+			   						(DECODE(RS, 'Y', 0,
+													   CASE
+													     WHEN uar_Ass_lvl = 'L(1)'
+													     THEN 3
+													     WHEN uar_ass_lvl = 'M(2)'
+													     THEN 2
+													     ELSE 1
+													   END                 +
+													   (SELECT uso_rsk_pnt * 2
+													   FROM uwo_rsk_vlb v,
+													     uwo_rsk_coc coc
+													   WHERE v.uso_coc_cod = coc.uso_coc_cod
+													   AND v.urv_vlb_cod   = r.urv_vlb_Cod)))) AS RR,
+			   r.rs,
+			   'Q',
+			   #urrRskTyp#,
+			   SYSDATE
+		  FROM
+			  (SELECT mtr.uar_Grp_cod,
+			    rst.urv_vlb_Cod,
+			    coc.uso_coc_cod,
+			    coc.uso_coc_nam,
+			    coc.uso_coc_des,
+			    mtr.UAR_ASS_LVL,
+			    grp.uag_dep_cod,
+			    grp.uag_svr_cod,
+			    grp.uag_svr_nam,
+			    CASE
+			      WHEN SUM(DECODE(urr_rsk_rst, 'NA', 1, 0)) = COUNT(urr_rsk_rst) THEN 'NA'
+			      WHEN SUM(DECODE(urr_rsk_rst, 'N',1,0)) = (COUNT(urr_rsk_rst) - SUM(DECODE(urr_rsk_rst, 'NA', 1, 0))) THEN 'N'
+			      WHEN SUM(DECODE(urr_rsk_rst, 'N',1,0)) >= 1 THEN 'P'
+			      WHEN SUM(DECODE(urr_rsk_rst, 'Y',1,0)) = (COUNT(urr_rsk_rst) - SUM(DECODE(urr_rsk_rst, 'NA', 1, 0))) THEN 'Y'
+			      ELSE 'NA' END AS rs
+			  FROM uwo_ass_mtr mtr,
+			       uwo_ass_grp grp,
+			       uwo_rsk_rst rst,
+			       uwo_rsk_coc coc,
+			       uwo_rsk_vlb vlb
+			  WHERE mtr.uar_Grp_cod = #uagGrpCod#
+			    AND rst.urr_rsk_typ = #urrRskTyp#
+			    AND mtr.uar_smp_yn    ='Y'
+			    AND grp.uag_grp_cod = mtr.uar_grp_cod
+			    AND mtr.uar_ass_Cod   = rst.uar_ass_cod
+			    AND vlb.urv_vlb_cod = rst.urv_vlb_cod
+			    AND vlb.uso_coc_cod = coc.uso_coc_cod
+			    AND mtr.uar_bcy_cod = grp.uag_bcy_cod
+			    AND NOT EXISTS (
+         			SELECT * FROM uwo_rsk_srl urs
+ 					WHERE
+ 						urs.uag_grp_cod = mtr.uar_grp_cod
+						AND urs.urs_rsk_typ = rst.urr_rsk_typ
+        		)
+			  GROUP BY mtr.uar_Grp_cod,
+			    mtr.UAR_ASS_LVL,
+			    rst.urv_vlb_Cod,
+			    coc.uso_coc_cod,
+			    coc.uso_coc_nam,
+			    coc.uso_coc_des,
+			    grp.uag_dep_cod,
+			    grp.uag_svr_cod,
+			    grp.uag_svr_nam ) r
+	 -->
+	</insert>
+
+	<select id="QR_RISKM007_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT urv_rsk_key,
+		       urv_rsk_typ,
+		       urv_vlb_cod,
+		       urv_rsk_div,
+		       urv_rsk_itm,
+		       urv_rsk_imp,
+		       F_GET_COMMON_NAME(urv_rsk_imp,'VLBGRD') AS urv_rsk_imp_nam,
+		       urv_rsk_ord,
+		       uso_coc_cod,
+		       urv_use_yn,
+		       urv_rsk_src
+		  FROM uwo_rsk_vlb
+		WHERE 1 = 1
+		<isNotEmpty property="vlbValue">
+		  AND urv_rsk_typ = #vlbValue#
+		</isNotEmpty>
+		<isNotEmpty property="urvRskItm">
+		  AND urv_rsk_itm like '%' || #urvRskItm# || '%'
+		</isNotEmpty>
+		 ORDER BY urv_rsk_typ, urv_rsk_ord
+	</select>
+
+	<select id="QR_RISKM007_INFO" parameterClass="String" resultClass="egovMap">
+		SELECT
+			urv_rsk_key,
+			urv_vlb_cod,
+			uso_coc_cod,
+			(SELECT uso_coc_nam FROM uwo_rsk_coc WHERE uso_coc_cod = vlb.uso_coc_cod) AS uso_coc_nam,
+			urv_rsk_itm,
+			urv_rsk_div,
+			urv_rsk_imp,
+			urv_rsk_ord,
+			urv_rgt_id,
+			urv_rgt_mdh,
+			urv_upt_id,
+			urv_upt_mdh,
+			urv_use_yn,
+			urv_rsk_typ
+		FROM
+			uwo_rsk_vlb vlb
+		WHERE
+			urv_rsk_key = #urvRskKey#
+	</select>
+
+	<insert id="QR_RISKM007_INSERT" parameterClass="Map">
+		INSERT
+			INTO uwo_rsk_vlb (
+				urv_rsk_key,
+				urv_vlb_cod,
+				uso_coc_cod,
+				urv_rsk_itm,
+				urv_rsk_div,
+				urv_rsk_imp,
+				urv_rsk_ord,
+				urv_rgt_id,
+				urv_rgt_mdh,
+				urv_use_yn,
+				urv_rsk_typ
+		) VALUES (
+			SEQ_UWO_RSK_VLB.NEXTVAL,
+			#urvVlbCod#,
+			#usoCocCod#,
+			#urvRskItm#,
+			#urvRskDiv#,
+			#urvRskImp#,
+			#urvRskOrd#,
+			#rgtId#,
+			SYSDATE,
+			NVL(#urvUseYn# ,'Y'),
+			#urvRskTyp#
+		)
+	</insert>
+
+	<update id="QR_RISKM007_UPDATE" parameterClass="Map">
+		UPDATE uwo_rsk_vlb
+			SET
+				urv_vlb_cod = #urvVlbCod#,
+				uso_coc_cod = #usoCocCod#,
+				urv_rsk_itm = #urvRskItm#,
+				urv_rsk_div = #urvRskDiv#,
+				urv_rsk_imp = #urvRskImp#,
+				urv_rsk_ord = #urvRskOrd#,
+				urv_upt_id  = #uptId#,
+				urv_upt_mdh = #urvUptMdh#,
+				urv_use_yn  = #urvUseYn#,
+				urv_rsk_typ = #urvRskTyp#
+		WHERE
+			urv_rsk_key = #urvRskKey#
+	</update>
+
+	<select id="QR_GET_COC_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT uso_coc_cod,
+			   uso_coc_nam
+		  FROM uwo_rsk_coc
+		 WHERE USO_USE_YN = 'Y'
+		 <isNotEmpty property="usoCocCod">
+		   AND uso_coc_cod like '%' || #usoCocCod# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="usoCocNam">
+		   AND uso_coc_nam like '%' || #usoCocNam# || '%'
+		 </isNotEmpty>
+	</select>
+
+	<select id="QR_GET_USR_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT uum_usr_key                                 AS uum_usr_key,
+		       uum_usr_id                                  AS uum_usr_id,
+		       uum_usr_nam                                 AS uum_usr_nam,
+		       usr.uum_dep_cod                             AS uum_dep_cod,
+		       (SELECT udm_dep_nam
+		          FROM UWO_DEP_MTR dep
+		         WHERE dep.udm_dep_cod = usr.uum_dep_cod ) AS uag_dep_nam
+		  FROM uwo_usr_mtr usr
+		  LEFT OUTER JOIN UWO_DEP_MTR UDM ON UDM.UDM_DEP_COD = usr.UUM_DEP_COD
+		 WHERE uum_use_yn = 'Y'
+		 <isNotEmpty property="uumUsrId">
+		   AND uum_usr_id like '%' || #uumUsrId# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="uumUsrNam">
+		   AND uum_usr_nam like '%' || #uumUsrNam# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="stOrg" prepend="AND">
+		   UDM.UDM_DEP_1LV = #stOrg#
+		 </isNotEmpty>
+		 <isNotEmpty property="hqOrg" prepend="AND">
+		   UDM.UDM_DEP_2LV = #hqOrg#
+		 </isNotEmpty>
+		 <isNotEmpty property="gpOrg" prepend="AND">
+		   UDM.UDM_DEP_3LV = #gpOrg#
+		 </isNotEmpty>
+	</select>
+
+	<select id="QR_RISKM008_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT rdep.urd_dep_key,
+			   rdep.umm_man_cyl,
+			   rdep.udm_dep_cod,
+			   rdep.udm_dep_nam,
+			   rdep.urd_use_yn,
+			   rdep.urp_rgt_id,
+			   rdep.urp_rgt_mdh,
+			   rdep.urp_upt_id,
+			   rdep.urp_upt_mdh,
+			   rdep.uag_svr_cod,
+               rdep.uag_svr_nam,
+               (SELECT dmtr.udm_dep_nam FROM uwo_dep_mtr dmtr WHERE dmtr.udm_dep_Cod = mtr.udm_dep_1LV) AS st_org,
+               (SELECT dmtr.udm_dep_nam FROM uwo_dep_mtr dmtr WHERE dmtr.udm_dep_Cod = mtr.udm_dep_2LV) AS hq_org,
+               (SELECT dmtr.udm_dep_nam FROM uwo_dep_mtr dmtr WHERE dmtr.udm_dep_Cod = mtr.udm_dep_3LV) AS gp_org,
+               rdep.urd_mng_id,
+               rdep.urd_mng_nam
+		  FROM uwo_rsk_dep rdep,
+		       uwo_dep_mtr mtr
+		 WHERE rdep.urd_use_yn = 'Y'
+           AND rdep.udm_dep_cod = mtr.udm_dep_cod
+		   AND umm_man_cyl = #ummManCyl#
+		 <isNotEmpty property="stOrg">
+	        AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = rdep.UDM_DEP_COD AND udm_dep_1lv = #stOrg#)
+	     </isNotEmpty>
+	     <isNotEmpty property="hqOrg">
+	        AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = rdep.UDM_DEP_COD AND udm_dep_2lv = #hqOrg#)
+	     </isNotEmpty>
+	     <isNotEmpty property="gpOrg">
+	        AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = rdep.UDM_DEP_COD AND udm_dep_3lv = #gpOrg#)
+	     </isNotEmpty>
+	     <isNotEmpty property="service">
+		    AND rdep.uag_svr_cod = #service#
+		 </isNotEmpty>
+	</select>
+
+	<select id="QR_RISKM008_DEP_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT dep.udm_dep_cod AS udm_dep_cod,
+			   dep.udm_dep_nam AS udm_dep_nam,
+			   org.uom_svc_cod AS uag_svr_cod,
+               org.uom_svc_nam AS uag_svr_nam
+		  FROM uwo_dep_mtr dep,
+		       uwo_org_mtr org
+		 WHERE org.uom_dep_cod = dep.udm_dep_cod
+		<isNotEmpty property="udmDepCod">
+		  AND dep.udm_dep_cod like '%' || #udmDepCod# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="udmDepNam">
+		  AND dep.udm_dep_nam like '%' || #udmDepNam# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="service">
+		  AND org.uom_svc_cod = #service#
+		</isNotEmpty>
+	</select>
+
+	<update id="QR_RISKM008_ADD_RISK_DEPLIST" parameterClass="Map">
+		MERGE INTO uwo_rsk_dep rdep
+		USING (SELECT #ummManCyl# AS umm_man_cyl,
+		              #depCod# AS udm_dep_cod
+	             FROM DUAL) idep
+		   ON (rdep.umm_man_cyl = idep.umm_man_cyl
+		        AND rdep.udm_dep_cod = idep.udm_dep_cod)
+		WHEN MATCHED THEN
+			UPDATE SET <!-- ZINOO -->
+			       uag_svr_cod = (SELECT uom_svc_cod FROM uwo_org_mtr WHERE uom_dep_cod = #depCod#),
+				   uag_svr_nam = (SELECT uom_svc_nam FROM uwo_org_mtr WHERE uom_dep_cod = #depCod#)
+		WHEN NOT MATCHED THEN
+			INSERT
+				(urd_dep_key,
+				 umm_man_cyl,
+				 udm_dep_cod,
+				 udm_dep_nam,
+				 urd_use_yn,
+				 urp_rgt_id,
+				 urp_rgt_mdh,
+				 uag_svr_cod,
+				 uag_svr_nam)
+			VALUES
+				(seq_uwo_rsk_dep.NEXTVAL,
+				 #ummManCyl#,
+				 #depCod#,
+				 (SELECT udm_dep_nam FROM uwo_dep_mtr dept WHERE dept.udm_dep_cod = #depCod#),
+				 'Y',
+				 #userKey#,
+				 SYSDATE, <!-- ZINOO -->
+				 (SELECT uom_svc_cod FROM uwo_org_mtr WHERE uom_dep_cod = #depCod#),
+				 (SELECT uom_svc_nam FROM uwo_org_mtr WHERE uom_dep_cod = #depCod#)
+				)
+	</update>
+
+	<update id="QR_RISKM008_DEL_RISK_DEPLIST" parameterClass="Map">
+		DELETE FROM uwo_rsk_dep
+		 WHERE urd_dep_key = #urdDepKey#
+	</update>
+
+	<update id="QR_RISKM008_UPDATE_RISK_DEP_MNG" parameterClass="Map">
+		UPDATE uwo_rsk_dep
+		SET urd_mng_id = #usrKey#,
+			urd_mng_nam = (SELECT uum_usr_nam FROM uwo_usr_mtr WHERE uum_usr_key = #usrKey#),
+			urp_upt_id = #uptId#,
+			urp_upt_mdh = SYSDATE
+		 WHERE urd_dep_key = #depKey#
+	</update>
+
+	<select id="QR_RISKM009_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT dep.urd_dep_key,
+			   dep.udm_dep_cod,
+			   dep.udm_dep_nam,
+			   dep.uag_svr_cod,
+			   dep.uag_svr_nam,
+			   (SELECT DECODE(COUNT(*), 0,'N','Y') FROM uwo_rsk_rst rr WHERE dep.udm_dep_cod = rr.uar_ass_cod AND rr.urr_rsk_typ = 'D' AND rr.umm_man_cyl = #ummManCyl#) AS rst_yn,
+			   (SELECT dmtr.udm_dep_nam FROM uwo_dep_mtr dmtr WHERE dmtr.udm_dep_Cod = mtr.udm_dep_1LV) AS st_org,
+               (SELECT dmtr.udm_dep_nam FROM uwo_dep_mtr dmtr WHERE dmtr.udm_dep_Cod = mtr.udm_dep_2LV) AS hq_org,
+               (SELECT dmtr.udm_dep_nam FROM uwo_dep_mtr dmtr WHERE dmtr.udm_dep_Cod = mtr.udm_dep_3LV) AS gp_org
+		  FROM uwo_rsk_dep dep,
+		       uwo_dep_mtr mtr
+		 WHERE 1 = 1
+		   AND umm_man_cyl = #ummManCyl#
+		   AND dep.udm_dep_cod = mtr.udm_dep_cod
+		<isNotEmpty property="stOrg">
+		   AND EXISTS (SELECT 'X' FROM uwo_dep_mtr udm WHERE dep.udm_dep_cod = udm.udm_dep_cod AND udm_dep_1lv = #stOrg#)
+		</isNotEmpty>
+		<isNotEmpty property="hqOrg">
+		   AND EXISTS (SELECT 'X' FROM uwo_dep_mtr udm WHERE dep.udm_dep_cod = udm.udm_dep_cod AND udm_dep_2lv = #hqOrg#)
+		</isNotEmpty>
+		<isNotEmpty property="gpOrg">
+		   AND EXISTS (SELECT 'X' FROM uwo_dep_mtr udm WHERE dep.udm_dep_cod = udm.udm_dep_cod AND udm_dep_3lv = #gpOrg#)
+		</isNotEmpty>
+ 	</select>
+
+ 	<select id="QR_RISKM009_RST_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT usm_sro_cod,
+		       usm_sro_lv0,
+		       usm_sro_lv1,
+		       usm_sro_lv2,
+		       usm_sro_Des,
+		       urr_Rsk_rst
+		  FROM uwo_SRO_MTR MTR,
+			   uwo_rsk_rst rst
+		 WHERE rst.urv_vlb_cod = MTR.USM_SRO_COD
+		   AND mtr.usm_use_yn    = 'Y'
+		   AND rst.uar_ass_cod = #udmDepCod#
+		   AND rst.umm_man_cyl = #ummManCyl#
+		 ORDER BY LPAD(REGEXP_REPLACE(usm_sro_cod, '^[A-Za-z]*',''), 8, '0')
+ 	</select>
+
+ 	<select id="QR_RISKM009_EXCEL_CHECK_TARGET" parameterClass="Map" resultClass="egovMap">
+		SELECT udm_dep_cod,
+		       udm_dep_nam,
+		       uag_svr_cod,
+		       uag_svr_nam
+		  FROM uwo_rsk_dep
+		 WHERE umm_man_cyl = #manCyl#
+		<isNotEmpty property="service">
+		   AND uag_svr_cod = #service#
+		</isNotEmpty>
+		 ORDER BY urd_dep_key
+	</select>
+
+	<select id="QR_RISKM009_SVR_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT DISTINCT
+		       uag_svr_cod,
+		       uag_svr_nam
+		  FROM uwo_rsk_dep
+		 WHERE umm_man_cyl = #manCyl#
+		<isNotEmpty property="service">
+		   AND uag_svr_cod = #service#
+		</isNotEmpty>
+	</select>
+
+	<select id="QR_RISKM009_RISKVLB_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT USM_SRO_KEY ,
+			   USM_SRO_COD ,
+			   USM_SRO_LV0 ,
+			   USM_SRO_LV1 ,
+			   USM_SRO_LV2 ,
+			   USM_SRO_DES ,
+			   USM_COC_KEY ,
+			   USM_REF_COD ,
+			   USM_USE_YN
+		  FROM UWO_SRO_MTR
+<!-- 		 WHERE USM_BCY_COD = #manCyl#
+ -->		 ORDER BY TO_NUMBER(SUBSTR(USM_SRO_COD,8))
+	</select>
+
+	<delete id="QR_RISKM009_SRL_DELETE" parameterClass="Map">
+		DELETE FROM uwo_rsk_srl
+		 WHERE umm_man_cyl = #manCylKey#
+		   AND urs_rsk_typ = #urrRskTyp#
+		   AND uag_svr_cod = (SELECT svc_cod FROM uwo_svc_mtr WHERE svc_nam = #uagSvrCod#)
+	</delete>
+
+	<insert id="QR_RISKM009_SRL_INSERT" parameterClass="Map">
+		INSERT INTO uwo_rsk_srl
+			(urs_rsk_key,
+			umm_man_cyl,
+			uag_svr_cod,
+			uag_svr_nam,
+			urv_vlb_cod,
+			uso_coc_cod,
+			urs_rsk_rst,
+			urs_rsk_chk,
+			urs_sta_cod,
+			urs_rsk_typ,
+			urs_rgt_mdh)
+			SELECT seq_uwo_rsk_srl.nextval,
+		           #manCylKey#,
+		           uag_svr_cod,
+		           uag_svr_nam,
+		           usm_sro_cod,
+		           uso_coc_cod,
+			       DECODE(rs, 'NA', 'NA',
+			              DECODE(rs, 'Y', '0',
+			                     DECODE(rs, 'N', 6 + uso_rsk_pnt , 5 + uso_rsk_pnt))) AS rr,
+			       rs,
+			       'Q',
+			       #urrRskTyp#,
+			       SYSDATE
+			FROM (
+			      SELECT sro.usm_sro_cod,
+			      	     coc.uso_coc_cod,
+			             CASE
+			                  WHEN SUM(DECODE(urr_rsk_rst, 'NA', 1, 0)) = COUNT(urr_rsk_rst) THEN 'NA'
+			                  WHEN SUM(DECODE(urr_rsk_rst, 'N',1,0)) = (COUNT(urr_rsk_rst) - SUM(DECODE(urr_rsk_rst, 'NA', 1, 0))) THEN 'N'
+			                  WHEN SUM(DECODE(urr_rsk_rst, 'N',1,0)) >= 1 THEN 'P'
+			                  WHEN SUM(DECODE(urr_rsk_rst, 'Y',1,0)) = (COUNT(urr_rsk_rst) - SUM(DECODE(urr_rsk_rst, 'NA', 1, 0))) THEN 'Y'
+			                  ELSE 'NA' END AS rs,
+			              coc.uso_rsk_pnt,
+	                      dep.uag_svr_cod,
+	                      dep.uag_svr_nam
+			        FROM uwo_rsk_rst rst,
+			             uwo_rsk_coc coc,
+			             uwo_sro_mtr sro,
+			             uwo_rsk_dep dep
+			       WHERE rst.urv_vlb_cod = sro.usm_sro_cod
+			         AND coc.uso_coc_cod = sro.usm_coc_key
+			         AND dep.udm_dep_cod = rst.uar_ass_cod
+               		 AND dep.uag_svr_cod = (SELECT svc_cod FROM uwo_svc_mtr WHERE svc_nam = #uagSvrCod#)
+			       GROUP BY sro.usm_sro_cod, coc.uso_coc_cod, coc.uso_rsk_pnt, coc.uso_rsk_grd,dep.uag_svr_cod, dep.uag_svr_nam
+			        ORDER BY TO_NUMBER(SUBSTR(sro.usm_sro_cod,8))) r
+	</insert>
+
+ 	<select id="QR_RISKM009_RST_DOWN_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT rst.urr_rsk_rst                              AS urr_rsk_rst,
+		       rst.urv_vlb_cod                              AS urv_vlb_cod,
+		       rst.uar_ass_cod                              AS uar_ass_cod
+		  FROM uwo_sro_mtr sro,
+		       uwo_rsk_rst rst
+		 WHERE rst.urv_vlb_cod = sro.usm_sro_cod
+		   AND sro.usm_use_yn = 'Y'
+		   AND rst.uar_ass_cod = #udmDepCod#
+		   AND rst.umm_man_cyl = #ummManCyl#
+		   AND rst.urr_rsk_typ = 'D'
+		 ORDER BY TO_NUMBER(SUBSTR(sro.usm_sro_cod,8))
+ 	</select>
+
+ 	<select id="QR_RISKM009_RST_ASS_SUM_LIST" parameterClass="Map" resultClass="egovMap">
+ 		SELECT rsk.*,
+		       CASE WHEN rsk.rr = 'NA' THEN '-'
+				    WHEN rsk.rr >= 7 THEN 'H'
+				    WHEN rsk.rr >= 5 THEN 'M'
+				    WHEN rsk.rr >= 3 THEN 'L'
+				    ELSE '-' END AS rsk
+		  FROM (SELECT usm_sro_cod,
+				           uso_coc_cod,
+					       DECODE(rs, 'NA', 'NA',
+					              DECODE(rs, 'Y', '0',
+					                     DECODE(rs, 'N', 6 + uso_rsk_pnt , 5 + uso_rsk_pnt))) AS rr,
+					       rs
+					FROM (
+					      SELECT sro.usm_sro_cod,
+					      	     coc.uso_coc_cod,
+					             CASE
+					                  WHEN SUM(DECODE(urr_rsk_rst, 'NA', 1, 0)) = COUNT(urr_rsk_rst) THEN 'NA'
+					                  WHEN SUM(DECODE(urr_rsk_rst, 'N',1,0)) = (COUNT(urr_rsk_rst) - SUM(DECODE(urr_rsk_rst, 'NA', 1, 0))) THEN 'N'
+					                  WHEN SUM(DECODE(urr_rsk_rst, 'N',1,0)) >= 1 THEN 'P'
+					                  WHEN SUM(DECODE(urr_rsk_rst, 'Y',1,0)) = (COUNT(urr_rsk_rst) - SUM(DECODE(urr_rsk_rst, 'NA', 1, 0))) THEN 'Y'
+					                  ELSE 'NA' END AS rs,
+					              coc.uso_rsk_pnt,
+                        		  dep.uag_svr_cod
+					         FROM uwo_rsk_rst rst,
+					              uwo_rsk_coc coc,
+					              uwo_sro_mtr sro,
+					              uwo_rsk_dep dep
+					        WHERE rst.urv_vlb_cod = sro.usm_sro_cod
+					          AND coc.uso_coc_Cod = sro.usm_coc_key
+					          AND dep.udm_dep_cod = rst.uar_ass_cod
+					          AND dep.uag_svr_cod = #uagSvrCod#
+					        GROUP BY sro.usm_sro_cod, coc.uso_coc_cod, coc.uso_rsk_pnt, coc.uso_rsk_grd,dep.uag_svr_cod
+					        ORDER BY TO_NUMBER(SUBSTR(sro.usm_sro_cod,8))) r) rsk
+ 	</select>
+
+ 	<!-- 위험그룹 내역 -->
+	<select id="QR_RISKM010_LIST" parameterClass="Map" resultClass="egovMap">
+		 SELECT
+		       svc_cod AS uag_svr_cod,
+			   svc_nam AS uag_svr_nam,
+               (SELECT COUNT(*) FROM uwo_rsk_dep dep WHERE usm.svc_cod = dep.uag_svr_cod AND umm_man_cyl = #cylKey#) as cnt
+		  FROM uwo_svc_mtr usm
+		 WHERE use_yn = 'Y'
+		<isNotEmpty property="service">
+		   AND svc_cod = #service#
+		</isNotEmpty>
+		 ORDER BY sort
+	</select>
+
+ 	<!-- 위험관리 내역 -->
+	<select id="QR_RISKM010_RSK_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT srl.urs_rsk_key                              AS urs_rsk_key,
+			   srl.uag_grp_cod                              AS uag_grp_cod,
+		       srl.uag_svr_cod                              AS uag_svr_cod,
+		       srl.uag_svr_nam                              AS uag_svr_nam,
+		       srl.uso_coc_cod                              AS uso_coc_cod,
+		       srl.urv_vlb_cod								AS urv_vlb_cod,
+		       coc.uso_coc_nam                              AS uso_coc_nam,
+		       (select USM_SRO_DES from UWO_SRO_MTR where USM_SRO_COD = srl.urv_vlb_cod) AS urv_vlb_des,
+		       srl.urs_rsk_rst                              AS urs_rsk_rst,
+		       srl.urs_rsk_chk                              AS urs_rsk_chk,
+		       F_GET_COMMON_NAME(srl.urs_rsk_chk, 'DIARST') AS urs_chk_nam,
+		       coc.uso_rsk_grd                              AS uso_rsk_grd,
+		       F_GET_COMMON_NAME(coc.uso_rsk_grd, 'VLBGRD') AS uso_grd_nam,
+		       coc.uso_rsk_pnt                              AS uso_rsk_pnt,
+		       srl.urs_sta_cod                              AS urs_sta_cod,
+		<isEmpty property="ursMngKey">
+		       '' AS urr_rsk_key,
+		       F_GET_COMMON_NAME(srl.urs_sta_cod, 'RSLSTA_ADM') AS urs_sta_nam
+		</isEmpty>
+		<isNotEmpty property="ursMngKey">
+		       urr.urr_rsk_key,
+		       F_GET_COMMON_NAME(urr.urr_sta_cod, 'RSLSTATUS') AS urs_sta_nam
+		</isNotEmpty>
+		  FROM uwo_rsk_srl srl
+			  INNER JOIN uwo_rsk_coc coc on srl.uso_coc_cod = coc.uso_coc_cod
+		<isNotEmpty property="ursMngKey">
+			  INNER JOIN uwo_rsk_rst urr on srl.urs_rsk_key = urr.urs_rsk_key
+			  INNER JOIN uwo_rsk_dep urd on urr.uar_ass_cod = urd.udm_dep_cod
+		</isNotEmpty>
+		WHERE srl.umm_man_cyl = #cylKey#
+		  AND srl.uso_coc_cod = coc.uso_coc_cod
+		  AND srl.urs_rsk_typ = 'D'
+		<isNotEmpty property="uagSvrCod">
+		  AND srl.uag_svr_cod = #uagSvrCod#
+		</isNotEmpty>
+		<isNotEmpty property="ursMngKey">
+		  AND urr.urr_rst_usr = #ursMngKey#
+		</isNotEmpty>
+		<isNotEmpty property="doa">
+		  AND REPLACE(URS_RSK_RST, 'NA', 0) >= #doa#
+		</isNotEmpty>
+		<isEqual property="doaGrd" compareValue="H">
+		  AND REPLACE(URS_RSK_RST, 'NA', 0) IN (7,8,9)
+		</isEqual>
+		<isEqual property="doaGrd" compareValue="M">
+		  AND REPLACE(URS_RSK_RST, 'NA', 0) IN (4,5,6)
+		</isEqual>
+		<isEqual property="doaGrd" compareValue="L">
+		  AND REPLACE(URS_RSK_RST, 'NA', 0) IN (1,2,3)
+		</isEqual>
+		<isNotEmpty property="ursMngKey">
+		  AND urr.urr_sta_cod != 'Q'
+		</isNotEmpty>
+		ORDER BY urs_rsk_key
+	</select>
+
+	<!-- 위험관리 내역 -->
+	<select id="QR_RISKM010_RSK_INFO" parameterClass="Map" resultClass="egovMap">
+		SELECT srl.urs_rsk_key                                AS urs_rsk_key,
+			  srl.uag_grp_cod                                 AS uag_grp_cod,
+			  srl.uag_svr_cod                                 AS uag_svr_cod,
+			  srl.uag_svr_nam                                 AS uag_svr_nam,
+			  srl.uso_coc_cod                                 AS uso_coc_cod,
+			  coc.uso_coc_nam                                 AS uso_coc_nam,
+			  coc.uso_coc_des                                 AS uso_coc_des,
+			  srl.urs_rsk_rst                                 AS urs_rsk_rst,
+			  srl.urs_rsk_chk                                 AS urs_rsk_chk,
+			  F_GET_COMMON_NAME(srl.urs_rsk_chk, 'DIARST')    AS urs_chk_nam,
+			  coc.uso_rsk_grd                                 AS uso_rsk_grd,
+			  F_GET_COMMON_NAME(coc.uso_rsk_grd, 'VLBGRD')    AS uso_grd_nam,
+			  coc.uso_rsk_pnt                                 AS uso_rsk_pnt,
+			  srl.urs_sta_cod                                 AS urs_sta_cod,
+			  srl.urs_mng_key                                 AS urs_mng_key,
+			  srl.urs_mes_mng                                 AS urs_mes_mng,
+			  srl.urs_mng_nam                                 AS urs_mng_nam,
+			  srl.urs_mes_des                                 AS urs_mes_des,
+			  srl.urs_mes_mdh                                 AS urs_mes_mdh,
+			  srl.urs_mes_usr                                 AS urs_mes_usr,
+			  srl.urs_cof_mdh                                 AS urs_cof_mdh,
+			  srl.urs_cof_usr                                 AS urs_cof_usr,
+			  srl.urs_lim_des                                 AS urs_lim_des,
+			  srl.urs_rst_des                                 AS urs_rst_des,
+			  srl.urs_rst_mdh                                 AS urs_rst_mdh,
+			  srl.urs_rst_usr                                 AS urs_rst_usr,
+			  srl.urs_rco_mdh                                 AS urs_rco_mdh,
+			  srl.urs_rco_usr                                 AS urs_rco_usr,
+			  srl.urs_rsk_prc                                 AS urs_rsk_prc,
+			  NVL2(srl.urs_rsk_prc, F_GET_COMMON_NAME(srl.urs_rsk_prc, 'RSKPRC'), '')
+			                                                  AS urs_prc_nam,
+			  TO_CHAR(srl.urs_req_mdh, 'YYYY-MM-DD')          AS urs_req_mdh,
+			  (SELECT usm_sro_des FROM uwo_sro_mtr WHERE usm_sro_cod = srl.urv_vlb_cod) AS urv_vlb_des,
+		<isEmpty property="urrRskKey">
+		       F_GET_COMMON_NAME(srl.urs_sta_cod, 'RSLSTA_ADM') AS urs_sta_nam
+		</isEmpty>
+		<isNotEmpty property="urrRskKey">
+		       (SELECT F_GET_COMMON_NAME(urr.urr_sta_cod, 'RSLSTATUS') FROM uwo_rsk_rst urr WHERE urr.urr_rsk_key = #urrRskKey#) AS urs_sta_nam
+		</isNotEmpty>
+		 FROM uwo_rsk_srl srl,
+		      uwo_rsk_coc coc
+		WHERE srl.urs_rsk_key	= #ursRskKey#
+		  AND srl.uso_coc_cod   = coc.uso_coc_cod
+	</select>
+
+	<select id="QR_RISKM009_EXCEL_TARGET_GROUP" parameterClass="Map" resultClass="egovMap">
+		SELECT DISTINCT uag_svr_cod
+		  FROM uwo_rsk_dep
+		 WHERE uag_svr_cod IS NOT NULL
+		<isNotEmpty property="service">
+		   AND uag_svr_cod = #service#
+		</isNotEmpty>
+	</select>
+
+	<!-- 부서별 위험조치계획서 리포트 내역 -->
+	<select id="QR_RISKM010_REPORT_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT srl.uso_coc_cod                                                           AS uso_coc_cod,
+			   coc.uso_coc_des                                                           AS uso_coc_des,
+			   srl.urs_mes_des                                                           AS urs_mes_des,
+			   CASE coc.uso_rsk_grd
+			    WHEN 'U'    THEN 'H'
+			    WHEN 'M'    THEN 'M'
+			    WHEN 'D'    THEN 'L'
+			                ELSE ''  END                                                 AS uso_rsk_grd_chg,
+			   NVL2(srl.urs_rsk_prc, F_GET_COMMON_NAME(srl.urs_rsk_prc, 'RSKPRC'), '' )  AS rsk,
+			   TO_CHAR(srl.urs_req_mdh, 'YYYY-MM-DD')                                    AS urs_req_mdh,
+			   (SELECT (SELECT udm_dep_nam  FROM uwo_dep_mtr dep
+			             WHERE dep.udm_dep_cod = usr.uum_dep_cod)
+			      FROM uwo_usr_mtr usr
+			     WHERE usr.uum_usr_key = srl.URS_MNG_KEY)                                AS mng_dep_nam,
+			   srl.urs_lim_des                                                           AS urs_lim_des,
+			   (select USM_SRO_DES from UWO_SRO_MTR where USM_SRO_COD = srl.urv_vlb_cod) AS urv_vlb_des
+		  FROM uwo_rsk_srl srl,
+		       uwo_rsk_coc coc
+		 WHERE coc.uso_coc_cod = srl.uso_coc_cod
+		   AND srl.uag_svr_cod = #svr#
+		   AND srl.umm_man_cyl = #manCyl#
+		   AND srl.urs_rsk_typ = 'D'
+		   AND urs_rsk_rst != 'NA'
+		   AND urs_rsk_rst > (SELECT ucc_snd_cod FROM uwo_com_cod
+			                   WHERE ucc_fir_Cod = 'DOA'
+			                     AND ucc_etc = 'Y')
+		 ORDER BY srl.uso_coc_cod
+	</select>
+
+	<!-- 관리적 위험조치관리 일괄 대책수립 할당 -->
+	<update id="QR_RISKM010_UPDATE_URR_STA_COD_S" parameterClass="Map">
+		UPDATE uwo_rsk_rst urr
+		SET urr_sta_cod = 'S',
+			urr_upt_id = #uptId#,
+			urr_upt_mdh = SYSDATE
+		WHERE urr_sta_cod = 'Q'
+			AND urr.urr_rsk_typ = 'D'
+			AND urr.urr_use_yn = 'Y'
+			AND urr.urr_rsk_rst = 'N'
+			AND EXISTS (
+				SELECT * FROM uwo_rsk_srl urs
+				WHERE urr.urs_rsk_key = urs.urs_rsk_key
+					AND urs.urs_sta_cod = 'Q'
+					AND urs.urs_rsk_typ = 'D'
+					AND urs.uag_svr_cod = #uagSvrCod#
+					AND urs.umm_man_cyl = #manCyl#
+					AND REPLACE(urs.urs_rsk_rst, 'NA', 0) >= #doa#
+				)
+ 	</update>
+
+	<!-- UWO_RSK_SRL 일괄 대책수립 할당(Q -> S) -->
+	<update id="QR_RISKM010_UPDATE_URS_STA_COD_S" parameterClass="Map">
+		UPDATE uwo_rsk_srl urs
+		SET urs_sta_cod = 'S',
+			urs_req_mdh = #ursReqMdh#,
+			urs_upt_id = #uptId#,
+			urs_upt_mdh = SYSDATE,
+			urs_mes_mdh = SYSDATE
+		WHERE urs.urs_sta_cod = 'Q'
+			AND urs.urs_rsk_typ = 'D'
+			AND urs.uag_svr_cod = #uagSvrCod#
+			AND urs.umm_man_cyl = #manCyl#
+			AND REPLACE(urs.urs_rsk_rst, 'NA', 0) >= #doa#
+	</update>
+
+	<!-- 관리적 위험조치관리 대상부서 리스트
+		20187-03-14, selectBox 에서 Table 형식으로 변경. 할당 전 리스트 보이게 처리
+	-->
+	<select id="QR_RISKM010_URR_DEP_LIST" parameterClass="Map" resultClass="egovMap">
+	  	<!-- SELECT
+			urr.urr_rsk_key,
+			urd.udm_dep_nam,
+			urd.urd_mng_id
+		FROM uwo_rsk_rst urr
+    	INNER JOIN uwo_rsk_dep urd ON urr.uar_ass_cod = urd.udm_dep_cod
+		WHERE urr.urs_rsk_key  = #ursRskKey#
+	  		AND urr.urr_use_yn = 'Y'
+	  		AND urr_sta_cod != 'Q'
+  		ORDER BY udm_dep_nam -->
+  		SELECT
+  			urr.urr_rsk_key,
+			urd.udm_dep_nam,
+			urd.udm_dep_cod,
+			COALESCE(urr.urr_rst_usr, urd.urd_mng_id) AS urr_rst_usr,
+			CASE WHEN urr.urr_rst_usr IS NOT NULL THEN F_GET_USR_NAME(urr.urr_rst_usr)
+			ELSE urd.urd_mng_nam
+			END urr_usr_nam,
+			urr.urr_sta_cod,
+			F_GET_COMMON_NAME(urr.urr_sta_cod, 'RSLSTATUS') AS urr_sta_nam,
+			TO_CHAR(urr.urr_mes_mdh, 'yyyy-mm-dd hh24:mi') AS urr_mes_mdh,
+			TO_CHAR(urr.urr_pln_mdh, 'yyyy-mm-dd') AS urr_pln_mdh,
+			TO_CHAR(urr.urr_end_mdh, 'yyyy-mm-dd') AS urr_end_mdh
+		FROM uwo_rsk_rst urr
+		INNER JOIN uwo_rsk_dep urd ON urr.uar_ass_cod = urd.udm_dep_cod
+		WHERE urr.urs_rsk_key = #ursRskKey#
+			AND urr.urr_use_yn = 'Y'
+			AND urr_rsk_rst = 'N'
+		ORDER BY udm_dep_nam
+	</select>
+
+	<!-- 관리적 위험조치관리 대상부서 리스트 -->
+	<select id="QR_RISKM010_URR_RSK_KEY" parameterClass="Map" resultClass="String">
+	  	SELECT
+			urr.urr_rsk_key
+		FROM uwo_rsk_rst urr
+    	INNER JOIN uwo_rsk_dep urd ON urr.uar_ass_cod = urd.udm_dep_cod
+		WHERE urr.urs_rsk_key  = #ursRskKey#
+	  		AND urd.urd_mng_id = #ursMngKey#
+	  		AND urr.urr_use_yn = 'Y'
+	</select>
+
+	<!-- 관리적 위험조치관리 대상부서 정보 -->
+	<select id="QR_RISKM010_URR_DETAIL" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			 urr.urr_rsk_key,
+			 urr.urr_sta_cod,
+			 urr.urr_rsk_prc,
+			 urr.urr_mes_des,
+			 urr.urr_lim_des,
+			 urr.urr_rst_des,
+			 F_GET_COMMON_NAME(urr.urr_sta_cod, 'RSLSTATUS') AS urr_sta_nam,
+			 urd.urd_mng_id,
+			 urd.urd_mng_nam,
+			 urr.urr_pln_sta,
+			 urr.urr_end_sta,
+			TO_CHAR(urr.urr_pln_mdh, 'yyyy-mm-dd') AS urr_pln_mdh,
+			TO_CHAR(urr.urr_end_mdh, 'yyyy-mm-dd') AS urr_end_mdh
+		FROM uwo_rsk_rst urr
+		INNER JOIN uwo_rsk_dep urd ON urr.uar_ass_cod = urd.udm_dep_cod
+		WHERE urr.urr_rsk_key = #urrRskKey#
+	  		AND urr.urr_use_yn = 'Y'
+	</select>
+
+	<!-- 관리적 위험조치관리 대책자 지정-->
+	<update id="QR_RISKM010_MNG_SAVE" parameterClass="Map">
+		UPDATE uwo_rsk_srl
+		   SET urs_sta_cod = 'S',
+		       urs_req_mdh = #ursReqMdh#,
+		       urs_upt_id  = #uptId#,
+		       urs_upt_mdh = SYSDATE
+		 WHERE urs_rsk_key = #ursRskKey#
+		 	AND urs_sta_cod = 'Q'
+	</update>
+	<!-- 2017-03-16, 담당자 개별 설정 가능하게 변경 -->
+	<update id="QR_RISKM010_MNG_SAVE_URR" parameterClass="Map">
+		UPDATE uwo_rsk_rst
+		  SET urr_sta_cod = 'S',
+			urr_upt_id = #uptId#,
+			urr_rst_usr = #urrRstUsr#,
+			urr_upt_mdh = SYSDATE,
+			urr_mes_mdh = SYSDATE
+		WHERE urr_sta_cod = 'Q'
+			AND urr_use_yn = 'Y'
+			AND urr_rsk_key = #urrRskKey#
+	</update>
+
+	<!-- 관리적 위험조치관리 상태 조정-->
+	<update id="QR_RISKM010_UPDATE_URS_STA_COD_PA" parameterClass="Map">
+		UPDATE uwo_rsk_srl urs
+		SET urs_upt_id = #uptId#,
+			urs_upt_mdh = SYSDATE,
+			urs_sta_cod = DECODE(
+				(SELECT COUNT(*) FROM uwo_rsk_rst urr WHERE urs.urs_rsk_key = urr.urs_rsk_key AND urr.urr_sta_cod != 'A' AND urr_rsk_rst = 'N'), 0,
+				'A', 'P')
+   		 WHERE urs_rsk_key = #ursRskKey#
+	</update>
+
+	<!-- 관리적 위험조치관리 저장-->
+	<update id="QR_RISKM010_RSK_REQ" parameterClass="Map">
+		UPDATE uwo_rsk_rst
+		   SET
+		   <isNotEmpty property="urrMesDes">
+		       urr_mes_des = #urrMesDes#,
+		   </isNotEmpty>
+		   <isEqual property="newUrrStaCod" compareValue="P">
+		       urr_mes_mdh = SYSDATE,
+		   </isEqual>
+		   <isNotEmpty property="urrLimDes">
+		       urr_lim_des = #urrLimDes#,
+		   </isNotEmpty>
+		   <isNotEmpty property="urrRstDes">
+		       urr_rst_des = #urrRstDes#,
+		   </isNotEmpty>
+		   <isNotEmpty property="urrPlnMdh">
+		       urr_pln_mdh = #urrPlnMdh#,
+		   </isNotEmpty>
+		   <isNotEmpty property="urrEndMdh">
+		       urr_end_mdh = #urrEndMdh#,
+		   </isNotEmpty>
+		   <isNotEmpty property="urrPlnSta">
+		       urr_pln_sta = #urrPlnSta#,
+		   </isNotEmpty>
+		   <isNotEmpty property="urrEndSta">
+		       urr_end_sta = #urrEndSta#,
+		   </isNotEmpty>
+		   <isEqual property="newUrrStaCod" compareValue="V">
+		       urr_rst_mdh = #urrRstMdh#,
+		   </isEqual>
+		   <isNotEmpty property="newUrrStaCod">
+		       urr_sta_cod = #newUrrStaCod#,
+		   </isNotEmpty>
+		       urr_upt_id  = #uptId#,
+		       urr_upt_mdh = SYSDATE
+		 WHERE urr_rsk_key = #urrRskKey#
+	</update>
+
+	<!-- 관리적 위험조치관리 승인-->
+	<update id="QR_RISKM010_RSK_APPR" parameterClass="Map">
+		UPDATE uwo_rsk_rst
+		   SET urr_upt_mdh = SYSDATE,
+		   <isEqual property="newUrrStaCod" compareValue="C">
+		       urr_cof_mdh = SYSDATE,
+		   </isEqual>
+		   <isEqual property="newUrrStaCod" compareValue="C">
+		       urr_cof_usr = #uptId#,
+		   </isEqual>
+		   <isEqual property="newUrrStaCod" compareValue="A">
+		       urr_rco_mdh = SYSDATE,
+		   </isEqual>
+		   <isEqual property="newUrrStaCod" compareValue="A">
+		       urr_rco_usr = #uptId#,
+		   </isEqual>
+		   <isNotEmpty property="urrRskPrc">
+		       urr_rsk_prc = #urrRskPrc#,
+		   </isNotEmpty>
+		       urr_upt_id  = #uptId#,
+		       urr_sta_cod = #newUrrStaCod#
+		 WHERE urr_rsk_key = #urrRskKey#
+	</update>
+
+	<!-- 관리적 위험조치관리 반려-->
+	<update id="QR_RISKM010_RSK_REJ" parameterClass="Map">
+		UPDATE uwo_rsk_rst
+		   SET urr_upt_mdh = SYSDATE,
+		       urr_upt_id  = #uptId#,
+		       urr_sta_cod = #newUrrStaCod#
+		 WHERE urr_rsk_key = #urrRskKey#
+	</update>
+
+
+	<!-- 기술적 위험조치 관리 메인
+		2017-05-26, uwo_rsk_coc, uwo_ass_grp 삭제
+					AND grp.uag_adm_id = #usrId# -> AND urs.urs_mes_mng = #usrKey#
+	 -->
+	<select id="QR_RISKM003_MAIN_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT urv_vlb_cod,
+		       urs_rsk_key,
+		       urs_req_mdh,
+		       uag_svr_nam,
+		       F_GET_COMMON_NAME(urs_sta_cod, 'RSLSTATUS') AS urs_sta_nam,
+		       urv_rsk_itm AS uso_coc_nam
+		  FROM (
+				SELECT urs.urv_vlb_cod,
+				       urs.urs_rsk_key,
+				       TO_CHAR(NVL(urs.urs_req_mdh, urs.urs_rgt_mdh), 'YYYY-MM-DD') AS urs_req_mdh,
+				       urs.uag_svr_nam,
+				       urs.urs_sta_cod,
+				       urv.urv_rsk_itm
+				  FROM uwo_rsk_srl urs
+				 INNER JOIN uwo_rsk_vlb urv ON urs.urv_vlb_cod = urv.urv_vlb_cod
+				 WHERE urs_rsk_typ = 'A'
+				   AND urs.umm_man_cyl = #manCyl#
+				   AND urs.urs_mes_mng = #usrKey#
+				   AND urs.urs_sta_cod IN ('S', 'C', 'X', 'R')
+				 <isEqual property="authKey" compareValue="A">
+			 UNION
+				 SELECT urs.urv_vlb_cod,
+				       urs.urs_rsk_key,
+				       TO_CHAR(NVL(urs.urs_req_mdh, urs.urs_rgt_mdh), 'YYYY-MM-DD') AS urs_req_mdh,
+				       urs.uag_svr_nam,
+				       urs.urs_sta_cod,
+				       urv.urv_rsk_itm
+				  FROM uwo_rsk_srl urs
+				 INNER JOIN uwo_rsk_vlb urv ON urs.urv_vlb_cod = urv.urv_vlb_cod
+				 WHERE urs_rsk_typ = 'A'
+				     AND urs.umm_man_cyl = #manCyl#
+				     AND urs_sta_cod IN ('Q', 'P', 'V')
+	                 AND REPLACE(urs.urs_rsk_rst, 'NA', 0) >= (SELECT DOA.UCC_SND_COD
+	                                                       FROM UWO_COM_COD COM, (SELECT UCC_SND_COD, UCC_ETC FROM UWO_COM_COD WHERE UCC_FIR_COD = 'DOA') DOA
+	                                                      WHERE COM.UCC_SND_COD = DOA.UCC_SND_COD
+	                                                        AND COM.UCC_FIR_COD = 'DOA'
+	                                                        AND DOA.UCC_ETC = 'Y')
+				 </isEqual>
+		 	)
+		 WHERE ROWNUM <![CDATA[<]]>	 5
+		 ORDER BY urs_req_mdh asc
+	</select>
+
+	<!-- 관리적 위험조치 관리 메인 -->
+	<select id="QR_RISKM010_MAIN_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT urv_vlb_cod,
+		       urs_rsk_key,
+		       uso_coc_cod,
+		       uso_coc_nam,
+		       urs_req_mdh,
+		       uag_svr_nam,
+		       urr_rsk_key,
+		       urs_sta_nam
+		  FROM (
+				SELECT urs.urv_vlb_cod,
+				       urs.urs_rsk_key,
+				       coc.uso_coc_cod AS uso_coc_cod,
+				       coc.uso_coc_nam AS uso_coc_nam,
+				       TO_CHAR(NVL(urs.urs_req_mdh, urs.urs_rgt_mdh), 'YYYY-MM-DD') AS urs_req_mdh,
+				       urs.uag_svr_nam,
+				       urr.urr_rsk_key,
+				       urr.urr_sta_cod AS urs_sta_cod,
+				       F_GET_COMMON_NAME(urr.urr_sta_cod, 'RSLSTATUS') AS urs_sta_nam
+				  FROM uwo_rsk_srl urs
+         		  INNER JOIN uwo_rsk_coc coc ON urs.uso_coc_cod = coc.uso_coc_cod
+          		  INNER JOIN uwo_rsk_rst urr ON urs.urs_rsk_key = urr.urs_rsk_key
+    			  INNER JOIN uwo_rsk_dep urd ON urr.uar_ass_cod = urd.udm_dep_cod
+				 WHERE urs_rsk_typ = 'D'
+				     AND urs.umm_man_cyl = #manCyl#
+				     AND urr.urr_rst_usr = #usrKey#
+				     AND urr.urr_sta_cod IN ('S', 'C', 'X', 'R')
+				 <isEqual property="authKey" compareValue="A">
+			 UNION
+				 SELECT urs.urv_vlb_cod,
+				       urs_rsk_key,
+				       coc.uso_coc_cod AS uso_coc_cod,
+				       coc.uso_coc_nam AS uso_coc_nam,
+				       TO_CHAR(NVL(urs.urs_req_mdh, urs.urs_rgt_mdh), 'YYYY-MM-DD') AS urs_req_mdh,
+				       urs.uag_svr_nam,
+				       '' AS urr_rsk_key,
+				       urs.urs_sta_cod,
+				       F_GET_COMMON_NAME(urs.urs_sta_cod, 'RSLSTA_ADM') AS urs_sta_nam
+				  FROM uwo_rsk_srl urs
+				  INNER JOIN uwo_rsk_coc coc ON urs.uso_coc_cod = coc.uso_coc_cod
+				 WHERE urs.urs_rsk_typ = 'D'
+				     AND urs.umm_man_cyl = #manCyl#
+				     AND urs.urs_sta_cod IN ('Q', 'P', 'V')
+	                 AND REPLACE(urs.urs_rsk_rst, 'NA', 0) >= (SELECT DOA.UCC_SND_COD
+	                                                       FROM UWO_COM_COD COM, (SELECT UCC_SND_COD, UCC_ETC FROM UWO_COM_COD WHERE UCC_FIR_COD = 'DOA') DOA
+	                                                      WHERE COM.UCC_SND_COD = DOA.UCC_SND_COD
+	                                                        AND COM.UCC_FIR_COD = 'DOA'
+	                                                        AND DOA.UCC_ETC = 'Y')
+				 </isEqual>
+		 	)
+		 WHERE ROWNUM <![CDATA[<]]>	 5
+		 ORDER BY urs_req_mdh asc
+	</select>
+
+	<!-- 2017-03-21, 자산의 그룹코드 -->
+	<select id="selectGrpCodOfAssetCode" parameterClass="Map" resultClass="String">
+		SELECT uar_grp_cod
+		FROM uwo_ass_mtr
+		WHERE
+			uar_bcy_cod = #uarBcyCod#
+			AND uar_ass_cod = #uarAssCod#
+	</select>
+
+</sqlMap>

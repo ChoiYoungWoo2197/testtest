@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/util 
+  		http://www.springframework.org/schema/util/spring-beans.xsd
+		">
+		
+	<!--here all the url value should contains the valid path for the jrxml file-->
+	
+	<bean id="mwork001Report"
+			class="org.springframework.web.servlet.view.jasperreports.JasperReportsPdfView"
+			p:url="classpath:report/mwork001Report.jrxml"
+			p:reportDataKey="datasource" />
+          
+	<bean id="comps003Report"
+			class="org.springframework.web.servlet.view.jasperreports.JasperReportsPdfView"
+			p:url="classpath:report/comps003Report.jrxml"
+			p:reportDataKey="datasource" />
+			
+	<bean id="setup020Report"
+			class="org.springframework.web.servlet.view.jasperreports.JasperReportsPdfView"
+			p:url="classpath:report/setup020Report.jrxml"
+			p:reportDataKey="datasource" />
+
+	<bean id="inspt002Report_I"
+			class="org.springframework.web.servlet.view.jasperreports.JasperReportsPdfView"
+			p:url="classpath:report/inspt002_I_Report.jrxml"
+			p:reportDataKey="datasource" />
+			
+	<bean id="inspt002Report_C"
+			class="org.springframework.web.servlet.view.jasperreports.JasperReportsPdfView"
+			p:url="classpath:report/inspt002_C_Report.jrxml"
+			p:reportDataKey="datasource" />
+	
+	<bean id="inspt002Report_D"
+			class="org.springframework.web.servlet.view.jasperreports.JasperReportsPdfView"
+			p:url="classpath:report/inspt002Report.jrxml"
+			p:reportDataKey="datasource" />
+	
+	<bean id="riskm003Report"
+			class="org.springframework.web.servlet.view.jasperreports.JasperReportsPdfView"
+			p:url="classpath:report/riskm003Report.jrxml"
+			p:reportDataKey="datasource" />
+	
+	<bean id="riskm003Report_KTL"
+			class="org.springframework.web.servlet.view.jasperreports.JasperReportsPdfView"
+			p:url="classpath:report/riskm003_KTL_Report.jrxml"
+			p:reportDataKey="datasource" />
+			
+	<bean id="asset002Report"
+			class="org.springframework.web.servlet.view.jasperreports.JasperReportsPdfView"
+			p:url="classpath:report/asset002Report.jrxml"
+			p:reportDataKey="datasource" />
+	
+	<bean id="asset002Report_I"
+			class="org.springframework.web.servlet.view.jasperreports.JasperReportsPdfView"
+			p:url="classpath:report/asset002_I_Report.jrxml"
+			p:reportDataKey="datasource" />
+			
+	<bean id="asset002Report_T"
+			class="org.springframework.web.servlet.view.jasperreports.JasperReportsPdfView"
+			p:url="classpath:report/asset002_T_Report.jrxml"
+			p:reportDataKey="datasource" />
+			
+	<bean id="inspt004Report"
+			class="org.springframework.web.servlet.view.jasperreports.JasperReportsPdfView"
+			p:url="classpath:report/inspt004Report.jrxml"
+			p:reportDataKey="datasource" />
+</beans>

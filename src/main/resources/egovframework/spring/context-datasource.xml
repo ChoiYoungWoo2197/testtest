@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+						http://www.springframework.org/schema/jdbc  http://www.springframework.org/schema/jdbc/spring-jdbc-3.2.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<context:property-placeholder location="classpath:egovframework/properties/database.properties" />
+
+	<bean id="dataSource-oracle-spied" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="net.sf.log4jdbc.DriverSpy" />
+		<!-- <property name="url" value="jdbc:log4jdbc:oracle:thin:@12.4.96.54:7208:ISAMSDEV" /> --> <!-- Dev server -->
+		<!-- <property name="url" value="jdbc:log4jdbc:oracle:thin:@12.4.72.48:7208:isamsdb" /> --> <!-- Production server -->
+		<property name="url" value="${database.application.url}" />
+		<property name="username" value="${database.application.username}" />
+		<property name="password" value="${database.application.password}" />
+		<property name="validationQuery" value="select 1 from dual" />
+		<property name="maxTotal" value="100" />
+		<property name="maxIdle" value="30" />
+		<property name="maxWaitMillis" value="10000" />
+	</bean>
+	<!-- ISC, MSSQL -->
+	<bean id="dataSource-sqlServer" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="com.microsoft.sqlserver.jdbc.SQLServerDriver" />
+		<!-- <property name="url" value="jdbc:sqlserver://12.4.96.71:1433;DatabaseName=BROADBAND_ISC2017" /> --> <!-- 2018-11-07, Dev server -->
+		<property name="url" value="${database.isc.url}" /> <!-- Production server -->
+		<property name="username" value="${database.isc.username}" />
+		<property name="password" value="${database.isc.password}" />
+		<property name="validationQuery" value="select 1" />
+		<property name="connectionProperties" value="loginTimeout=6000;socketTimeout=6000"/>
+	</bean>
+	<!-- Smart Guard, MariaDB -->
+	<bean id="dataSource-smartGuard" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="net.sf.log4jdbc.DriverSpy" />
+		<property name="url" value="${database.smartguard.url}" /> <!-- Production server -->
+		<property name="username" value="${database.smartguard.username}" />
+		<property name="password" value="${database.smartguard.password}" />
+		<property name="validationQuery" value="select 1" />
+	</bean>
+
+	<bean id="dataSource-oracle" class="net.sf.log4jdbc.Log4jdbcProxyDataSource">
+		<constructor-arg ref="dataSource-oracle-spied" />
+		<property name="logFormatter">
+			<bean class="net.sf.log4jdbc.tools.Log4JdbcCustomFormatter">
+		        <property name="loggingType" value="MULTI_LINE" />
+		        <property name="sqlPrefix" value="SQL:::" />
+	      	</bean>
+		</property>
+	</bean>
+</beans>

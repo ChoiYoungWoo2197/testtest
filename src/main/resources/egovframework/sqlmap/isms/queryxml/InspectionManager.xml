@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="inspectionManager">
+
+    <typeAlias alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+    <typeAlias alias="fileVO" type="com.uwo.isms.domain.FileVO"/>
+
+    <select id="getAvailableCompliance" resultClass="egovMap">
+        SELECT EXP.KIND, COM_COD.*
+        FROM UWO_COM_COD COM_COD
+            INNER JOIN UWO_COM_COD_EXP_STND_KIND EXP ON COM_COD.UCC_SND_COD = EXP.SND_COD
+        WHERE COM_COD.UCC_FIR_COD = 'STND'
+            AND EXP.KIND IN ('msit', 'infra_mp', 'infra_la') ORDER BY COM_COD.UCC_SND_NAM
+    </select>
+
+    <select id="getControlItem" parameterClass="Map" resultClass="egovMap">
+        SELECT CASE WHEN ANSWER_COUNT > 0 THEN 'true' ELSE 'false' END COMPLETED, T.*
+        FROM (
+            SELECT (SELECT COUNT(*) FROM UWO_IST_RST WHERE UIR_BCY_COD = #bcyCode# AND UIR_SVC_COD = #service# AND UIR_CTR_GBN = #standard# AND UIR_CTR_KEY = CTR_MTR.UCM_CTR_KEY) ANSWER_COUNT,
+            CTR_MTR.*
+            FROM UWO_CTR_MTR CTR_MTR
+                LEFT JOIN UWO_CTR_MAP CTR_MAP ON CTR_MTR.UCM_CTR_KEY = CTR_MAP.UCM_CTR_KEY
+            WHERE
+                CTR_MTR.UCM_BCY_COD = #bcyCode#
+                AND CTR_MTR.UCM_CTR_GBN = #standard#
+                AND CTR_MAP.UCM_SVC_COD = #service#
+            ORDER BY CTR_MTR.UCM_CTR_KEY
+        ) T
+        <dynamic prepend="WHERE">
+            <isEqual prepend="AND" property="status" compareValue="finished">
+                T.ANSWER_COUNT > 0
+            </isEqual>
+            <isEqual prepend="AND" property="status" compareValue="initiated">
+                T.ANSWER_COUNT = 0
+            </isEqual>
+        </dynamic>
+    </select>
+
+    <!--과기정통부 문항, 선택된 문항 정보 가지고 오기-->
+    <select id="getMsitAnswer" parameterClass="Map" resultClass="egovMap">
+        SELECT CASE WHEN IST_RST.UIR_ASW_ID = EXP.MQ_ID THEN 'true' ELSE 'false' END AS SELECTED,
+            IST_RST.UIR_ASW_ID AS ANSWER_ID,
+            IST_RST.UIR_ASW_VAL AS ANSWER_VALUE,
+            EXP.MQ_ID AS ID,
+            EXP.CTR_KEY AS CTR_KEY,
+            EXP.TITLE AS TITLE,
+            '' AS DESCRIPTION,
+            EXP.POINT AS POINT,
+            EXP.SEQ AS SEQ
+        FROM UWO_CTR_MTR_EXP_MSIT_QST EXP
+            LEFT JOIN UWO_IST_RST IST_RST ON EXP.CTR_KEY = IST_RST.UIR_CTR_KEY AND IST_RST.UIR_BCY_COD = #bcyCode# AND
+            IST_RST.UIR_SVC_COD = #service# AND CASE WHEN IST_RST.UIR_ASW_ID IN ('X', 'O', 'P') THEN '0' ELSE IST_RST.UIR_ASW_ID END = EXP.MQ_ID
+        <dynamic prepend="WHERE">
+            <isNotNull prepend="AND" property="controlItem">
+                EXP.CTR_KEY = #controlItem#
+            </isNotNull>
+        </dynamic>
+        ORDER BY EXP.CTR_KEY, EXP.SEQ
+    </select>
+
+    <!--기반시설 관리/물리 취약점 문항, 선택된 문항 정보 가지고 오기-->
+    <select id="getInfraMpAnswer" parameterClass="Map" resultClass="egovMap">
+        WITH INFRA_MP_ANSWER_LIST AS
+        (
+            SELECT 'O' ANSWER FROM DUAL
+            UNION ALL
+            SELECT 'P' ANSWER FROM DUAL
+            UNION ALL
+            SELECT 'X' ANSWER FROM DUAL
+        )
+        SELECT CASE WHEN IST_RST.UIR_ASW_ID = AL.ANSWER THEN 'true' ELSE 'false' END AS SELECTED,
+            AL.ANSWER AS ANSWER_ID,
+            CASE WHEN AL.ANSWER = 'O' THEN 1 WHEN AL.ANSWER = 'P' THEN 0.5 WHEN AL.ANSWER = 'X' THEN 0 ELSE null END AS ANSWER_VALUE,
+            EXP.IM_ID AS ID,
+            EXP.CTR_KEY AS CTR_KEY,
+            AL.ANSWER AS TITLE,
+            '' AS DESCRIPTION,
+            CASE WHEN AL.ANSWER = 'O' THEN 1 WHEN AL.ANSWER = 'P' THEN 0.5 WHEN AL.ANSWER = 'X' THEN 0 ELSE null END AS POINT,
+            CASE WHEN AL.ANSWER = 'O' THEN 1 WHEN AL.ANSWER = 'P' THEN 2 WHEN AL.ANSWER = 'X' THEN 3 END AS SEQ
+        FROM INFRA_MP_ANSWER_LIST AL
+            LEFT JOIN UWO_CTR_MTR_EXP_INFRA_MP EXP ON 1 = 1
+            LEFT JOIN UWO_IST_RST IST_RST
+            ON EXP.CTR_KEY = IST_RST.UIR_CTR_KEY AND IST_RST.UIR_BCY_COD = #bcyCode# AND IST_RST.UIR_SVC_COD = #service#
+        <dynamic prepend="WHERE">
+            <isNotNull prepend="AND" property="controlItem">
+                EXP.CTR_KEY = #controlItem#
+            </isNotNull>
+        </dynamic>
+        ORDER BY EXP.CTR_KEY, AL.ANSWER
+    </select>
+
+    <!--기반시설 정보보호 수준평가 문항, 선택된 문항 정보 가지고 오기-->
+    <select id="getInfraLaAnswer" parameterClass="Map" resultClass="egovMap">
+        SELECT CASE WHEN IST_RST.UIR_ASW_ID = EXP.IL_ID THEN 'true' ELSE 'false' END AS SELECTED,
+            IST_RST.UIR_ASW_ID AS ANSWER_ID,
+            IST_RST.UIR_ASW_VAL AS ANSWER_VALUE,
+            EXP.IL_ID AS ID,
+            EXP.CTR_KEY AS CTR_KEY,
+            EXP.TITLE AS TITLE,
+            EXP.NOTE AS DESCRIPTION,
+            EXP.SEQ AS POINT,
+            EXP.SEQ AS SEQ
+        FROM UWO_CTR_MTR_EXP_INFRA_LA EXP
+            LEFT JOIN UWO_IST_RST IST_RST
+            ON EXP.CTR_KEY = IST_RST.UIR_CTR_KEY AND IST_RST.UIR_BCY_COD = #bcyCode# AND IST_RST.UIR_SVC_COD = #service#
+        <dynamic prepend="WHERE">
+            <isNotNull prepend="AND" property="controlItem">
+                EXP.CTR_KEY = #controlItem#
+            </isNotNull>
+        </dynamic>
+        ORDER BY EXP.CTR_KEY, EXP.SEQ
+    </select>
+
+    <select id="getAnswer" parameterClass="Map" resultClass="egovMap">
+        SELECT
+        <isEqual property="complianceKind" compareValue="msit">
+            MQ_ID AS ID,
+            CTR_KEY AS CTR_KEY,
+            LVL_COD AS LVL_COD,
+            TITLE AS TITLE,
+            POINT AS POINT,
+            SEQ AS SEQ,
+            '' AS REF_NO,
+            '' AS GRADE,
+            '' AS NOTE
+        </isEqual>
+        <isEqual property="complianceKind" compareValue="infra_mp">
+            IM_ID AS ID,
+            CTR_KEY AS CTR_KEY,
+            LVL_COD AS LVL_COD,
+            '' AS TITLE,
+            POINT AS POINT,
+            '' AS SEQ,
+            REF_NO AS REF_NO,
+            GRADE AS GRADE,
+            '' AS NOTE
+        </isEqual>
+        <isEqual property="complianceKind" compareValue="infra_la">
+            IL_ID AS ID,
+            CTR_KEY AS CTR_KEY,
+            LVL_COD AS LVL_COD,
+            TITLE AS TITLE,
+            SEQ AS POINT,
+            SEQ AS SEQ,
+            '' AS REF_NO,
+            '' AS GRADE,
+            NOTE AS NOTE
+        </isEqual>
+        FROM
+        <isEqual property="complianceKind" compareValue="msit">UWO_CTR_MTR_EXP_MSIT_QST</isEqual>
+        <isEqual property="complianceKind" compareValue="infra_mp">UWO_CTR_MTR_EXP_INFRA_MP</isEqual>
+        <isEqual property="complianceKind" compareValue="infra_la">UWO_CTR_MTR_EXP_INFRA_LA</isEqual>
+        WHERE
+        <isEqual property="complianceKind" compareValue="msit">MQ_ID = #id#</isEqual>
+        <isEqual property="complianceKind" compareValue="infra_mp">IM_ID = #id#</isEqual>
+        <isEqual property="complianceKind" compareValue="infra_la">IL_ID = #id#</isEqual>
+    </select>
+
+    <select id="getInspectionResultAdditionalInfo" parameterClass="Map" resultClass="egovMap">
+        SELECT UIR_SVC_COD, UIR_CTR_GBN, UIR_BCY_COD, UIR_CTR_KEY, UID_RST_DTL, UID_RLT_DOC
+            FROM UWO_IST_DTL
+        <dynamic prepend="WHERE">
+            <isNotNull prepend="AND" property="service">
+                UIR_SVC_COD = #service#
+            </isNotNull>
+            <isNotNull prepend="AND" property="standard">
+                UIR_CTR_GBN = #standard#
+            </isNotNull>
+            <isNotNull prepend="AND" property="bcyCode">
+                UIR_BCY_COD = #bcyCode#
+            </isNotNull>
+            <isNotNull prepend="AND" property="controlItem">
+                UIR_CTR_KEY = #controlItem#
+            </isNotNull>
+        </dynamic>
+    </select>
+    
+    <update id="saveInspectionResultAdditionalInfo" parameterClass="Map">
+        MERGE INTO UWO_IST_DTL
+            USING DUAL
+            ON (UIR_SVC_COD = #service#
+                AND UIR_CTR_GBN = #standard#
+                AND UIR_BCY_COD = #bcyCode#
+                AND UIR_CTR_KEY = #controlItem#)
+        WHEN MATCHED THEN
+            UPDATE
+                SET UID_RST_DTL = #rstDtl#,
+                UID_RLT_DOC = #rltDoc#
+        WHEN NOT MATCHED THEN
+            INSERT (UIR_SVC_COD, UIR_CTR_GBN, UIR_BCY_COD, UIR_CTR_KEY, UID_RST_DTL, UID_RLT_DOC)
+            VALUES (#service#, #standard#, #bcyCode#, #controlItem#, #rstDtl#, #rltDoc#)
+    </update>
+
+    <delete id="deleteInspectionResult" parameterClass="Map">
+        DELETE FROM UWO_IST_RST WHERE UIR_BCY_COD = #bcyCode# AND UIR_SVC_COD = #service# AND UIR_CTR_GBN = #standard# AND UIR_CTR_KEY = #controlItem#
+    </delete>
+
+    <insert id="insertInspectionResult" parameterClass="Map">
+        INSERT INTO UWO_IST_RST (UIR_SVC_COD, UIR_CTR_GBN, UIR_CTR_KEY, UIR_BCY_COD, UIR_ASW_ID, UIR_ASW_VAL, UIR_WRK_KEY, CREATED_AT, UPDATED_AT)
+        VALUES (#service#, #standard#, #controlItem#, #bcyCode#, #answerId#, #answerValue#, #workerKey#, SYSDATE, SYSDATE)
+    </insert>
+
+    <select id="getFileList" parameterClass="Map" resultClass="egovMap">
+        SELECT TRC_DOC.*, MNG_FLE.*
+        FROM UWO_TRC_WRK TRC_WRK
+            LEFT JOIN UWO_TRC_DOC TRC_DOC ON TRC_WRK.UTW_TRC_KEY = TRC_DOC.UTD_TRC_KEY
+            LEFT JOIN UWO_TRC_CTR TRC_CTR ON TRC_DOC.UTD_TRC_KEY = TRC_CTR.UTC_TRC_KEY
+            INNER JOIN UWO_MNG_FLE MNG_FLE ON TRC_WRK.UTW_WRK_KEY = MNG_FLE.UMF_CON_KEY AND MNG_FLE.UMF_TBL_GBN = 'WRK' AND
+            MNG_FLE.UMF_DEL_YN = 'N'
+        WHERE TRC_DOC.UTD_BCY_COD = #bcyCode#
+            AND TRC_DOC.UTD_SVC_COD = #service#
+            AND TRC_CTR.UTC_CTR_KEY = #controlItem#
+
+    </select>
+
+    <select id="getActivityList" parameterClass="Map" resultClass="egovMap">
+        SELECT *
+        FROM UWO_TRC_DOC TRC_DOC
+            LEFT JOIN UWO_TRC_CTR TRC_CTR ON TRC_DOC.UTD_TRC_KEY = TRC_CTR.UTC_TRC_KEY
+        WHERE TRC_DOC.UTD_BCY_COD = #bcyCode#
+            AND TRC_DOC.UTD_SVC_COD = #service#
+            AND TRC_CTR.UTC_CTR_KEY = #controlItem#
+    </select>
+
+</sqlMap>

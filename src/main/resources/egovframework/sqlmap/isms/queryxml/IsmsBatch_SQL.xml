@@ -1,0 +1,613 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL MAP 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="IsmsBatch">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+
+ 	<select id="GET_WORK_DAYS_OF_MONTH" parameterClass="String" resultClass="egovMap">
+	 	SELECT
+		  MIN(UWY_WRK_YMD) AS FIRST_DATE,
+		  MAX(UWY_WRK_YMD) AS LAST_DATE
+		FROM UWO_WRK_YMD
+		WHERE UWY_WRK_YN = 'N'
+		  AND UWY_WRK_YMD >= TO_CHAR(TRUNC(TO_DATE(#currentDate#),'MM'),'YYYYMMDD')
+		  AND UWY_WRK_YMD <![CDATA[<=]]> TO_CHAR(LAST_DAY(TO_DATE(#currentDate#)),'YYYYMMDD')
+ 	</select>
+
+ 	<select id="GET_WORK_DAYS_OF_WEEK" parameterClass="String" resultClass="egovMap">
+	 	SELECT
+		  MIN(UWY_WRK_YMD) AS FIRST_DATE,
+		  MAX(UWY_WRK_YMD) AS LAST_DATE
+		FROM UWO_WRK_YMD
+		WHERE UWY_WRK_YN = 'N'
+		  AND UWY_WRK_YMD >= TO_CHAR(TRUNC(TO_DATE(#currentDate#), 'IW'), 'YYYYMMDD')
+		  AND UWY_WRK_YMD <![CDATA[<=]]> TO_CHAR(TRUNC(TO_DATE(#currentDate#), 'IW') + 4, 'YYYYMMDD')
+ 	</select>
+
+ 	<sql id="WHERE_UWO_TRC_WORK">
+  		  FROM UWO_TRC_DOC UTD
+		 INNER JOIN UWO_TRC_MAP UTM
+		 	ON UTD.UTD_TRC_KEY = UTM.UTM_TRC_KEY
+		 INNER JOIN UWO_USR_MTR UUM
+		  	ON UTM.UTM_WRK_ID = UUM.UUM_USR_KEY
+	 	 WHERE
+		       CASE WHEN utd_dtr_gbn = 'E' THEN utd_trm_gbn
+		       ELSE utd_dtr_gbn END = #TrmGbn#
+		   AND UTD.UTD_STR_DAT <![CDATA[<=]]> SYSDATE
+		   AND UTD.UTD_END_DAT >= SYSDATE
+		   AND utd.wrk_upt_mdh IS NOT NULL <!-- 2017-02-17, 관리자가 1회 이상 업무 배정을 수행한 보호활동만 처리 -->
+		   AND utm.utm_del_yn = 'N' <!-- 2018-07-06 s, 삭제된 담당자에게 업무 할당되는 버그 수정 -->
+		   AND NOT EXISTS
+		  	  (SELECT *
+		 	     FROM UWO_TRC_WRK UTW
+		 	    WHERE UTW.UTW_TRC_KEY = UTD.UTD_TRC_KEY
+		   		  AND UTW.UTW_STR_DAT = TO_DATE(#currentDate#)
+		   		  AND utw.utw_del_yn = 'N'
+		      )
+		<isNotEqual property="utdSdmYn" compareValue="Y">
+			AND utd.utd_sdm_yn = 'Y'
+		</isNotEqual>
+	</sql>
+
+ 	<select id="SELECT_UWO_TRC_WORK"  parameterClass="Map" resultClass="egovMap">
+ 	 SELECT
+		    UTD.UTD_DOC_NAM,
+		    TO_CHAR(TO_DATE(#currentDate#), 'YYYY.MM.DD') AS UTW_STR_DAT,
+		    TO_CHAR(TO_DATE(#lastDate#), 'YYYY.MM.DD') AS UTW_END_DAT,
+		    UTM.UTM_WRK_ID
+ 		<include refid="WHERE_UWO_TRC_WORK"/>
+ 	</select>
+
+ 	<insert id="INSERT_UWO_TRC_WORK" parameterClass="Map">
+		INSERT INTO UWO_TRC_WRK
+		  (
+		    UTW_WRK_KEY, <!-- SEQ_WORK_KEY.NEXTVAL -->
+		    UTW_PRD_COD, <!-- 심사주기 -->
+		    UTW_TRM_COD, <!-- 주기코드 -->
+		    UTW_TRC_KEY, <!-- UTD.UTD_TRC_KEY -->
+		    UTW_WRK_STA, <!-- 10, 업무상태코드 -->
+		    UTW_STR_DAT, <!-- 업무시작일 -->
+		    UTW_END_DAT, <!-- 업무종료일 -->
+		    UTW_DIV_COD, <!-- 사업부코드 -->
+		    UTW_SVC_COD, <!-- 서비스코드 -->
+		    UTW_DEL_YN,  <!-- N, 삭제유무 -->
+		    UTW_WRK_ID,  <!-- 담당자ID -->
+		    UTW_RGT_ID,  <!-- 생성자ID -->
+		    UTW_RGT_MDH, <!-- 생성일시 -->
+		    UTW_DEP_COD, <!-- 부서코드 -->
+		    UTW_WRK_GBN, <!-- 업무구분 -->
+		    utw_dtr_gbn
+		  )
+		  SELECT
+		    SEQ_WORK_KEY.NEXTVAL,
+		    UTD.UTD_BCY_COD,
+		    UTD.UTD_TRM_GBN,
+		    UTD.UTD_TRC_KEY,
+		    '10',
+		    TO_DATE(#currentDate#),
+		    TO_DATE(#lastDate#),
+		    UTD.UTD_DIV_COD,
+		    UTD.UTD_SVC_COD,
+		    'N',
+		    UTM.UTM_WRK_ID,
+		    #adminId#,
+		    SYSDATE,
+		    UUM.UUM_DEP_COD,
+		    '1',
+		    utd.utd_dtr_gbn
+		 <include refid="WHERE_UWO_TRC_WORK"/>
+ 	</insert>
+
+
+ 	<!-- 최종 운영 주기 -->
+	<select id="SELECT_LAST_UWO_MCY_MTR" parameterClass="Map" resultClass="egovMap">
+		SELECT *
+		FROM (
+			SELECT ROWNUM, A.*
+			FROM (
+				SELECT
+					umm_man_cyl,
+					TO_CHAR(TO_DATE(umm_std_dat), 'YYYY-MM-DD') AS umm_std_dat,
+					TO_CHAR(TO_DATE(umm_end_dat), 'YYYY-MM-DD') AS umm_end_dat,
+					CASE WHEN SYSDATE <![CDATA[<]]> umm_end_dat THEN 'true' ELSE 'false' END exists_date
+				FROM uwo_mcy_mtr
+				ORDER BY umm_man_cyl DESC
+			) A
+		)
+		WHERE ROWNUM = 1
+	</select>
+
+	<!-- 1. 운영 주기 생성 -->
+	<insert id="INSERT_UWO_MCY_MTR" parameterClass="Map">
+		INSERT INTO uwo_mcy_mtr
+		(
+			umm_man_cyl,
+			umm_std_dat,
+			umm_end_dat,
+			umm_cre_dat,
+			umm_cre_id,
+			umm_man_tle,
+			umm_man_con,
+			umm_cfm_yn,
+			umm_cfm_gbn
+		)
+		SELECT
+			umm_man_cyl + 1,
+			umm_end_dat + 1,
+    		ADD_MONTHS(umm_end_dat, 12),
+			SYSDATE,
+			#rgtId#,
+			CONCAT(TO_CHAR(SYSDATE, 'yyyy'), ' 운영주기'),
+			'시스템 자동 생성',
+			'Y',
+			'2'
+		FROM uwo_mcy_mtr
+		WHERE umm_man_cyl = #manCyl#
+	</insert>
+
+	<!-- 2. 운영주기 생성에 따른: 통제항목 복제 -->
+	<insert id="INSERT_UWO_CTR_MTR" parameterClass="Map">
+		INSERT INTO uwo_ctr_mtr
+		(
+			ucm_ctr_key,
+			ucm_bcy_cod,
+			ucm_ctr_gbn,
+			ucm_div_cod,
+			ucm_lvl_gbn,
+			ucm_ctr_cod,
+			ucm_1lv_cod,
+			ucm_1lv_nam,
+			ucm_2lv_cod,
+			ucm_2lv_nam,
+			ucm_2lv_dtl,
+			ucm_3lv_cod,
+			ucm_3lv_nam,
+			ucm_3lv_dtl,
+			ucm_4lv_cod,
+			ucm_4lv_nam,
+			ucm_5lv_cod,
+			ucm_5lv_nam,
+			ucm_rlt_gid,
+			ucm_ctr_opr,
+			ucm_etc,
+			ucm_gol_no,
+			ucm_sum_pnt,
+			ucm_rgt_id,
+			ucm_rgt_mdh,
+			ucm_upd_id,
+			ucm_upd_mdh,
+			ucm_1ld_yn,
+			ucm_2ld_yn,
+			ucm_3ld_yn,
+			ucm_4ld_yn,
+			ucm_5ld_yn,
+			ucm_msr_dtl
+		)
+		SELECT
+			seq_uwo_ctr_mtr.NEXTVAL,
+			#newManCyl#,
+			ucm_ctr_gbn,
+			ucm_div_cod,
+			ucm_lvl_gbn,
+			ucm_ctr_cod,
+			ucm_1lv_cod,
+			ucm_1lv_nam,
+			ucm_2lv_cod,
+			ucm_2lv_nam,
+			ucm_2lv_dtl,
+			ucm_3lv_cod,
+			ucm_3lv_nam,
+			ucm_3lv_dtl,
+			ucm_4lv_cod,
+			ucm_4lv_nam,
+			ucm_5lv_cod,
+			ucm_5lv_nam,
+			ucm_rlt_gid,
+			ucm_ctr_opr,
+			ucm_etc,
+			ucm_gol_no,
+			ucm_sum_pnt,
+			#rgtId#,
+			SYSDATE,
+			NULL,
+			NULL,
+			ucm_1ld_yn,
+			ucm_2ld_yn,
+			ucm_3ld_yn,
+			ucm_4ld_yn,
+			ucm_5ld_yn,
+			ucm_msr_dtl
+		FROM uwo_ctr_mtr
+		WHERE
+			ucm_bcy_cod = #manCyl#
+	</insert>
+
+	<!-- 3. 운영주기 생성에 따른: 통제항목과 서비스 매핑 복제 -->
+	<insert id="INSERT_UWO_CTR_MAP" parameterClass="Map">
+		INSERT INTO uwo_ctr_map
+		(
+			ucm_ctr_key,
+			ucm_svc_cod,
+			ucm_rgt_id,
+			ucm_rgt_mdh
+		)
+		SELECT
+			ucm.ucm_ctr_key,
+			ucm2.ucm_svc_cod,
+			#rgtId#,
+			SYSDATE
+		FROM
+			uwo_ctr_mtr ucm
+			INNER JOIN (
+				SELECT
+					ucp.ucm_svc_cod,
+					ucm.ucm_ctr_gbn,
+					ucm.ucm_3lv_cod
+				FROM
+					uwo_ctr_map ucp
+					INNER JOIN uwo_ctr_mtr ucm ON ucp.ucm_ctr_key = ucm.ucm_ctr_key
+					INNER JOIN uwo_svc_mtr usm ON ucp.ucm_svc_cod = usm.svc_cod
+					INNER JOIN (
+						SELECT ucc_snd_cod
+						FROM uwo_com_cod
+						WHERE
+							ucc_fir_cod = 'STND'
+							AND ucc_use_yn = 'Y'
+					) ucc
+					ON ucc.ucc_snd_cod = ucm.ucm_ctr_gbn
+				WHERE ucm_bcy_cod = #manCyl#
+			) ucm2 ON ucm.ucm_ctr_gbn = ucm2.ucm_ctr_gbn AND ucm.ucm_3lv_cod = ucm2.ucm_3lv_cod
+		WHERE
+			ucm.ucm_bcy_cod = #newManCyl#
+	</insert>
+
+	<!-- 4. 운영주기 생성에 따른: 수행업무 복제 -->
+	<insert id="INSERT_UWO_TRC_DOC" parameterClass="Map">
+		INSERT INTO uwo_trc_doc
+		(
+			utd_trc_key,
+			utd_bcy_cod,
+			utd_doc_nam,
+			utd_doc_gbn,
+			utd_trm_gbn,
+			utd_div_cod,
+			utd_svc_cod,
+			utd_del_yn,
+			utd_apr_yn,
+			utd_app_lev,
+			utd_str_dat,
+			utd_end_dat,
+			utd_doc_dat,
+			utd_doc_cnt,
+			utd_wrk_end,
+			utd_doc_etc,
+			utd_sdm_yn,
+			utd_rgt_id,
+			utd_rgt_mdh,
+			utd_upt_id,
+			utd_upt_mdh,
+			utd_cmp_dat,
+			utd_mng_key,
+			utd_dtr_gbn,
+			lnk_trc_key
+		)
+		SELECT
+			seq_uwo_trc_doc.NEXTVAL,
+			#newManCyl#,
+			utd_doc_nam,
+			utd_doc_gbn,
+			utd_trm_gbn,
+			utd_div_cod,
+			utd_svc_cod,
+			utd_del_yn,
+			utd_apr_yn,
+			utd_app_lev,
+			#startDate#,
+			#endDate#,
+			utd_doc_dat,
+			utd_doc_cnt,
+			utd_wrk_end,
+			utd_doc_etc,
+			utd_sdm_yn,
+			#rgtId#,
+			SYSDATE,
+			#rgtId#,
+			SYSDATE,
+			utd_cmp_dat + (INTERVAL '1' YEAR),
+			utd_mng_key,
+			utd_dtr_gbn,
+			utd_trc_key
+		FROM uwo_trc_doc
+		WHERE
+			utd_bcy_cod = #manCyl#
+			AND utd_del_yn = 'N'
+	</insert>
+
+	<!-- 5. 운영주기 생성에 따른: 수행업무 샘플양식 복제 -->
+	<insert id="INSERT_UWO_MNG_FLE" parameterClass="Map">
+		INSERT INTO uwo_mng_fle
+		(
+			umf_fle_key,
+			umf_tbl_gbn,
+			umf_con_gbn,
+			umf_con_key,
+			umf_bcy_cod,
+			umf_svr_pth,
+			umf_svr_fnm,
+			umf_con_fnm,
+			umf_fle_ext,
+			umf_fle_siz,
+			umf_del_yn,
+			umf_rgt_id,
+			umf_rgt_mdh,
+			umf_msr_yn
+		)
+		SELECT
+		   seq_uwo_mng_fle.NEXTVAL,
+		   umf_tbl_gbn,
+		   umf_con_gbn,
+		   umf_con_key,
+		   #newManCyl#,
+		   umf_svr_pth,
+		   umf_svr_fnm,
+		   umf_con_fnm,
+		   umf_fle_ext,
+		   umf_fle_siz,
+		   umf_del_yn,
+		   #rgtId#,
+		   SYSDATE,
+		   umf_msr_yn
+		 FROM uwo_mng_fle umf
+	     INNER JOIN uwo_trc_doc utd ON umf.umf_con_key = utd.lnk_trc_key
+		 WHERE umf.umf_bcy_cod = #manCyl#
+		   AND umf.umf_tbl_gbn = 'DOC'
+	       AND umf.umf_del_yn = 'N'
+	</insert>
+
+	<!-- 6. 운영주기 생성에 따른: 수행업무 연결 자료 복제 -->
+	<insert id="INSERT_UWO_CTR_BRD" parameterClass="Map">
+		INSERT INTO uwo_ctr_brd
+		(
+			ucb_map_key,
+			ucb_ctr_key,
+			ucb_brd_key,
+			ucb_del_yn,
+			ucb_rgt_id,
+			ucb_rgt_mdh,
+			ucb_gol_no
+		)
+		SELECT
+			seq_uwo_ctr_brd.NEXTVAL,
+			ucm.ucm_ctr_key,
+			ucm2.ucb_brd_key,
+			'N',
+			#rgtId#,
+			SYSDATE,
+			ucm2.ucb_gol_no
+		FROM
+			uwo_ctr_mtr ucm
+			INNER JOIN (
+				SELECT
+					ucb.ucb_brd_key,
+					ucb.ucb_gol_no,
+					ucm.ucm_ctr_gbn,
+					ucm.ucm_3lv_cod
+				FROM
+					uwo_ctr_brd ucb
+					INNER JOIN uwo_ctr_mtr ucm ON ucb.ucb_ctr_key = ucm.ucm_ctr_key
+				WHERE
+					ucm.ucm_bcy_cod = #manCyl#
+					AND ucb.ucb_del_yn = 'N'
+			) ucm2 ON ucm.ucm_ctr_gbn = ucm2.ucm_ctr_gbn AND ucm.ucm_3lv_cod = ucm2.ucm_3lv_cod
+		WHERE
+			ucm.ucm_bcy_cod = #newManCyl#
+	</insert>
+
+	<!-- 7. 운영주기 생성에 따른: 수행업무 연결 통제항목 복제 -->
+	<insert id="INSERT_UWO_TRC_CTR" parameterClass="Map">
+		INSERT INTO uwo_trc_ctr
+		(
+			utc_map_key,
+			utc_bcy_cod,
+			utc_trc_key,
+			utc_ctr_key,
+			utc_rgt_id,
+			utc_rgt_date,
+			utc_del_yn
+		)
+		SELECT
+			seq_uwo_trc_ctr.NEXTVAL,
+			#newManCyl#,
+			ucm2.utd_trc_key,
+			ucm.ucm_ctr_key,
+			#rgtId#,
+			SYSDATE,
+			'N'
+		FROM uwo_ctr_mtr ucm
+		INNER JOIN
+		       (
+			   SELECT utd.utd_trc_key,
+					  ucm.ucm_ctr_gbn,
+					  ucm.ucm_3lv_cod
+				 FROM uwo_trc_ctr utc
+				INNER JOIN uwo_ctr_mtr ucm
+				   ON utc.utc_ctr_key = ucm.ucm_ctr_key
+				INNER JOIN uwo_trc_doc utd
+				   ON utc.utc_trc_key = utd.lnk_trc_key
+				WHERE utd.utd_bcy_cod = #newManCyl#
+			   ) ucm2
+		    ON ucm.ucm_ctr_gbn = ucm2.ucm_ctr_gbn
+		   AND ucm.ucm_3lv_cod = ucm2.ucm_3lv_cod
+		 WHERE ucm.ucm_bcy_cod = #newManCyl#
+	</insert>
+
+	<!-- 8. 운영주기 생성에 따른: 수행업무 연결 담당자 복제 -->
+	<insert id="INSERT_UWO_TRC_MAP" parameterClass="Map">
+		INSERT INTO uwo_trc_map
+		(
+			utm_map_key,
+			utm_trc_key,
+			utm_bcy_cod,
+			utm_wrk_id,
+			utm_wrk_old,
+			utm_del_yn,
+			utm_rgt_id,
+			utm_rgt_mdh,
+			utm_upt_id,
+			utm_upt_mdh,
+			utm_dwn_yn
+		)
+		SELECT
+		   seq_uwo_trc_map.NEXTVAL,
+		   utd.utd_trc_key,
+		   utd.utd_bcy_cod,
+		   UTM_WRK_ID,
+		   UTM_WRK_OLD,
+		   'N',
+		   #rgtId#,
+		   SYSDATE,
+		   NULL,
+		   NULL,
+		   utm_dwn_yn
+		  FROM uwo_trc_map utm
+		 INNER JOIN uwo_trc_doc utd
+		    ON utm.utm_trc_key = utd.lnk_trc_key
+		 WHERE utd.utd_bcy_cod = #newManCyl#
+		   AND utm.utm_del_yn = 'N'
+		   AND utm.utm_wrk_id IS NOT NULL
+	</insert>
+
+	<!-- 9. 운영주기 생성에 따른: 자산정보 심사자산정보로 복제 -->
+	<insert id="INSERT_UWO_ASS_MTR" parameterClass="Map">
+        INSERT INTO uwo_ass_mtr
+		(
+		  uar_ass_key,
+		  uar_bcy_cod,
+		  uar_ass_cod,
+		  uar_grp_cod,
+		  uar_rsk_nam,
+		  uar_sub_nam,
+		  uar_sub_cod,
+		  uar_rsk_grp,
+		  uar_dep_lv2,
+		  uar_opr_lv1,
+		  uar_opr_lv2,
+		  uar_grp_nam,
+		  uar_dep_lv1,
+		  uar_ass_nam,
+		  uar_svr_nam,
+		  uar_use_nam,
+		  uar_rgt_id,
+		  uar_rgt_mdh,
+		  uar_upt_id,
+		  uar_upt_mdh,
+		  uar_val_cl9,
+		  uar_val_cl8,
+		  uar_val_cl7,
+		  uar_val_cl6,
+		  uar_val_cl5,
+		  uar_val_cl4,
+		  uar_val_cl3,
+		  uar_val_cl2,
+		  uar_val_cl1,
+		  uar_val_cl0,
+		  uar_use_yn,
+		  uar_prv_yn,
+		  uar_inf_yn,
+		  uar_smp_yn,
+		  uar_aud_yn,
+		  uar_ass_lvl,
+		  uar_app_tot,
+		  uar_app_avt,
+		  uar_app_itg,
+		  uar_app_con,
+		  uar_adm_pos,
+		  uar_dtl_exp,
+		  uar_ass_gbn,
+		  uar_eqp_nam,
+		  uar_pic_nam,
+		  uar_pic_id,
+		  uar_use_id,
+		  uar_opr_nam,
+		  uar_opr_cod,
+		  uar_adm_nam,
+		  uar_adm_id,
+		  uar_own_id,
+		  uar_own_nam,
+		  uar_dep_nam,
+		  uar_svr_etc,
+		  uar_dep_cod,
+		  uar_svr_cod,
+		  uar_ass_cat,
+		  uar_ip,
+		  uar_host,
+		  uar_os
+		)
+		SELECT
+		  SEQ_UWO_ASS_MTR.NEXTVAL,
+		  #newManCyl#,
+		  uar_ass_cod,
+		  uar_grp_cod,
+		  uar_rsk_nam,
+		  uar_sub_nam,
+		  uar_sub_cod,
+		  uar_rsk_grp,
+		  uar_dep_lv2,
+		  uar_opr_lv1,
+		  uar_opr_lv2,
+		  uar_grp_nam,
+		  uar_dep_lv1,
+		  uar_ass_nam,
+		  uar_svr_nam,
+		  uar_use_nam,
+		  uar_rgt_id,
+		  uar_rgt_mdh,
+		  #rgtId#,
+ 		  SYSDATE,
+		  uar_val_cl9,
+		  uar_val_cl8,
+		  uar_val_cl7,
+		  uar_val_cl6,
+		  uar_val_cl5,
+		  uar_val_cl4,
+		  uar_val_cl3,
+		  uar_val_cl2,
+		  uar_val_cl1,
+		  uar_val_cl0,
+		  uar_use_yn,
+		  uar_prv_yn,
+		  uar_inf_yn,
+		  uar_smp_yn,
+		  uar_aud_yn,
+		  uar_ass_lvl,
+		  uar_app_tot,
+		  uar_app_avt,
+		  uar_app_itg,
+		  uar_app_con,
+		  uar_adm_pos,
+		  uar_dtl_exp,
+		  uar_ass_gbn,
+		  uar_eqp_nam,
+		  uar_pic_nam,
+		  uar_pic_id,
+		  uar_use_id,
+		  uar_opr_nam,
+		  uar_opr_cod,
+		  uar_adm_nam,
+		  uar_adm_id,
+		  uar_own_id,
+		  uar_own_nam,
+		  uar_dep_nam,
+		  uar_svr_etc,
+		  uar_dep_cod,
+		  uar_svr_cod,
+		  uar_ass_cat,
+		  uar_ip,
+		  uar_host,
+		  uar_os
+	  FROM uwo_ass_mtr
+	  WHERE
+		  uar_bcy_cod = #manCyl#
+	</insert>
+</sqlMap>

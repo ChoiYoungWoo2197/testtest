@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<rule name="과기정통부 체크리스트">
+  <ruleStyle id="style01" startRow="7" startCell="1" finishCell="9">
+    <cell order="1" />
+    <cell order="2" />
+    <cell order="3" />
+    <cell order="4" />
+    <cell order="5" />
+    <cell order="6" />
+    <cell order="7" />
+    <cell order="8" />
+    <cell order="9" />
+  </ruleStyle>
+
+  <sheets>
+    <sheet ruleStyle="style01" />
+  </sheets>
+</rule>

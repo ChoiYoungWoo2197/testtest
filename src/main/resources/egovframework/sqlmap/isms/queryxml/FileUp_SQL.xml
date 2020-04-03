@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="fileup">
+
+	<typeAlias  alias="fileVO" type="com.uwo.isms.domain.FileVO"/>
+	<typeAlias  alias="searchVO" type="com.uwo.isms.domain.SearchVO"/>
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	
+		<insert id="QR_FILEUP001_A" parameterClass="fileVO">
+		INSERT INTO UWO_MNG_FLE
+		(
+			 UMF_FLE_KEY
+			,UMF_TBL_GBN
+			,UMF_CON_GBN
+			,UMF_BCY_COD
+			,UMF_SVR_PTH
+			,UMF_SVR_FNM
+			,UMF_CON_FNM
+			,UMF_FLE_EXT
+			,UMF_FLE_SIZ
+			,UMF_DEL_YN
+			,UMF_RGT_ID
+			,UMF_RGT_MDH
+			,UMF_CON_KEY
+		)
+		
+		VALUES(			
+			(SELECT NVL(MAX(UMF_FLE_KEY)+1,1) FROM UWO_MNG_FLE) 
+			,#umf_tbl_gbn#
+			,#umf_con_gbn#
+			,#umf_bcy_cod#
+			,#umf_svr_pth#
+			,#umf_svr_fnm#
+			,#umf_con_fnm#
+      		,#umf_fle_ext#
+			,#umf_fle_siz#
+			,'N'
+			,#umf_rgt_id#
+			,SYSDATE
+			,#umf_con_key#
+		)	
+	</insert>
+	
+	<select id="QR_FILE_LIST" parameterClass="fileVO" resultClass="fileVO">
+		SELECT *
+		FROM UWO_MNG_FLE
+		WHERE UMF_TBL_GBN = #umf_tbl_gbn#
+		AND UMF_CON_GBN = #umf_con_gbn#
+		AND UMF_CON_KEY=#umf_con_key#
+		AND UMF_DEL_YN = 'N'		
+	</select>
+	
+	<select id="QR_FILE_LIST_B" parameterClass="fileVO" resultClass="fileVO">
+		SELECT UMF_CON_FNM, UMF_FLE_KEY
+		FROM UWO_MNG_FLE
+		WHERE UMF_TBL_GBN = #umf_tbl_gbn#
+		AND UMF_CON_GBN = #umf_con_gbn#
+		AND UMF_CON_KEY = (select utw_trc_key from uwo_trc_wrk where utw_wrk_key = #umf_con_key#)
+		AND UMF_DEL_YN = 'N'		
+	</select>
+	
+	<update id="QR_FILE_DELETE" parameterClass="String">
+		UPDATE UWO_MNG_FLE SET UMF_DEL_YN='Y'
+		WHERE UMF_FLE_KEY = #key#
+	</update>
+	
+	<select id="QR_FILE_BOARDKEY" parameterClass="String" resultClass="String">
+		SELECT UMF_CON_KEY FROM UWO_MNG_FLE WHERE UMF_FLE_KEY = #key#
+	</select>
+
+	<update id="QR_FILE_DELETE_BYCON" parameterClass="fileVO">
+		UPDATE UWO_MNG_FLE
+		   SET UMF_DEL_YN = 'Y'
+		 WHERE UMF_TBL_GBN = #umf_tbl_gbn#
+		   AND UMF_CON_GBN = #umf_con_gbn#
+		   AND UMF_CON_KEY = #umf_con_key#
+	</update>
+	
+	<!-- 업무팝업창 증적파일 -->
+	<select id="QR_PROOFFILE_LIST" parameterClass="fileVO" resultClass="fileVO">
+		SELECT   F_FIND_NAME('01', UTW_DIV_COD, #company#) division
+		       , F_FIND_NAME('12', UTW_SVC_COD, #company#) service
+		       , F_GET_USR_NAME(UTW_WRK_ID) wrk_name
+		       , TO_CHAR(UTW_WRK_DAT, 'YYYY.MM.DD') wrk_date
+		       , UMF_FLE_KEY,UMF_CON_FNM
+		       , UMF_FLE_KEY
+		  FROM UWO_MNG_FLE, UWO_TRC_WRK
+		 WHERE UMF_CON_KEY = UTW_WRK_KEY
+		   AND UMF_TBL_GBN = #umf_tbl_gbn#
+		   AND UMF_CON_GBN = #umf_con_gbn#
+		   AND UMF_CON_KEY = #umf_con_key#
+		   AND UMF_DEL_YN = 'N'
+		   AND UTW_WRK_STA = '90'
+	</select>
+	
+	<!-- 수행업무 팝업창 증적파일 -->
+	<select id="QR_PROOFFILE_BY_TRCKEY_LIST" parameterClass="searchVO" resultClass="fileVO">
+		SELECT   F_FIND_NAME('01', UTW_DIV_COD, #company#) division
+		       , F_FIND_NAME('12', UTW_SVC_COD, #company#) service
+		       , F_GET_USR_NAME(UTW_WRK_ID) wrk_name
+		       , TO_CHAR(UTW_WRK_DAT, 'YYYY.MM.DD') wrk_date
+		       , UMF_FLE_KEY,UMF_CON_FNM
+		       , UMF_FLE_KEY
+		  FROM UWO_MNG_FLE, UWO_TRC_WRK
+		 WHERE UMF_CON_KEY = UTW_WRK_KEY
+		   AND UMF_TBL_GBN = 'WRK'
+		   AND UMF_CON_GBN = '6'
+		   AND UMF_CON_KEY IN (SELECT UTW_WRK_KEY 
+	                             FROM UWO_TRC_WRK 
+	                            WHERE UTW_TRC_KEY = #docCode#
+	                            <isNotEmpty property="division">
+									<isNotEqual property="division" compareValue="A">
+										AND UTW_DIV_COD = #division#
+									</isNotEqual>
+								</isNotEmpty>
+								<isNotEmpty property="worker">
+									<isNotEqual property="worker" compareValue="A">
+										AND UTW_WRK_ID = #worker#
+									</isNotEqual>
+								</isNotEmpty>
+	                          )
+		   AND UMF_DEL_YN = 'N'
+		   AND UTW_WRK_STA = '90'
+	</select>
+	
+	<select id="QR_GET_FILE_NAME" parameterClass="String" resultClass="egovMap">
+		SELECT UMF_SVR_FNM, UMF_CON_FNM
+		  FROM UWO_CTR_MTR A,
+		       UWO_TRC_CTR B,
+		       UWO_TRC_DOC C,
+		       UWO_TRC_WRK D,
+		       UWO_MNG_FLE E
+		 WHERE A.UCM_CTR_KEY = B.UTC_CTR_KEY
+		   AND B.UTC_TRC_KEY = C.UTD_TRC_KEY
+		   AND C.UTD_TRC_KEY = D.UTW_TRC_KEY
+		   AND D.UTW_WRK_KEY = E.UMF_CON_KEY
+		   AND E.UMF_TBL_GBN = 'WRK'
+		   AND A.UCM_CTR_KEY = #fKey#
+		 ORDER BY UCM_3LV_COD
+	</select>	
+</sqlMap>

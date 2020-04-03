@@ -1,0 +1,739 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="fmBoard">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="com.uwo.isms.domain.SearchVO"/>
+	<typeAlias  alias="boardVO" type="com.uwo.isms.domain.BoardVO"/>
+	<typeAlias  alias="userVO" type="com.uwo.isms.domain.UserVO"/>
+
+	<sql id="QR_BOARD_D_WHERE">
+		<isEqual property="authKey" compareValue="A">
+			AND UBM_SEK_ATH IN ('1','2','3')
+		</isEqual>
+		<isEqual property="authKey" compareValue="V">
+			AND UBM_SEK_ATH IN ('2','3')
+		</isEqual>
+		<isEqual property="authKey" compareValue="P">
+			AND UBM_SEK_ATH = '3'
+		</isEqual>
+	</sql>
+
+	<sql id="QR_BOARD001_WHERE">
+		WHERE 1=1
+			AND UBM_BRD_GBN = '1'
+			AND UBM_DEL_YN = 'N'
+		<isEqual property="sekAth" compareValue="A">
+			AND UBM_SEK_ATH IN ('1','2','3')
+		</isEqual>
+		<isEqual property="sekAth" compareValue="V">
+			AND UBM_SEK_ATH IN ('2','3')
+		</isEqual>
+		<isEqual property="sekAth" compareValue="P">
+			AND UBM_SEK_ATH = '3'
+		</isEqual>
+		<isNotEmpty prepend="AND" property="division">
+			UBM_DIV_COD = #division#
+		</isNotEmpty>
+		<isEqual prepend="AND" property="searchCondition" compareValue="0">
+			<![CDATA[(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="1">
+			<![CDATA[UBM_BRD_TLE LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="2">
+			<![CDATA[UBM_BRD_CTS LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+	</sql>
+
+	<select id="QR_BOARD001_A" resultClass="egovMap" parameterClass="searchVO">
+		SELECT  *
+		FROM  (
+				SELECT ROWNUM RNUM, ALL_LIST.*
+				FROM  (
+						SELECT
+							UBM_BRD_KEY,
+							(SELECT UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_SND_COD = UBM_DIV_COD AND ROWNUM =1) AS UOM_DIV_NAM,
+							UBM_BRD_TLE, TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH,
+							(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID
+						FROM UWO_BRD_MTR
+		<include refid="QR_BOARD001_WHERE" />
+				ORDER BY UBM_BRD_KEY DESC
+			) ALL_LIST
+		)
+		<![CDATA[
+		WHERE  RNUM  > #firstIndex#
+		AND  RNUM <= #firstIndex# + #recordCountPerPage#
+		]]>
+	</select>
+
+	<select id="QR_BOARD001_B" parameterClass="searchVO" resultClass="int">
+		SELECT count(*) totcnt
+		FROM UWO_BRD_MTR
+		<include refid="QR_BOARD001_WHERE" />
+	</select>
+
+	<insert id="QR_BOARD001_C" parameterClass="boardVO">
+		INSERT INTO UWO_BRD_MTR(UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS, UBM_NTC_YN, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH, UBM_RGT_ID, UBM_RGT_MDH)
+		VALUES(
+			SEQ_UWO_BRD_MTR.nextval
+			,'1'
+			,0
+			,#ubm_brd_tle#
+			,#ubm_brd_cts#
+			<isEmpty prepend="," property="ubm_ntc_yn">
+				'N'
+			</isEmpty>
+			<isNotEmpty prepend="," property="ubm_ntc_yn">
+				#ubm_ntc_yn#
+			</isNotEmpty>
+      		,'N'
+			,#ubm_div_cod#
+			,#ubm_sek_ath#
+			,#ubm_dwn_ath#
+			,#ubm_rgt_id#
+			,SYSDATE
+		)
+	</insert>
+
+	<select id="QR_BOARD001_D" parameterClass="boardVO" resultClass="boardVO">
+		SELECT
+			UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS,
+			UBM_NTC_YN, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH,
+            (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID
+           ,TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH
+		FROM UWO_BRD_MTR
+		WHERE UBM_BRD_GBN = '1'
+		AND UBM_BRD_KEY=#ubm_brd_key#
+		<include refid="QR_BOARD_D_WHERE" />
+	</select>
+
+	<update id="QR_BOARD001_E" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET
+			UBM_BRD_TLE = #ubm_brd_tle#
+			,UBM_BRD_CTS = #ubm_brd_cts#
+			,UBM_DIV_COD = #ubm_div_cod#
+			,UBM_SEK_ATH = #ubm_sek_ath#
+			,UBM_DWN_ATH = #ubm_dwn_ath#
+			,UBM_NTC_YN =
+			<isEmpty property="ubm_ntc_yn">
+				'N'
+			</isEmpty>
+			<isNotEmpty property="ubm_ntc_yn">
+				#ubm_ntc_yn#
+			</isNotEmpty>
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '1'
+		<isNotEqual prepend="AND" property="authKey" compareValue="A">
+			ubm_rgt_id = #ubm_rgt_id#
+		</isNotEqual>
+	</update>
+
+	<update id="QR_BOARD001_F" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_DEL_YN = 'Y'
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '1'
+		<isNotEqual prepend="AND" property="authKey" compareValue="A">
+			ubm_rgt_id = #ubm_rgt_id#
+		</isNotEqual>
+	</update>
+
+	<update id="QR_BOARD001_G" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_VST_CNT = (SELECT UBM_VST_CNT+1 FROM UWO_BRD_MTR  WHERE UBM_BRD_KEY = #ubm_brd_key#)
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '1'
+	</update>
+
+	<select id="QR_BOARD001_H" resultClass="Integer">
+		SELECT MAX(UBM_BRD_KEY) FROM UWO_BRD_MTR
+	</select>
+
+	<sql id="QR_BOARD002_WHERE">
+		WHERE 1=1
+		AND UBM_BRD_GBN = '2'
+		AND UBM_DEL_YN = 'N'
+		<isEqual property="sekAth" compareValue="A">
+			AND UBM_SEK_ATH IN ('1','2','3')
+		</isEqual>
+		<isEqual property="sekAth" compareValue="V">
+			AND UBM_SEK_ATH IN ('2','3')
+		</isEqual>
+		<isEqual property="sekAth" compareValue="P">
+			AND UBM_SEK_ATH = '3'
+		</isEqual>
+		<isNotEmpty prepend="AND" property="division">
+			UBM_DIV_COD = #division#
+		</isNotEmpty>
+		<isEqual prepend="AND" property="searchCondition" compareValue="0">
+			<![CDATA[(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="1">
+			<![CDATA[UBM_BRD_TLE LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="2">
+			<![CDATA[UBM_BRD_CTS LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="3">
+			UBM_CAT_COD = #searchKeyword#
+		</isEqual>
+	</sql>
+
+	<select id="QR_BOARD002_A" resultClass="egovMap" parameterClass="searchVO">
+	SELECT  *
+	FROM  (
+		SELECT ROWNUM RNUM, ALL_LIST.*
+		FROM  (
+			SELECT
+			UBM_BRD_KEY,
+			F_GET_COMMON_NAME(UBM_CAT_COD,'CATEGORY') AS UBM_CAT_COD,
+			(SELECT UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_SND_COD = UBM_DIV_COD AND ROWNUM =1) AS UOM_DIV_NAM,
+			UBM_BRD_TLE,
+			TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH,
+			(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID
+		FROM UWO_BRD_MTR
+		<include refid="QR_BOARD002_WHERE" />
+		ORDER BY UBM_BRD_KEY DESC
+			) ALL_LIST
+				    )
+			<![CDATA[
+			 WHERE  RNUM  > #firstIndex#
+			   AND  RNUM <= #firstIndex# + #recordCountPerPage#
+			]]>
+	</select>
+
+	<select id="QR_BOARD002_B" parameterClass="searchVO" resultClass="int">
+		SELECT count(*) totcnt
+		FROM UWO_BRD_MTR
+		<include refid="QR_BOARD002_WHERE" />
+	</select>
+
+	<insert id="QR_BOARD002_C" parameterClass="boardVO">
+		INSERT INTO UWO_BRD_MTR(UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS, UBM_CAT_COD, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH, UBM_RGT_ID, UBM_RGT_MDH)
+		VALUES(
+			SEQ_UWO_BRD_MTR.nextval
+			,'2'
+			,0
+			,#ubm_brd_tle#
+			,#ubm_brd_cts#
+			,#ubm_cat_cod#
+      		,'N'
+			,#ubm_div_cod#
+			,#ubm_sek_ath#
+			,#ubm_dwn_ath#
+			,#ubm_rgt_id#
+			,SYSDATE
+		)
+	</insert>
+
+	<select id="QR_BOARD002_D" parameterClass="boardVO" resultClass="boardVO">
+		SELECT
+			UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS, F_GET_COMMON_NAME(UBM_CAT_COD,'CATEGORY') AS UBM_CAT_NAM, UBM_CAT_COD,
+			UBM_NTC_YN, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH,
+            (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID
+           ,TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH, UBM_CAT_COD
+		FROM UWO_BRD_MTR
+		WHERE UBM_BRD_GBN = '2'
+		AND UBM_BRD_KEY = #ubm_brd_key#
+		<include refid="QR_BOARD_D_WHERE" />
+	</select>
+
+	<update id="QR_BOARD002_E" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET
+			UBM_BRD_TLE = #ubm_brd_tle#
+			,UBM_BRD_CTS = #ubm_brd_cts#
+			,UBM_DIV_COD = #ubm_div_cod#
+			,UBM_SEK_ATH = #ubm_sek_ath#
+			,UBM_DWN_ATH = #ubm_dwn_ath#
+			,UBM_CAT_COD = #ubm_cat_cod#
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '2'
+		<isNotEqual prepend="AND" property="authKey" compareValue="A">
+			ubm_rgt_id = #ubm_rgt_id#
+		</isNotEqual>
+	</update>
+
+	<update id="QR_BOARD002_F" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_DEL_YN = 'Y'
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '2'
+		<isNotEqual prepend="AND" property="authKey" compareValue="A">
+			ubm_rgt_id = #ubm_rgt_id#
+		</isNotEqual>
+	</update>
+
+	<update id="QR_BOARD002_G" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_VST_CNT = (SELECT UBM_VST_CNT+1 FROM UWO_BRD_MTR  WHERE UBM_BRD_KEY = #ubm_brd_key#)
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '2'
+	</update>
+
+	<select id="QR_BOARD002_H" resultClass="Integer">
+		SELECT MAX(UBM_BRD_KEY) FROM UWO_BRD_MTR
+	</select>
+
+	<sql id="QR_BOARD003_WHERE">
+		WHERE 1=1
+		AND UBM_BRD_GBN = '3'
+		AND UBM_DEL_YN = 'N'
+		<isEqual property="sekAth" compareValue="A">
+			AND UBM_SEK_ATH IN ('1','2','3')
+		</isEqual>
+		<isEqual property="sekAth" compareValue="V">
+			AND UBM_SEK_ATH IN ('2','3')
+		</isEqual>
+		<isEqual property="sekAth" compareValue="P">
+			AND UBM_SEK_ATH = '3'
+		</isEqual>
+		<isNotEmpty prepend="AND" property="division">
+			UBM_DIV_COD = #division#
+		</isNotEmpty>
+		<isEqual prepend="AND" property="searchCondition" compareValue="0">
+			<![CDATA[(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="1">
+			<![CDATA[UBM_BRD_TLE LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="2">
+			<![CDATA[UBM_BRD_CTS LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+	</sql>
+
+	<select id="QR_BOARD003_A" resultClass="egovMap" parameterClass="searchVO">
+	SELECT  *
+	FROM  (
+		SELECT ROWNUM RNUM, ALL_LIST.*
+		FROM  (
+			SELECT
+			UBM_BRD_KEY,
+			(SELECT UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_SND_COD = UBM_DIV_COD AND ROWNUM =1) AS UOM_DIV_NAM,
+			UBM_BRD_TLE,
+			TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH,
+			(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID
+		FROM UWO_BRD_MTR
+		<include refid="QR_BOARD003_WHERE" />
+		ORDER BY UBM_BRD_KEY DESC
+			) ALL_LIST
+				    )
+			<![CDATA[
+			 WHERE  RNUM  > #firstIndex#
+			   AND  RNUM <= #firstIndex# + #recordCountPerPage#
+			]]>
+	</select>
+	<select id="QR_BOARD003_B" parameterClass="searchVO" resultClass="int">
+		SELECT count(*) totcnt
+		FROM UWO_BRD_MTR
+		<include refid="QR_BOARD003_WHERE" />
+	</select>
+
+	<insert id="QR_BOARD003_C" parameterClass="boardVO">
+		INSERT INTO UWO_BRD_MTR(UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS, UBM_NTC_YN, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH, UBM_RGT_ID, UBM_RGT_MDH)
+		VALUES(
+			SEQ_UWO_BRD_MTR.nextval
+			,'3'
+			,0
+			,#ubm_brd_tle#
+			,#ubm_brd_cts#
+			<isEmpty prepend="," property="ubm_ntc_yn">
+				'N'
+			</isEmpty>
+			<isNotEmpty prepend="," property="ubm_ntc_yn">
+				#ubm_ntc_yn#
+			</isNotEmpty>
+      		,'N'
+			,#ubm_div_cod#
+			,#ubm_sek_ath#
+			,#ubm_dwn_ath#
+			,#ubm_rgt_id#
+			,SYSDATE
+		)
+	</insert>
+
+	<select id="QR_BOARD003_D" parameterClass="boardVO" resultClass="boardVO">
+		SELECT
+			UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS,
+			UBM_NTC_YN, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH,
+            (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID
+           ,TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH
+		FROM UWO_BRD_MTR
+		WHERE UBM_BRD_GBN = '3'
+		AND UBM_BRD_KEY=#ubm_brd_key#
+		<include refid="QR_BOARD_D_WHERE" />
+	</select>
+
+	<update id="QR_BOARD003_E" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET
+			UBM_BRD_TLE = #ubm_brd_tle#
+			,UBM_BRD_CTS = #ubm_brd_cts#
+			,UBM_DIV_COD = #ubm_div_cod#
+			,UBM_SEK_ATH = #ubm_sek_ath#
+			,UBM_DWN_ATH = #ubm_dwn_ath#
+			,UBM_NTC_YN =
+			<isEmpty property="ubm_ntc_yn">
+				'N'
+			</isEmpty>
+			<isNotEmpty property="ubm_ntc_yn">
+				#ubm_ntc_yn#
+			</isNotEmpty>
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '3'
+		<isNotEqual prepend="AND" property="authKey" compareValue="A">
+			ubm_rgt_id = #ubm_rgt_id#
+		</isNotEqual>
+	</update>
+
+	<update id="QR_BOARD003_F" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_DEL_YN = 'Y'
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '3'
+		<isNotEqual prepend="AND" property="authKey" compareValue="A">
+			ubm_rgt_id = #ubm_rgt_id#
+		</isNotEqual>
+	</update>
+
+	<update id="QR_BOARD003_G" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_VST_CNT = (SELECT UBM_VST_CNT+1 FROM UWO_BRD_MTR  WHERE UBM_BRD_KEY = #ubm_brd_key#)
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '3'
+	</update>
+
+	<select id="QR_BOARD003_H" resultClass="Integer">
+		SELECT MAX(UBM_BRD_KEY) FROM UWO_BRD_MTR
+	</select>
+
+	<sql id="QR_BOARD004_WHERE">
+		WHERE 1=1
+		AND UBM_BRD_GBN = '4'
+		AND UBM_DEL_YN = 'N'
+		<isEqual property="sekAth" compareValue="A">
+			AND UBM_SEK_ATH IN ('1','2','3')
+		</isEqual>
+		<isEqual property="sekAth" compareValue="V">
+			AND UBM_SEK_ATH IN ('2','3')
+		</isEqual>
+		<isEqual property="sekAth" compareValue="P">
+			AND UBM_SEK_ATH = '3'
+		</isEqual>
+		<isNotEmpty prepend="AND" property="division">
+			UBM_DIV_COD = #division#
+		</isNotEmpty>
+		<isEqual prepend="AND" property="searchCondition" compareValue="0">
+			<![CDATA[(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="1">
+			<![CDATA[UBM_BRD_TLE LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="2">
+			<![CDATA[UBM_BRD_CTS LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="3">
+			<![CDATA[UBM_GOL_NO LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+	</sql>
+
+	<select id="QR_BOARD004_A" resultClass="egovMap" parameterClass="searchVO">
+	SELECT  *
+	FROM  (
+		SELECT ROWNUM RNUM, ALL_LIST.*
+		FROM  (
+			SELECT
+			UBM_BRD_KEY,
+			(SELECT UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_SND_COD = UBM_DIV_COD AND ROWNUM =1) AS UOM_DIV_NAM,
+			UBM_BRD_TLE,
+			TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH,
+			(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID,
+			CASE
+        		WHEN UBM_ANS_CTS IS NULL THEN ' '
+        		ELSE 'O'
+      		END UBM_ANS_CTS
+		FROM UWO_BRD_MTR
+		<include refid="QR_BOARD004_WHERE" />
+		ORDER BY UBM_BRD_KEY DESC
+			) ALL_LIST
+				    )
+			<![CDATA[
+			 WHERE  RNUM  > #firstIndex#
+			   AND  RNUM <= #firstIndex# + #recordCountPerPage#
+			]]>
+	</select>
+	<select id="QR_BOARD004_B" parameterClass="searchVO" resultClass="int">
+		SELECT count(*) totcnt
+		FROM UWO_BRD_MTR
+		<include refid="QR_BOARD004_WHERE" />
+	</select>
+
+	<insert id="QR_BOARD004_C" parameterClass="boardVO">
+		INSERT INTO UWO_BRD_MTR(UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS, UBM_NTC_YN, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH, UBM_RGT_ID, UBM_RGT_MDH, UBM_CTR_GBN, UBM_GOL_NO)
+		VALUES(
+			SEQ_UWO_BRD_MTR.nextval
+			,'4'
+			,0
+			,#ubm_brd_tle#
+			,#ubm_brd_cts#
+			<isEmpty prepend="," property="ubm_ntc_yn">
+				'N'
+			</isEmpty>
+			<isNotEmpty prepend="," property="ubm_ntc_yn">
+				#ubm_ntc_yn#
+			</isNotEmpty>
+      		,'N'
+			,#ubm_div_cod#
+			,'3'
+			,'3'
+			,#ubm_rgt_id#
+			,SYSDATE
+			,#standard#
+			,#depth3#
+		)
+	</insert>
+
+	<select id="QR_BOARD004_D" parameterClass="boardVO" resultClass="boardVO">
+		SELECT
+			UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS,
+			UBM_NTC_YN, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH, UBM_ANS_CTS,
+            (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID
+           ,TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH, UBM_GOL_NO AS depth3, (SELECT UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_FIR_COD = 'STND' AND UCC_SND_COD = UBM_CTR_GBN) as standard
+		FROM UWO_BRD_MTR
+		WHERE UBM_BRD_GBN = '4'
+		AND UBM_BRD_KEY=#ubm_brd_key#
+		<include refid="QR_BOARD_D_WHERE" />
+	</select>
+
+	<update id="QR_BOARD004_E" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET
+			UBM_ANS_CTS = #ubm_ans_cts#
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '4'
+		<isNotEqual prepend="AND" property="authKey" compareValue="A">
+			ubm_rgt_id = #ubm_rgt_id#
+		</isNotEqual>
+	</update>
+
+	<update id="QR_BOARD004_F" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_DEL_YN = 'Y'
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '4'
+		<isNotEqual prepend="AND" property="authKey" compareValue="A">
+			ubm_rgt_id = #ubm_rgt_id#
+		</isNotEqual>
+	</update>
+
+	<update id="QR_BOARD004_G" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_VST_CNT = (SELECT UBM_VST_CNT+1 FROM UWO_BRD_MTR  WHERE UBM_BRD_KEY = #ubm_brd_key#)
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '4'
+	</update>
+
+	<select id="QR_BOARD004_H" resultClass="Integer">
+		SELECT MAX(UBM_BRD_KEY) FROM UWO_BRD_MTR
+	</select>
+
+	<insert id="QR_BOARD004_I" parameterClass="boardVO">
+		INSERT INTO UWO_BRD_MTR(UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH, UBM_RGT_ID, UBM_RGT_MDH, UBM_CTR_GBN, UBM_GOL_NO, UBM_ANS_CTS)
+		VALUES(
+			SEQ_UWO_BRD_MTR.nextval
+			,'5'
+			,0
+			,#ubm_brd_tle#
+			,#ubm_brd_cts#
+      		,'N'
+			,#ubm_div_cod#
+			,'1'
+			,'1'
+			,#ubm_rgt_id#
+			,SYSDATE
+			,(SELECT UCC_SND_COD FROM UWO_COM_COD WHERE UCC_SND_NAM = #standard#)
+			,#depth3#
+			,#ubm_ans_cts#
+		)
+	</insert>
+
+	<update id="QR_BOARD004_J" parameterClass="Map">
+		UPDATE UWO_BRD_MTR
+		SET UBM_ANS_CTS = #ans#
+		WHERE UBM_BRD_KEY = #brdKey#
+	</update>
+
+	<sql id="QR_BOARD005_WHERE">
+		WHERE 1=1
+		AND UBM_BRD_GBN = '5'
+		AND UBM_DEL_YN = 'N'
+		<isEqual property="sekAth" compareValue="A">
+			AND UBM_SEK_ATH IN ('1','2','3')
+		</isEqual>
+		<isEqual property="sekAth" compareValue="V">
+			AND UBM_SEK_ATH IN ('2','3')
+		</isEqual>
+		<isEqual property="sekAth" compareValue="P">
+			AND UBM_SEK_ATH = '3'
+		</isEqual>
+		<isNotEmpty prepend="AND" property="division">
+			UBM_DIV_COD = #division#
+		</isNotEmpty>
+		<isEqual prepend="AND" property="searchCondition" compareValue="0">
+			<![CDATA[(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="1">
+			<![CDATA[UBM_BRD_TLE LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="2">
+			<![CDATA[UBM_BRD_CTS LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="3">
+			<![CDATA[UBM_GOL_NO LIKE '%' || #searchKeyword# || '%']]>
+		</isEqual>
+	</sql>
+
+	<select id="QR_BOARD005_A" resultClass="egovMap" parameterClass="searchVO">
+	SELECT  *
+	FROM  (
+		SELECT ROWNUM RNUM, ALL_LIST.*
+		FROM  (
+			SELECT
+			UBM_BRD_KEY,
+			(SELECT UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_SND_COD = UBM_DIV_COD AND ROWNUM =1) AS UOM_DIV_NAM,
+			UBM_BRD_TLE,
+			(SELECT UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_FIR_COD = 'STND' AND UCC_SND_COD = UBM_CTR_GBN) as standard,
+			UBM_GOL_NO,
+			TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH,
+			(SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID
+		FROM UWO_BRD_MTR
+		<include refid="QR_BOARD005_WHERE" />
+		ORDER BY UBM_BRD_KEY DESC
+			) ALL_LIST
+				    )
+			<![CDATA[
+			 WHERE  RNUM  > #firstIndex#
+			   AND  RNUM <= #firstIndex# + #recordCountPerPage#
+			]]>
+	</select>
+	<select id="QR_BOARD005_B" parameterClass="searchVO" resultClass="int">
+		SELECT count(*) totcnt
+		FROM UWO_BRD_MTR
+		<include refid="QR_BOARD005_WHERE" />
+	</select>
+
+	<insert id="QR_BOARD005_C" parameterClass="boardVO">
+		INSERT INTO UWO_BRD_MTR(UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS, UBM_NTC_YN, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH, UBM_RGT_ID, UBM_RGT_MDH, UBM_CTR_GBN, UBM_GOL_NO, UBM_ANS_CTS)
+		VALUES(
+			SEQ_UWO_BRD_MTR.nextval
+			,'5'
+			,0
+			,#ubm_brd_tle#
+			,#ubm_brd_cts#
+			<isEmpty prepend="," property="ubm_ntc_yn">
+				'N'
+			</isEmpty>
+			<isNotEmpty prepend="," property="ubm_ntc_yn">
+				#ubm_ntc_yn#
+			</isNotEmpty>
+      		,'N'
+			,#ubm_div_cod#
+			,'3'
+			,'3'
+			,#ubm_rgt_id#
+			,SYSDATE
+			<isNotEqual property="depth3" compareValue="A">
+				,#standard#
+				,#depth3#
+			</isNotEqual>
+			<isEqual property="depth3" compareValue="A">
+				,''
+				,''
+			</isEqual>
+			,#ubm_ans_cts#
+		)
+	</insert>
+
+	<select id="QR_BOARD005_D" parameterClass="boardVO" resultClass="boardVO">
+		SELECT
+			UBM_BRD_KEY, UBM_BRD_GBN, UBM_VST_CNT, UBM_BRD_TLE, UBM_BRD_CTS,
+			UBM_NTC_YN, UBM_DEL_YN, UBM_DIV_COD, UBM_SEK_ATH, UBM_DWN_ATH,
+            (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UBM_RGT_ID) AS UBM_RGT_ID
+           ,TO_CHAR(UBM_RGT_MDH,'YYYY.MM.DD') AS UBM_RGT_MDH , UBM_GOL_NO AS depth3, (SELECT UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_FIR_COD = 'STND' AND UCC_SND_COD = UBM_CTR_GBN) as standard, UBM_ANS_CTS
+		FROM UWO_BRD_MTR
+		WHERE UBM_BRD_GBN = '5'
+		AND UBM_BRD_KEY=#ubm_brd_key#
+		<include refid="QR_BOARD_D_WHERE" />
+	</select>
+
+	<update id="QR_BOARD005_E" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET
+			UBM_BRD_TLE = #ubm_brd_tle#
+			,UBM_BRD_CTS = #ubm_brd_cts#
+			,UBM_ANS_CTS = #ubm_ans_cts#
+			<isNotEqual property="depth3" compareValue="A">
+			,UBM_CTR_GBN = #standard#
+			,UBM_GOL_NO = #depth3#
+			</isNotEqual>
+
+
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '5'
+		<isNotEqual prepend="AND" property="authKey" compareValue="A">
+			ubm_rgt_id = #ubm_rgt_id#
+		</isNotEqual>
+	</update>
+
+	<update id="QR_BOARD005_F" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_DEL_YN = 'Y'
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '5'
+		<isNotEqual prepend="AND" property="authKey" compareValue="A">
+			ubm_rgt_id = #ubm_rgt_id#
+		</isNotEqual>
+	</update>
+
+	<update id="QR_BOARD005_G" parameterClass="boardVO">
+		UPDATE UWO_BRD_MTR
+		SET UBM_VST_CNT = (SELECT UBM_VST_CNT+1 FROM UWO_BRD_MTR  WHERE UBM_BRD_KEY = #ubm_brd_key#)
+		WHERE UBM_BRD_KEY = #ubm_brd_key#
+		AND UBM_BRD_GBN = '5'
+	</update>
+
+	<select id="QR_BOARD005_H" resultClass="Integer">
+		SELECT MAX(UBM_BRD_KEY) FROM UWO_BRD_MTR
+	</select>
+
+	<select id="QR_GET_SVC_LIST" resultClass="egovMap">
+		SELECT
+			svc_cod AS uom_svc_cod,
+			svc_nam AS uom_svc_nam
+		FROM uwo_svc_mtr
+		WHERE use_yn = 'Y'
+		ORDER BY sort
+	</select>
+
+	<select id="QR_BOARD001_AUH_INFO" parameterClass="String" resultClass="EgovMap">
+		SELECT
+			svc_cod AS uom_svc_cod,
+			svc_nam AS uom_svc_nam
+		FROM uwo_svc_mtr
+		WHERE use_yn = 'Y'
+		ORDER BY sort
+	</select>
+
+	<select id="QR_CNTR_DATA" parameterClass="Map" resultClass="egovMap">
+		SELECT B.* , UCC_SND_NAM
+		FROM UWO_BRD_MTR A, UWO_CTR_MTR B, UWO_COM_COD
+		WHERE UBM_CTR_GBN = UCM_CTR_GBN
+		AND UBM_GOL_NO = UCM_GOL_NO
+		AND UCM_CTR_GBN = UCC_SND_COD
+		AND UBM_BRD_KEY = #brdKey#
+		AND UCM_BCY_COD = #manCyl#
+		AND UCM_DIV_COD = #service#
+	</select>
+</sqlMap>

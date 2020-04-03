@@ -1,0 +1,2131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="fmAsset">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="com.uwo.isms.domain.SearchVO"/>
+	<typeAlias  alias="riskVO" type="com.uwo.isms.domain.RiskVO"/>
+
+	<sql id="QR_ASSET001_WHERE">
+		AND UAR_BCY_COD = #manCyl#
+		<isNotEmpty property="service">
+			AND UAR_SUB_COD = #service#
+		</isNotEmpty>
+		<isNotEmpty property="stOrg">
+		    AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_1lv = #stOrg#)
+		</isNotEmpty>
+		<isNotEmpty property="hqOrg">
+		    AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_2lv = #hqOrg#)
+		</isNotEmpty>
+		<isNotEmpty property="gpOrg">
+		    AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_3lv = #gpOrg#)
+		</isNotEmpty>
+		<isNotEmpty property="worker">
+			AND UAR_OWN_NAM = #worker#
+		</isNotEmpty>
+		<isNotEmpty property="assCat">
+			AND UAR_ASS_CAT = #assCat#
+		</isNotEmpty>
+		<isNotEmpty property="assGbn">
+			AND UAR_ASS_GBN = #assGbn#
+		</isNotEmpty>
+		<isNotEmpty property="aosCod">
+			AND UAR_AOS_COD = #aosCod#
+		</isNotEmpty>
+		<isNotEmpty property="assLvl">
+		    AND UAR_ASS_LVL = #assLvl#
+		</isNotEmpty>
+		<isNotEmpty property="assCod">
+			<![CDATA[AND UAR_ASS_COD LIKE '%'|| #assCod# || '%']]>
+		</isNotEmpty>
+		<isNotEmpty property="assNam">
+			<![CDATA[
+			AND (
+				UPPER(uar_eqp_nam) LIKE '%'|| UPPER(#assNam#) || '%'
+				OR UPPER(uar_host) LIKE '%'|| UPPER(#assNam#) || '%'
+				OR UPPER(uar_ip) LIKE '%'|| UPPER(#assNam#) || '%'
+				OR UPPER(uar_ass_cod) LIKE '%'|| UPPER(#assNam#) || '%'
+			)
+			]]>
+		</isNotEmpty>
+		<isNotEmpty property="audYn">
+			AND UAR_AUD_YN = #audYn#
+		</isNotEmpty>
+		<isNotEmpty property="smpYn">
+			AND UAR_SMP_YN = #smpYn#
+		</isNotEmpty>
+		<isNotEmpty property="groupName">
+		    <![CDATA[AND UAG_GRP_NAM LIKE '%'|| #groupName# || '%']]>
+		</isNotEmpty>
+		<isNotEmpty property="useYn">
+			AND UAR_USE_YN = #useYn#
+		</isNotEmpty>
+	</sql>
+
+	<select id="QR_ASSET001_A" parameterClass="searchVO" resultClass="riskVO">
+		SELECT * FROM  (
+			SELECT ROWNUM RNUM, ALL_LIST.* FROM  (
+		SELECT      UAR_ASS_KEY             <!-- 자산관리키 -->
+            ,UAR_BCY_COD                    <!-- 운영주기코드 -->
+            ,UAR_GRP_COD                    <!-- 자산그룹코드 -->
+            ,UAR_GRP_NAM					<!-- 자산그룹명 -->
+            ,UAR_ASS_COD                    <!-- 자산키 -->
+			,UAR_SVR_COD                    <!-- 서비스코드 -->
+			,UAR_SVR_NAM    				<!-- 서비스명 -->
+			,UAR_SUB_COD					<!-- 하위서비스코드 -->
+			,UAR_SUB_NAM					<!-- 하위서비스명 -->
+            ,UAR_SVR_ETC                    <!-- 서비스상세 -->
+            ,UAR_DEP_LV1					<!-- 관리부서코드 LV1 -->
+            ,(select UDM_DEP_NAM from UWO_DEP_MTR where UDM_DEP_COD = UAR_DEP_LV1) AS UAR_DL1_NAM
+            ,UAR_DEP_LV2					<!-- 관리부서코드 LV2 -->
+            ,(select UDM_DEP_NAM from UWO_DEP_MTR where UDM_DEP_COD = UAR_DEP_LV2) AS UAR_DL2_NAM
+			,UAR_DEP_COD                    <!-- 관리부서코드 -->
+			,UAR_DEP_NAM                    <!-- 관리부서명 -->
+            ,UAR_OWN_ID                     <!-- 관리담당자ID -->
+            ,UAR_OWN_NAM                    <!-- 관리담당자명 -->
+            ,UAR_ADM_ID                     <!-- 관리책임자ID -->
+            ,UAR_ADM_NAM                    <!-- 관리책임자명 -->
+            ,UAR_OPR_LV1					<!-- 운영부서코드 LV1 -->
+            ,(select UDM_DEP_NAM from UWO_DEP_MTR where UDM_DEP_COD = UAR_OPR_LV1) AS UAR_OL1_NAM
+            ,UAR_OPR_LV2					<!-- 운영부서코드 LV2 -->
+            ,(select UDM_DEP_NAM from UWO_DEP_MTR where UDM_DEP_COD = UAR_OPR_LV2) AS UAR_OL2_NAM
+            ,UAR_OPR_COD                    <!-- 운영부서코드 -->
+            ,UAR_OPR_NAM                    <!-- 운영부서명 -->
+            ,UAR_USE_ID                     <!-- 운영담당자ID -->
+            ,UAR_USE_NAM                    <!-- 운영담당자명 -->
+            ,UAR_PIC_ID                     <!-- 운영책임자ID -->
+            ,UAR_PIC_NAM                    <!-- 운영책임자명 -->
+			,UAR_ASS_CAT                    <!-- 자산분류 -->
+			,UAC_CAT_NAM                    <!-- 자산분류명 -->
+			,UAR_ASS_GBN                    <!-- 자산유형코드 -->
+            ,UAR_ASS_NAM			        <!-- 자산유형명 -->
+			,UAR_EQP_NAM                    <!-- 자산명 -->
+			,UAR_DTL_EXP                    <!-- 용도 -->
+			,UAR_ADM_POS                    <!-- 자산위치 -->
+			,UAR_APP_CON                    <!-- 기밀성 -->
+			,UAR_APP_ITG                    <!-- 무결성 -->
+			,UAR_APP_AVT                    <!-- 가용성 -->
+			,UAR_APP_TOT                    <!-- 중요도점수 -->
+			,UAR_ASS_LVL                    <!-- 등급 -->
+			,DECODE(UAR_AUD_YN, 'Y', '대상', '비대상') UAR_AUD_YN        <!-- 인증대상 -->
+			,DECODE(UAR_SMP_YN, 'Y', '대상', '비대상') UAR_SMP_YN        <!-- 샘플링대상 -->
+            ,DECODE(UAR_INF_YN, 'Y', '대상', '비대상') UAR_INF_YN        <!-- 기반시설대상 -->
+            ,DECODE(UAR_PRV_YN, 'Y', '대상', '비대상') UAR_PRV_YN        <!-- 개인정보보유 -->
+			,UAR_USE_YN                     <!-- 사용유무 -->
+			,UAR_VAL_CL0
+			,UAR_VAL_CL1
+			,UAR_VAL_CL2
+			,UAR_VAL_CL3
+			,UAR_VAL_CL4
+			,UAR_VAL_CL5
+			,UAR_VAL_CL6
+			,UAR_VAL_CL7
+			,UAR_VAL_CL8
+			,UAR_VAL_CL9
+			,TO_CHAR(UAR_RGT_MDH, 'YYYY.MM.DD') UAR_RGT_MDH
+			,TO_CHAR(UAR_UPT_MDH, 'YYYY.MM.DD') UAR_UPT_MDH
+			,uar_ip
+			,uar_host
+			,uar_os
+		  FROM
+		  	UWO_ASS_MTR,
+		  	UWO_ASS_GRP,
+		  	UWO_ASS_CAT
+		 WHERE
+			UAR_ASS_CAT = UAC_CAT_KEY
+		 	AND UAR_ASS_KEY = UAG_GRP_KEY(+)
+		 <include refid="QR_ASSET001_WHERE" />
+		 ORDER BY UAR_ASS_COD DESC
+			) ALL_LIST
+		)
+		<![CDATA[
+		WHERE RNUM > #firstIndex#
+		AND RNUM <= #firstIndex# + #recordCountPerPage#
+		]]>
+	</select>
+
+	<select id="QR_ASSET001_CNT" parameterClass="searchVO" resultClass="int">
+		SELECT COUNT(*) totcnt
+		  FROM
+		  	UWO_ASS_MTR,
+		  	UWO_ASS_GRP,
+		  	UWO_ASS_CAT
+		 WHERE
+			UAR_ASS_CAT = UAC_CAT_KEY
+		 	AND UAR_ASS_KEY = UAG_GRP_KEY(+)
+		 <include refid="QR_ASSET001_WHERE" />
+	</select>
+
+	<select id="QR_ASSET001_EXCEL_D" parameterClass="searchVO" resultClass="riskVO">
+		SELECT      UAR_ASS_KEY             <!-- 자산관리키 -->
+			,UAR_ASS_COD
+            ,UAR_BCY_COD                    <!-- 운영주기코드 -->
+            ,UAR_GRP_COD                    <!-- 자산그룹코드 -->
+            ,UAR_GRP_NAM					<!-- 자산그룹명 -->
+            ,(SELECT UAC_CAT_COD FROM UWO_ASS_CAT WHERE UAC_CAT_KEY = UAR_ASS_CAT) AS UAR_CAT_COD
+       		,(SELECT UAC_CAT_NAM FROM UWO_ASS_CAT WHERE UAC_CAT_KEY = UAR_ASS_CAT) AS UAR_CAT_NAM
+			,UAR_SVR_COD                    <!-- 서비스코드 -->
+			,UAR_SVR_NAM    				<!-- 서비스명 -->
+			,UAR_SUB_COD					<!-- 하위서비스코드 -->
+			,UAR_SUB_NAM					<!-- 하위서비스명 -->
+            ,UAR_SVR_ETC                    <!-- 서비스상세 -->
+			,UAR_DEP_COD                    <!-- 관리부서코드 -->
+			,UAR_DEP_NAM                    <!-- 관리부서명 -->
+            ,UAR_OWN_ID                     <!-- 관리담당자ID -->
+            ,UAR_OWN_NAM                    <!-- 관리담당자명 -->
+            ,UAR_ADM_ID                     <!-- 관리책임자ID -->
+            ,UAR_ADM_NAM                    <!-- 관리책임자명 -->
+            ,UAR_OPR_COD                    <!-- 운영부서코드 -->
+            ,UAR_OPR_NAM                    <!-- 운영부서명 -->
+            ,UAR_USE_ID                     <!-- 운영담당자ID -->
+            ,UAR_USE_NAM                    <!-- 운영담당자명 -->
+            ,UAR_PIC_ID                     <!-- 운영책임자ID -->
+            ,UAR_PIC_NAM                    <!-- 운영책임자명 -->
+			,UAR_ASS_GBN                    <!-- 자산유형코드 -->
+            ,UAR_ASS_NAM			        <!-- 자산유형명 -->
+			,UAR_EQP_NAM                    <!-- 자산명 -->
+			,UAR_DTL_EXP                    <!-- 용도 -->
+			,UAR_ADM_POS                    <!-- 자산위치 -->
+			,UAR_RSK_GRP					<!-- 취약점그룹코드 -->
+			,UAR_RSK_NAM					<!-- 취약점그룹명 -->
+			,UAR_APP_CON                    <!-- 기밀성 -->
+			,UAR_APP_ITG                    <!-- 무결성 -->
+			,UAR_APP_AVT                    <!-- 가용성 -->
+			,UAR_APP_TOT                    <!-- 중요도점수 -->
+			,UAR_ASS_LVL                    <!-- 등급 -->
+			,DECODE(UAR_AUD_YN, 'Y', 'Y', 'N') UAR_AUD_YN        <!-- 인증대상 -->
+			,DECODE(UAR_SMP_YN, 'Y', 'Y', 'N') UAR_SMP_YN        <!-- 샘플링대상 -->
+            ,DECODE(UAR_INF_YN, 'Y', 'Y', 'N') UAR_INF_YN        <!-- 기반시설대상 -->
+            ,DECODE(UAR_PRV_YN, 'Y', 'Y', 'N') UAR_PRV_YN        <!-- 개인정보보유 -->
+			,UAR_USE_YN                     <!-- 사용유무 -->
+			,UAR_VAL_CL0
+			,UAR_VAL_CL1
+			,UAR_VAL_CL2
+			,UAR_VAL_CL3
+			,UAR_VAL_CL4
+			,UAR_VAL_CL5
+			,UAR_VAL_CL6
+			,UAR_VAL_CL7
+			,UAR_VAL_CL8
+			,UAR_VAL_CL9
+			<!-- ,F_GET_USR_NAME(UAR_RGT_ID) UAR_RGT_ID
+			,UAR_UPT_MDH
+			,F_GET_USR_NAME(UAR_UPT_ID) UAR_UPT_ID
+			,UAR_RGT_MDH -->
+			,CASE
+		  		WHEN UAR_APP_CON + UAR_APP_ITG + UAR_APP_AVT > 7 THEN '1등급'
+		  		WHEN UAR_APP_CON + UAR_APP_ITG + UAR_APP_AVT > 4 THEN '2등급'
+		  		ELSE '3등급'
+		  	END sec_lvl_tot
+		  	,UAR_OPR_NAM || '/' || UAR_USE_NAM AS uar_opr_etc
+		  	,uar_ip
+			,uar_host
+			,uar_os
+		  FROM
+		  	UWO_ASS_MTR,
+		  	UWO_ASS_GRP,
+		  	UWO_ASS_CAT
+		 WHERE
+			UAR_ASS_CAT = UAC_CAT_KEY
+		 	AND UAR_ASS_KEY = UAG_GRP_KEY(+)
+		 	<include refid="QR_ASSET001_WHERE" />
+		 ORDER BY UAR_ASS_COD DESC
+	</select>
+
+	<!-- 자산관리 : 자산관리 팝업창 -->
+	<select id="QR_ASSET001_B" parameterClass="String" resultClass="egovMap">
+		SELECT UAR_ASS_KEY
+			, UAR_ASS_COD
+			, UAR_GRP_COD
+			, (SELECT UAG_GRP_NAM FROM UWO_ASS_GRP WHERE UAG_GRP_COD = UAR_GRP_COD)	AS UAR_GRP_NAM
+			, UAR_ASS_CAT
+			, UAR_SVR_COD
+			, UAR_SVR_NAM
+			, UAR_SUB_COD
+			, UAR_SUB_NAM
+			, UAR_SVR_ETC
+			, UAR_DEP_LV1
+			, (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UAR_DEP_LV1)	AS UAR_DL1_NAM
+			, UAR_DEP_LV2
+			, (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UAR_DEP_LV2)	AS UAR_DL2_NAM
+			, UAR_DEP_COD
+			, UAR_DEP_NAM
+			, UAR_OWN_ID
+			, UAR_OWN_NAM
+			, UAR_ADM_ID
+			, UAR_ADM_NAM
+			, UAR_OPR_LV1
+			, (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UAR_OPR_LV1)	AS UAR_OL1_NAM
+			, UAR_OPR_LV2
+			, (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UAR_OPR_LV2)	AS UAR_OL2_NAM
+			, UAR_OPR_COD
+			, UAR_OPR_NAM
+			, UAR_USE_ID
+			, UAR_USE_NAM
+			, UAR_PIC_ID
+			, UAR_PIC_NAM
+			, UAR_ASS_GBN
+			, UAR_ASS_NAM
+			, UAR_EQP_NAM
+			, UAR_ADM_POS
+			, UAR_DTL_EXP
+			, UAR_RSK_GRP
+			, UAR_RSK_NAM
+			, UAR_APP_CON
+			, UAR_APP_ITG
+			, UAR_APP_AVT
+			, UAR_APP_TOT
+			, UAR_ASS_LVL
+			, UAR_AUD_YN
+			, UAR_SMP_YN
+			, UAR_INF_YN
+			, UAR_PRV_YN
+			, UAR_USE_YN
+			, UAR_VAL_CL0
+			, UAR_VAL_CL1
+			, UAR_VAL_CL2
+			, UAR_VAL_CL3
+			, UAR_VAL_CL4
+			, UAR_VAL_CL5
+			, UAR_VAL_CL6
+			, UAR_VAL_CL7
+			, UAR_VAL_CL8
+			, UAR_VAL_CL9
+			, uar_ip
+			, uar_host
+			, uar_os
+		from UWO_ASS_MTR
+		WHERE UAR_ASS_KEY = #code#
+	</select>
+
+	<!-- 자산관리 : insert -->
+	<!-- <insert id="QR_ASSET001_C" parameterClass="Map">
+		<selectKey keyProperty="uarAssKey" resultClass="String">
+			SELECT SEQ_UWO_ASS_MTR.NEXTVAL assKey FROM DUAL
+		</selectKey>
+		INSERT
+			INTO UWO_ASS_MTR (
+				UAR_ASS_KEY
+				,UAR_SVR_COD
+				,UAR_DEP_COD
+				,UAR_BCY_COD
+				,UAR_ASS_CAT
+				,UAR_ASS_GBN
+				,UAR_ASS_SEQ
+				,UAR_GRP_KEY
+				,UAR_MNG_COD
+				,UAR_ASS_COD
+				,UAR_EQP_NAM
+				,UAR_MAK_NAM
+				,UAR_DTL_NUM
+				,UAR_DTL_NAM
+				,UAR_DEP_NAM
+				,UAR_DTL_EXP
+				,UAR_OWN_NAM
+				,UAR_ADM_NAM
+				,UAR_ADM_POS
+				,UAR_USE_NAM
+				,UAR_AOS_COD
+				,UAR_USE_YN
+				,UAR_APP_CON
+				,UAR_APP_ITG
+				,UAR_APP_AVT
+				,UAR_APP_TOT
+				,UAR_ASS_LVL
+				,UAR_SMP_YN
+				,UAR_SVR_ETC
+				,UAR_AUD_YN
+				,UAR_VAL_CL0
+				,UAR_VAL_CL1
+				,UAR_VAL_CL2
+				,UAR_VAL_CL3
+				,UAR_VAL_CL4
+				,UAR_VAL_CL5
+				,UAR_VAL_CL6
+				,UAR_VAL_CL7
+				,UAR_VAL_CL8
+				,UAR_VAL_CL9
+				,UAR_RGT_ID
+				,UAR_UPT_MDH
+				,UAR_UPT_ID
+				,UAR_RGT_MDH
+		) VALUES (
+			SEQ_UWO_ASS_MTR.NEXTVAL
+		  	,#uarSvrCod#
+			,#uarDepCod#
+			,#uarBcyCod#
+			,#uarAssCat#
+			,#uarAssGbn#
+			,#uarAssSeq#
+			,#uarGrpKey#
+			,#uarAssCod#
+			,#uarAssCod#
+			,#uarEqpNam#
+			,#uarMakNam#
+			,#uarDtlNum#
+			,#uarDtlNam#
+			,#uarDepNam#
+			,#uarDtlExp#
+			,#uarOwnNam#
+			,#uarAdmNam#
+			,#uarAdmPos#
+			,#uarUseNam#
+			,#uarAosCod#
+			,#uarUseYn#
+			,#uarAppCon#
+			,#uarAppItg#
+			,#uarAppAvt#
+			,#uarAppTot#
+			,#uarAssLvl#
+			,#uarSmpYn#
+			,#uarEtc#
+			,#uarAudYn#
+			,#uarValCl0#
+			,#uarValCl1#
+			,#uarValCl2#
+			,#uarValCl3#
+			,#uarValCl4#
+			,#uarValCl5#
+			,#uarValCl6#
+			,#uarValCl7#
+			,#uarValCl8#
+			,#uarValCl9#
+			,#uarRgtId#
+			,SYSDATE
+			,#uarRgtId#
+			,SYSDATE
+		)
+	</insert> -->
+
+	<insert id="QR_ASSET001_C" parameterClass="Map">
+		INSERT
+		INTO UWO_ASS_MTR(
+			UAR_ASS_KEY
+			,UAR_BCY_COD
+			,UAR_ASS_COD
+			,UAR_GRP_COD
+			,UAR_GRP_NAM
+			,UAR_ASS_CAT
+			,UAR_SVR_COD
+			,UAR_SVR_NAM
+			,UAR_SVR_ETC
+			,UAR_SUB_COD
+			,UAR_SUB_NAM
+			,UAR_DEP_LV1
+			,UAR_DEP_LV2
+			,UAR_DEP_COD
+			,UAR_DEP_NAM
+			,UAR_OWN_ID
+			,UAR_OWN_NAM
+			,UAR_ADM_ID
+			,UAR_ADM_NAM
+			,UAR_OPR_LV1
+			,UAR_OPR_LV2
+			,UAR_OPR_COD
+			,UAR_OPR_NAM
+			,UAR_USE_ID
+			,UAR_USE_NAM
+			,UAR_PIC_ID
+			,UAR_PIC_NAM
+			,UAR_ASS_GBN
+			,UAR_ASS_NAM
+			,UAR_EQP_NAM
+			,UAR_DTL_EXP
+			,UAR_ADM_POS
+			,UAR_RSK_GRP
+			,UAR_RSK_NAM
+			,UAR_APP_CON
+			,UAR_APP_ITG
+			,UAR_APP_AVT
+			,UAR_APP_TOT
+			,UAR_ASS_LVL
+			,UAR_AUD_YN
+			,UAR_SMP_YN
+			,UAR_INF_YN
+			,UAR_PRV_YN
+			,UAR_USE_YN
+			,UAR_VAL_CL0
+			,UAR_VAL_CL1
+			,UAR_VAL_CL2
+			,UAR_VAL_CL3
+			,UAR_VAL_CL4
+			,UAR_VAL_CL5
+			,UAR_VAL_CL6
+			,UAR_VAL_CL7
+			,UAR_VAL_CL8
+			,UAR_VAL_CL9
+			,UAR_RGT_ID
+			,UAR_RGT_MDH
+			,UAR_UPT_ID
+			,UAR_UPT_MDH
+			,uar_ip
+			,uar_host
+			,uar_os
+		)
+		SELECT
+			SEQ_UWO_ASS_MTR.NEXTVAL
+			,#uarBcyCod#
+			,#uarAssCod#
+			,#uarGrpCod#
+			,#uarGrpNam#
+			,A.UAC_CAT_KEY
+			,(SELECT svc_cod FROM uwo_svc_sub WHERE svc_sub_cod = #uarSvrCod#)
+			,(SELECT svc_nam FROM uwo_svc_mtr c1 INNER JOIN uwo_svc_sub c2 ON c1.svc_cod = c2.svc_cod WHERE c2.svc_sub_cod = #uarSvrCod#)
+			,#uarSvrEtc#
+			,#uarSvrCod#
+			,(select svc_sub_nam from uwo_svc_sub where svc_sub_cod = #uarSvrCod#)
+			,(select udm_dep_1lv from uwo_dep_mtr where udm_dep_cod = #uarDepCod#)
+			,(select udm_dep_2lv from uwo_dep_mtr where udm_dep_cod = #uarDepCod#)
+			,#uarDepCod#
+			,(select udm_dep_nam from uwo_dep_mtr where udm_dep_cod = #uarDepCod#)
+			,#uarOwnId#
+			,(select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarOwnId#)
+			,#uarAdmId#
+			,(select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarAdmId#)
+			,(select udm_dep_1lv from uwo_dep_mtr where udm_dep_cod = #uarOprCod#)
+			,(select udm_dep_2lv from uwo_dep_mtr where udm_dep_cod = #uarOprCod#)
+			,#uarOprCod#
+			,(select udm_dep_nam from uwo_dep_mtr where udm_dep_cod = #uarOprCod#)
+			,#uarUseId#
+			,(select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarUseId#)
+			,#uarPicId#
+			,(select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarPicId#)
+			,#uarAssGbn#
+			,(select UCC_SND_NAM from UWO_COM_COD where UCC_SND_COD = #uarAssGbn#)
+			,#uarEqpNam#
+			,#uarDtlExp#
+			,#uarAdmPos#
+			,#uarRskGrp#
+			,#uarRskNam#
+			,#uarAppCon#
+			,#uarAppItg#
+			,#uarAppAvt#
+			,#uarAppTot#
+			,#uarAssLvl#
+			,DECODE(#uarAudYn#, NULL, 'N', #uarAudYn#)
+			,DECODE(#uarSmpYn#, NULL, 'N', #uarSmpYn#)
+			,DECODE(#uarInfYn#, NULL, 'N', #uarInfYn#)
+			,DECODE(#uarPrvYn#, NULL, 'N', #uarPrvYn#)
+			,DECODE(#uarUseYn#, NULL, 'N', #uarUseYn#)
+			,#uarValCl0#
+			,#uarValCl1#
+			,#uarValCl2#
+			,#uarValCl3#
+			,#uarValCl4#
+			,#uarValCl5#
+			,#uarValCl6#
+			,#uarValCl7#
+			,#uarValCl8#
+			,#uarValCl9#
+			,#uarRgtId#
+			,SYSDATE
+			,#uarRgtId#
+			,SYSDATE
+			,#uarIp#
+			,#uarHost#
+			,#uarOs#
+			FROM
+			UWO_ASS_CAT A
+		WHERE
+			UAC_CAT_COD = #arrAssCat#
+		<!-- WHERE UAR_ASS_KEY = #uarAssKey# -->
+	</insert>
+
+	<select id="QR_ASSET001_GRPCODE01" parameterClass="String" resultClass="String">
+		SELECT UDM_DEP_NAM as UAR_DEP_NAM from UWO_DEP_MTR where UDM_DEP_COD = #depCod#
+	</select>
+
+	<select id="QR_ASSET001_GRPCODE02" parameterClass="String" resultClass="String">
+		SELECT svc_sub_nam
+		 FROM uwo_svc_sub
+		 WHERE svc_sub_cod = #subCod#
+	</select>
+
+	<select id="QR_ASSET001_GRPCODE03" parameterClass="String" resultClass="String">
+		SELECT UCC_SND_COD as UAR_RSK_GRP
+		from UWO_COM_COD
+		where UCC_SND_COD = (select UCC_ETC from UWO_COM_COD where UCC_SND_COD = #rskGrp#) AND UCC_FIR_COD = 'VLBTYPE'
+	</select>
+
+	<select id="QR_ASSET001_GRPCODE04" parameterClass="String" resultClass="String">
+		SELECT UCC_SND_NAM as UAR_RSK_NAM
+		from UWO_COM_COD
+		where UCC_SND_COD = (select UCC_ETC from UWO_COM_COD where UCC_SND_COD = #rskNam#) AND UCC_FIR_COD = 'VLBTYPE'
+	</select>
+
+	<select id="QR_ASSET001_GRPCODE05" parameterClass="String" resultClass="String">
+		SELECT UCC_SND_COD as UAR_RSK_GRP
+		from UWO_COM_COD
+		where UCC_SND_COD = (select UCC_ETC from UWO_COM_COD where UCC_FIR_COD = 'CAT_SV' AND UCC_SND_NAM = #valCl2#)
+	</select>
+
+	<select id="QR_ASSET001_GRPCODE06" parameterClass="String" resultClass="String">
+		SELECT UCC_SND_NAM as UAR_RSK_NAM
+		from UWO_COM_COD
+		where UCC_SND_COD = (select UCC_ETC from UWO_COM_COD where UCC_FIR_COD = 'CAT_SV' AND UCC_SND_NAM = #valCl2#)
+	</select>
+
+	<insert id="QR_ASSET001_GROUP_INSERT" parameterClass="Map">
+		INSERT INTO UWO_ASS_GRP
+		(
+		  UAG_GRP_KEY
+		  , UAG_BCY_COD
+		  , UAG_SVR_COD
+		  , UAG_SVR_NAM
+		  , UAG_SUB_COD
+		  , UAG_SUB_NAM
+		  , UAG_DEP_COD
+		  , UAG_DEP_NAM
+		  , UAG_ADM_ID
+		  , UAG_ADM_NAM
+		  , UAG_ASS_CAT
+		  , UAG_CAT_NAM
+		  , UAG_GRP_COD
+		  , UAG_GRP_NAM
+		  , UAG_GRP_DES
+		  , UAG_GRP_LVL
+		  , UAG_USE_YN
+		  , UAG_RGT_ID
+		  , UAG_RGT_MDH
+		  , UAG_UPT_ID
+		  , UAG_UPT_MDH
+		)
+		VALUES
+		(
+		  #uagGrpKey#
+		  , #uarBcyCod#
+		  , (SELECT svc_cod FROM uwo_svc_sub WHERE svc_sub_cod = #uarSvrCod#)
+		  , (SELECT svc_nam FROM uwo_svc_mtr c1 INNER JOIN uwo_svc_sub c2 ON c1.svc_cod = c2.svc_cod WHERE c2.svc_sub_cod = #uarSvrCod#)
+		  , #uarSvrCod#
+		  , (SELECT svc_sub_nam FROM uwo_svc_sub WHERE svc_sub_cod = #uarSvrCod#)
+		  , #uarDepCod#
+		  , (select UDM_DEP_NAM from UWO_DEP_MTR where UDM_DEP_COD = #uarDepCod#)
+		  , #uarAdmId#
+		  , (select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarAdmId#)
+		  , (select UAC_CAT_KEY from UWO_ASS_CAT where uac_cat_cod = #arrAssCat#)
+		  , (select UAC_CAT_NAM from UWO_ASS_CAT where uac_cat_cod = #arrAssCat#)
+		  , #uarGrpCod#
+		  , #uarGrpNam#
+		  , ''
+		  , #uarAssLvl#
+		  , 'Y'
+		  , #uarRgtId#
+		  , SYSDATE
+		  , #uarUatId#
+		  , SYSDATE
+		)
+	</insert>
+
+	<!-- 자산관리 : log insert -->
+	<insert id="QR_ASSET001_D"  parameterClass="Map">
+	<selectKey keyProperty="uarAssKey" resultClass="String">
+			SELECT SEQ_UWO_ASS_MTR.NEXTVAL assKey FROM DUAL
+		</selectKey>
+		INSERT
+			INTO UWO_ASS_LOG (
+				UAO_LOG_KEY
+				,UAO_ASS_KEY
+				,UAO_SVR_COD
+				,UAO_DEP_COD
+				,UAO_BCY_COD
+				,UAO_ASS_CAT
+				,UAO_ASS_GBN
+				,UAO_ASS_SEQ
+				,UAO_GRP_KEY
+				,UAO_MNG_COD
+				,UAO_ASS_COD
+				,UAO_EQP_NAM
+				,UAO_MAK_NAM
+				,UAO_DTL_NUM
+				,UAO_DTL_NAM
+				,UAO_DEP_NAM
+				,UAO_DTL_EXP
+				,UAO_OWN_NAM
+				,UAO_ADM_NAM
+				,UAO_ADM_POS
+				,UAO_USE_NAM
+				,UAO_AOS_COD
+				,UAO_USE_YN
+				,UAO_APP_CON
+				,UAO_APP_ITG
+				,UAO_APP_AVT
+				,UAO_APP_TOT
+				,UAO_ASS_LVL
+				,UAO_SMP_YN
+				,UAO_ETC
+				,UAO_AUD_YN
+				,UAO_VAL_CL0
+				,UAO_VAL_CL1
+				,UAO_VAL_CL2
+				,UAO_VAL_CL3
+				,UAO_VAL_CL4
+				,UAO_VAL_CL5
+				,UAO_VAL_CL6
+				,UAO_VAL_CL7
+				,UAO_VAL_CL8
+				,UAO_VAL_CL9
+				,UAO_RGT_ID
+				,UAO_RGT_MDH
+		)
+		SELECT
+			(SELECT NVL (MAX (UAO_LOG_KEY), 0) + 1 FROM UWO_ASS_LOG)
+			,UAR_ASS_KEY
+			,UAR_SVR_COD
+			,UAR_DEP_COD
+			,UAR_BCY_COD
+			,UAR_ASS_CAT
+			,UAR_ASS_GBN
+			,UAR_ASS_SEQ
+			,UAR_GRP_KEY
+			,UAR_MNG_COD
+			,UAR_ASS_COD
+			,UAR_EQP_NAM
+			,UAR_MAK_NAM
+			,UAR_DTL_NUM
+			,UAR_DTL_NAM
+			,UAR_DEP_NAM
+			,UAR_DTL_EXP
+			,UAR_OWN_NAM
+			,UAR_ADM_NAM
+			,UAR_ADM_POS
+			,UAR_USE_NAM
+			,UAR_AOS_COD
+			,UAR_USE_YN
+			,UAR_APP_CON
+			,UAR_APP_ITG
+			,UAR_APP_AVT
+			,UAR_APP_TOT
+			,UAR_ASS_LVL
+			,UAR_SMP_YN
+			,UAR_SVR_ETC
+			,UAR_AUD_YN
+			,UAR_VAL_CL0
+			,UAR_VAL_CL1
+			,UAR_VAL_CL2
+			,UAR_VAL_CL3
+			,UAR_VAL_CL4
+			,UAR_VAL_CL5
+			,UAR_VAL_CL6
+			,UAR_VAL_CL7
+			,UAR_VAL_CL8
+			,UAR_VAL_CL9
+          , #uarUatId#
+          , SYSDATE
+		FROM UWO_ASS_MTR
+		WHERE UAR_ASS_KEY = #uarAssKey#
+	</insert>
+
+	<!-- 자산관리 : update -->
+	<update id="QR_ASSET001_E" parameterClass="Map">
+		UPDATE UWO_ASS_MTR
+		   SET
+				UAR_SUB_COD = #uarSvrCod#
+				, UAR_SUB_NAM = (SELECT svc_sub_nam FROM uwo_svc_sub WHERE svc_sub_cod = #uarSvrCod#)
+				, UAR_SVR_COD = (SELECT svc_cod FROM uwo_svc_sub WHERE svc_sub_cod = #uarSvrCod#)
+				, UAR_SVR_NAM = (SELECT svc_nam FROM uwo_svc_mtr c1 INNER JOIN uwo_svc_sub c2 ON c1.svc_cod = c2.svc_cod WHERE c2.svc_sub_cod = #uarSvrCod#)
+				, UAR_GRP_COD = #uarGrpCod#
+				, UAR_GRP_NAM = #uarGrpNam#
+				, UAR_ASS_GBN = #uarAssGbn#
+				, UAR_ASS_NAM = (SELECT UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_SND_COD = #uarAssGbn#)
+				, UAR_DEP_LV1 = (SELECT UDM_DEP_1LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = #uarDepCod#)
+				, UAR_DEP_LV2 = (SELECT UDM_DEP_2LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = #uarDepCod#)
+				, UAR_DEP_COD = #uarDepCod#
+				, UAR_DEP_NAM = (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR WHERE UDM_DEP_COD = #uarDepCod#)
+				, UAR_OWN_ID = #uarOwnId#
+				, UAR_OWN_NAM = (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_ID = #uarOwnId#)
+				, UAR_ADM_ID = #uarAdmId#
+				, UAR_ADM_NAM = (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_ID = #uarAdmId#)
+				, UAR_OPR_LV1 = (SELECT UDM_DEP_1LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = #uarOprCod#)
+				, UAR_OPR_LV2 = (SELECT UDM_DEP_2LV FROM UWO_DEP_MTR WHERE UDM_DEP_COD = #uarOprCod#)
+				, UAR_OPR_COD = #uarOprCod#
+				, UAR_OPR_NAM = (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR WHERE UDM_DEP_COD = #uarOprCod#)
+				, UAR_USE_ID = #uarUseId#
+				, UAR_USE_NAM = (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_ID = #uarUseId#)
+				, UAR_PIC_ID = #uarPicId#
+				, UAR_PIC_NAM = (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_ID = #uarPicId#)
+				, UAR_EQP_NAM = #uarEqpNam#
+				, UAR_ADM_POS = #uarAdmPos#
+				, UAR_SMP_YN = #uarSmpYn#
+				, UAR_AUD_YN = #uarAudYn#
+				, UAR_INF_YN = #uarInfYn#
+				, UAR_PRV_YN = #uarPrvYn#
+				, UAR_SVR_ETC = #uarSvrEtc#
+				, UAR_DTL_EXP = #uarDtlExp#
+				, UAR_APP_CON = #uarAppCon#
+				, UAR_APP_ITG = #uarAppItg#
+				, UAR_APP_AVT = #uarAppAvt#
+				, UAR_APP_TOT = #uarAppTot#
+				, UAR_ASS_LVL = #uarAssLvl#
+				, UAR_USE_YN = #uarUseYn#
+				, UAR_VAL_CL0 = #uarValCl0#
+				, UAR_VAL_CL1 = #uarValCl1#
+				, UAR_VAL_CL2 = #uarValCl2#
+				, UAR_VAL_CL3 = #uarValCl3#
+				, UAR_VAL_CL4 = #uarValCl4#
+				, UAR_VAL_CL5 = #uarValCl5#
+				, UAR_VAL_CL6 = #uarValCl6#
+				, UAR_VAL_CL7 = #uarValCl7#
+				, UAR_VAL_CL8 = #uarValCl8#
+				, UAR_VAL_CL9 = #uarValCl9#
+				, UAR_RSK_GRP = #uarRskGrp#
+				, UAR_RSK_NAM = #uarRskNam#
+				, UAR_UPT_ID = #uarUatId#
+				, UAR_UPT_MDH = SYSDATE
+				,uar_ip = #uarIp#
+				,uar_host = #uarHost#
+				,uar_os = #uarOs#
+		 WHERE UAR_ASS_KEY = #uarAssKey#
+	</update>
+
+
+	<select id="QR_ASSET001_F"  parameterClass="SearchVO"  resultClass="egovMap">
+		SELECT
+			UAC_CAT_NAM
+			,UAG_GRP_COD
+			,UAG_GRP_NAM
+			,UAR_ASS_SEQ
+			,D.UCC_SND_NAM UAR_DEP_NAM
+			,UAR_EQP_NAM
+			,UAR_VAL_CL0
+			,UAR_ADM_POS
+			,S.UCC_SND_NAM UAR_SVR_NAM
+			,UAR_DTL_EXP
+			,UAR_ASS_LVL
+          FROM
+              UWO_ASS_MTR,
+              UWO_ASS_GRP,
+              UWO_ASS_CAT,
+              (
+		        SELECT
+					svc_sub_nam AS UCC_SND_NAM
+				FROM uwo_svc_sub
+				WHERE use_yn = 'Y'
+              ) S,
+              (
+                  SELECT UCC_SND_COD, UCC_SND_NAM
+                FROM UWO_COM_COD
+                WHERE UCC_FIR_COD = 'DEPT'
+                  AND UCC_USE_YN = 'Y'
+              ) D
+         WHERE
+            UAR_ASS_CAT = UAC_CAT_KEY
+            AND UAR_SVR_COD = S.UCC_SND_COD(+)
+            AND UAR_DEP_COD = D.UCC_SND_COD(+)
+            AND UAR_ASS_KEY = UAG_GRP_KEY(+)
+            AND UAR_BCY_COD = #manCyl#
+		 <isNotEmpty property="service">
+			AND UAR_SVR_COD = #service#
+		 </isNotEmpty>
+		 <isNotEmpty property="dept">
+			AND UAR_DEP_COD = #dept#
+		 </isNotEmpty>
+	</select>
+
+	<insert id="QR_ASSET001_G" parameterClass="Map">
+	<selectKey keyProperty="uarAssKey" resultClass="String">
+			SELECT SEQ_UWO_ASS_MTR.NEXTVAL assKey FROM DUAL
+		</selectKey>
+		INSERT
+		INTO UWO_ASS_MTR(
+			UAR_ASS_KEY
+			,UAR_BCY_COD
+			,UAR_ASS_COD
+			,UAR_GRP_COD
+			,UAR_GRP_NAM
+			,UAR_ASS_CAT
+			,UAR_SVR_COD
+			,UAR_SVR_NAM
+			,UAR_SVR_ETC
+			,UAR_SUB_COD
+			,UAR_SUB_NAM
+			,UAR_DEP_LV1
+			,UAR_DEP_LV2
+			,UAR_DEP_COD
+			,UAR_DEP_NAM
+			,UAR_OWN_ID
+			,UAR_OWN_NAM
+			,UAR_ADM_ID
+			,UAR_ADM_NAM
+			,UAR_OPR_LV1
+			,UAR_OPR_LV2
+			,UAR_OPR_COD
+			,UAR_OPR_NAM
+			,UAR_USE_ID
+			,UAR_USE_NAM
+			,UAR_PIC_ID
+			,UAR_PIC_NAM
+			,UAR_ASS_GBN
+			,UAR_ASS_NAM
+			,UAR_EQP_NAM
+			,UAR_DTL_EXP
+			,UAR_ADM_POS
+			,UAR_RSK_GRP
+			,UAR_RSK_NAM
+			,UAR_APP_CON
+			,UAR_APP_ITG
+			,UAR_APP_AVT
+			,UAR_APP_TOT
+			,UAR_ASS_LVL
+			,UAR_AUD_YN
+			,UAR_SMP_YN
+			,UAR_INF_YN
+			,UAR_PRV_YN
+			,UAR_USE_YN
+			,uar_ip
+			,uar_host
+			,uar_os
+			,UAR_VAL_CL0
+			,UAR_VAL_CL1
+			,UAR_VAL_CL2
+			,UAR_VAL_CL3
+			,UAR_VAL_CL4
+			,UAR_VAL_CL5
+			,UAR_VAL_CL6
+			,UAR_VAL_CL7
+			,UAR_VAL_CL8
+			,UAR_VAL_CL9
+			,UAR_RGT_ID
+			,UAR_RGT_MDH
+			,UAR_UPT_ID
+			,UAR_UPT_MDH
+		)
+		SELECT
+			SEQ_UWO_ASS_MTR.NEXTVAL
+			,#uarBcyCod#
+			,#uarAssCod#
+			,#uarGrpCod#
+			,#uarGrpNam#
+			,A.UAC_CAT_KEY
+			,(SELECT svc_cod FROM uwo_svc_sub WHERE svc_sub_cod = #uarSubCod#)
+		    ,(SELECT svc_nam FROM uwo_svc_mtr c1 INNER JOIN uwo_svc_sub c2 ON c1.svc_cod = c2.svc_cod WHERE c2.svc_sub_cod = #uarSubCod#)
+			,#uarSvrEtc#
+			,#uarSubCod#
+			,#uarSubNam#
+			,(select udm_dep_1lv from uwo_dep_mtr where udm_dep_cod = #uarDepCod#)
+			,(select udm_dep_2lv from uwo_dep_mtr where udm_dep_cod = #uarDepCod#)
+			,#uarDepCod#
+			,#uarDepNam#
+			,#uarOwnId#
+			,(select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarOwnId#)
+			,#uarAdmId#
+			,(select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarAdmId#)
+			,(select udm_dep_1lv from uwo_dep_mtr where udm_dep_cod = #uarOprCod#)
+			,(select udm_dep_2lv from uwo_dep_mtr where udm_dep_cod = #uarOprCod#)
+			,#uarOprCod#
+			,#uarOprNam#
+			,#uarUseId#
+			,(select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarUseId#)
+			,#uarPicId#
+			,(select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarPicId#)
+			,#uarAssGbn#
+			,#uarAssNam#
+			,#uarEqpNam#
+			,#uarDtlExp#
+			,#uarAdmPos#
+			,#uarRskGrp#
+			,#uarRskNam#
+			,#uarAppCon#
+			,#uarAppItg#
+			,#uarAppAvt#
+			,#uarAppTot#
+			,#uarAssLvl#
+			,DECODE(#uarAudYn#, NULL, 'N', #uarAudYn#)
+			,DECODE(#uarSmpYn#, NULL, 'N', #uarSmpYn#)
+			,DECODE(#uarInfYn#, NULL, 'N', #uarInfYn#)
+			,DECODE(#uarPrvYn#, NULL, 'N', #uarPrvYn#)
+			,DECODE(#uarUseYn#, NULL, 'N', #uarUseYn#)
+			,#uarIp#
+			,#uarHost#
+			,#uarOs#
+			,#uarValCl0#
+			,#uarValCl1#
+			,#uarValCl2#
+			,#uarValCl3#
+			,#uarValCl4#
+			,#uarValCl5#
+			,#uarValCl6#
+			,#uarValCl7#
+			,#uarValCl8#
+			,#uarValCl9#
+			,#uarRgtId#
+			,SYSDATE
+			,#uarRgtId#
+			,SYSDATE
+		FROM
+			UWO_ASS_CAT A
+		WHERE
+			UAC_CAT_COD = #uarCatCod#
+	</insert>
+
+	<update id="QR_ASSET001_G_UPDATE" parameterClass="Map">
+		UPDATE UWO_ASS_MTR
+		SET UAR_BCY_COD = #uarBcyCod#
+			,UAR_ASS_COD = #uarAssCod#
+			,UAR_GRP_COD = #uarGrpCod#
+			,UAR_GRP_NAM = #uarGrpNam#
+			,UAR_ASS_CAT = (select UAC_CAT_KEY from UWO_ASS_CAT where UAC_CAT_COD = #uarCatCod#)
+			,UAR_SVR_COD = (SELECT svc_cod FROM uwo_svc_sub WHERE svc_sub_cod = #uarSubCod#)
+			,UAR_SVR_NAM = (SELECT svc_nam FROM uwo_svc_mtr c1 INNER JOIN uwo_svc_sub c2 ON c1.svc_cod = c2.svc_cod WHERE c2.svc_sub_cod = #uarSubCod#)
+			,UAR_SVR_ETC = #uarSvrEtc#
+			,UAR_SUB_COD = #uarSubCod#
+			,UAR_SUB_NAM = #uarSubNam#
+			,UAR_DEP_LV1 = (select udm_dep_1lv from uwo_dep_mtr where udm_dep_cod = #uarDepCod#)
+			,UAR_DEP_LV2 = (select udm_dep_2lv from uwo_dep_mtr where udm_dep_cod = #uarDepCod#)
+			,UAR_DEP_COD = #uarDepCod#
+			,UAR_DEP_NAM = #uarDepNam#
+			,UAR_OWN_ID = #uarOwnId#
+			,UAR_OWN_NAM = (select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarOwnId#)
+			,UAR_ADM_ID = #uarAdmId#
+			,UAR_ADM_NAM = (select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarAdmId#)
+			,UAR_OPR_LV1 = (select udm_dep_1lv from uwo_dep_mtr where udm_dep_cod = #uarOprCod#)
+			,UAR_OPR_LV2 = (select udm_dep_2lv from uwo_dep_mtr where udm_dep_cod = #uarOprCod#)
+			,UAR_OPR_COD = #uarOprCod#
+			,UAR_OPR_NAM = #uarOprNam#
+			,UAR_USE_ID = #uarUseId#
+			,UAR_USE_NAM = (select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarUseId#)
+			,UAR_PIC_ID = #uarPicId#
+			,UAR_PIC_NAM = (select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uarPicId#)
+			,UAR_ASS_GBN = #uarAssGbn#
+			,UAR_ASS_NAM = #uarAssNam#
+			,UAR_EQP_NAM = #uarEqpNam#
+			,UAR_DTL_EXP = #uarDtlExp#
+			,UAR_ADM_POS = #uarAdmPos#
+			,UAR_RSK_GRP = (select UCC_SND_COD from uwo_com_cod where UCC_SND_COD = (select ucc_etc from UWO_COM_COD where UCC_SND_COD = #uarAssGbn#))
+			,UAR_RSK_NAM = (select UCC_SND_NAM from uwo_com_cod where UCC_SND_COD = (select ucc_etc from UWO_COM_COD where UCC_SND_COD = #uarAssGbn#))
+			,UAR_APP_CON = #uarAppCon#
+			,UAR_APP_ITG = #uarAppItg#
+			,UAR_APP_AVT = #uarAppAvt#
+			,UAR_APP_TOT = #uarAppTot#
+			,UAR_ASS_LVL = #uarAssLvl#
+			,UAR_AUD_YN = DECODE(#uarAudYn#, NULL, 'N', #uarAudYn#)
+			,UAR_SMP_YN = DECODE(#uarSmpYn#, NULL, 'N', #uarSmpYn#)
+			,UAR_INF_YN = DECODE(#uarInfYn#, NULL, 'N', #uarInfYn#)
+			,UAR_PRV_YN = DECODE(#uarPrvYn#, NULL, 'N', #uarPrvYn#)
+			,UAR_USE_YN = DECODE(#uarUseYn#, NULL, 'N', #uarUseYn#)
+			,uar_ip = #uarIp#
+			,uar_host = #uarHost#
+			,uar_os = #uarOs#
+			,UAR_VAL_CL0 = #uarValCl0#
+			,UAR_VAL_CL1 = #uarValCl1#
+			,UAR_VAL_CL2 = #uarValCl2#
+			,UAR_VAL_CL3 = #uarValCl3#
+			,UAR_VAL_CL4 = #uarValCl4#
+			,UAR_VAL_CL5 = #uarValCl5#
+			,UAR_VAL_CL6 = #uarValCl6#
+			,UAR_VAL_CL7 = #uarValCl7#
+			,UAR_VAL_CL8 = #uarValCl8#
+			,UAR_VAL_CL9 = #uarValCl9#
+			,UAR_UPT_ID = #uarRgtId#
+			,UAR_UPT_MDH = SYSDATE
+		WHERE UAR_ASS_KEY = #uarAssKey#
+	</update>
+
+
+	<!-- 그룹 리스트 -->
+	<!-- <select id="QR_ASSET002_A" parameterClass="searchVO" resultClass="egovMap">
+		SELECT UAG_GRP_KEY
+			, UAG_SVC_COD
+			, F_GET_COMMON_NAME(UAG_SVC_COD,'SERVICE') AS UAG_SVC_NAM
+			, UAG_DEP_COD
+			, F_GET_COMMON_NAME(UAG_DEP_COD,'DEPT') AS UAG_DEP_NAM
+			, UAG_MNG_ID
+			, (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UAG_MNG_ID) UAG_MNG_NAM
+			, UAG_GRP_DES
+			, UAG_GRP_LVL
+			, UAG_CAT_KEY
+		    , (SELECT UAC_CAT_NAM FROM UWO_ASS_CAT WHERE UAC_CAT_KEY = UAG_CAT_KEY) AS UAG_CAT_NAM
+		    , UAG_GRP_COD
+		    , UAG_GRP_NAM
+		    , DECODE(UAG_USE_YN, 'Y', '사용', '미사용') UAG_USE_YN
+		    , DECODE(UAG_UPT_ID, NULL, UAG_RGT_ID, UAG_UPT_ID) UAG_UPT_ID
+		    , DECODE(UAG_UPT_ID, NULL, F_GET_USR_NAME(UAG_RGT_ID), F_GET_USR_NAME(UAG_UPT_ID)) upt_nam
+		    , DECODE(UAG_UPT_ID, NULL, TO_CHAR(UAG_RGT_MDH, 'YYYY.MM.DD'), TO_CHAR(UAG_UPT_MDH, 'YYYY.MM.DD')) UAG_UPT_MDH
+		    , UAG_CAT_KEY AS UAG_CAT_COD
+		  FROM UWO_ASS_GRP,
+		  	(SELECT UUM_USR_KEY, UUM_USR_NAM, UUM_USR_ID FROM UWO_USR_MTR )
+		 WHERE 1=1
+		 AND UAG_BCY_COD = #manCyl#
+		 AND UUM_USR_KEY = UAG_MNG_ID
+		 <isNotEmpty property="groupGbn">
+		 	AND UAG_CAT_KEY = #groupGbn#
+		 </isNotEmpty>
+		 <isNotEmpty property="groupCode">
+		 	<![CDATA[AND UAG_GRP_COD LIKE '%' || #groupCode# || '%']]>
+		 </isNotEmpty>
+		 <isNotEmpty property="groupName">
+		 	<![CDATA[AND UAG_GRP_NAM LIKE '%' || #groupName# || '%']]>
+		 </isNotEmpty>
+		 <isNotEmpty property="service">
+		 	AND UAG_SVC_COD = #service#
+		 </isNotEmpty>
+		 <isNotEmpty property="dept">
+		 	AND UAG_DEP_COD = #dept#
+		 </isNotEmpty>
+		 <isNotEmpty property="worker">
+		 	AND UAG_MNG_ID = #worker#
+		 </isNotEmpty>
+	</select> -->
+
+	<!-- 그룹 리스트 -->
+	<select id="QR_ASSET002_A" parameterClass="searchVO" resultClass="egovMap">
+		select UAG_GRP_KEY ,
+      		UAG_ASS_CAT ,
+       		UAG_SVR_NAM ,
+       		UAG_SUB_NAM ,
+       		UAG_DEP_NAM ,
+       		UAG_CAT_NAM ,
+       		COUNT(A.UAR_ASS_COD) AS UAG_ASS_COD ,
+       		UAG_DEP_COD ,
+       		UAG_GRP_COD ,
+       		UAG_GRP_NAM ,
+       		UAG_GRP_DES ,
+       		UAG_GRP_LVL ,
+       		UAG_USE_YN ,
+       		(select A.UUM_USR_NAM from UWO_USR_MTR A, UWO_ASS_GRP B where A.UUM_USR_ID = B.UAG_RGT_ID GROUP BY A.UUM_USR_NAM, B.UAG_RGT_ID) AS UAG_UPT_NAM  ,
+       		DECODE(UAG_UPT_ID, NULL, TO_CHAR(UAG_UPT_MDH, 'YYYY.MM.DD'), TO_CHAR(UAG_UPT_MDH, 'YYYY.MM.DD')) UAG_UPT_MDH,
+       		<!-- 2017-07-26 -->
+       		uag_adm_id,
+       		uag_adm_nam
+  		from UWO_ASS_MTR A,
+       		UWO_ASS_GRP B
+ 		where A.UAR_GRP_COD = B.UAG_GRP_COD
+			AND UAR_BCY_COD = #manCyl#
+ 		<isNotEmpty property="groupGbn">
+			AND UAG_CAT_KEY = #groupGbn#
+		</isNotEmpty>
+		<isNotEmpty property="groupCode">
+		 	<![CDATA[AND UAG_GRP_COD LIKE '%' || #groupCode# || '%']]>
+		</isNotEmpty>
+		<isNotEmpty property="groupName">
+		 	<![CDATA[AND UAG_GRP_NAM LIKE '%' || #groupName# || '%']]>
+		</isNotEmpty>
+		<isNotEmpty property="service">
+			AND UAG_SUB_COD = #service#
+		</isNotEmpty>
+		<isNotEmpty property="stOrg">
+		    AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_1lv = #stOrg#)
+		</isNotEmpty>
+		<isNotEmpty property="hqOrg">
+		    AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_2lv = #hqOrg#)
+		</isNotEmpty>
+		<isNotEmpty property="gpOrg">
+		    AND EXISTS (SELECT 'X' FROM uwo_dep_mtr dep WHERE dep.udm_dep_cod = uar_opr_cod AND udm_dep_3lv = #gpOrg#)
+		</isNotEmpty>
+		<isNotEmpty property="dept">
+			AND UAG_DEP_COD = #dept#
+		</isNotEmpty>
+		<isNotEmpty property="assCat">
+			AND UAR_ASS_CAT = #assCat#
+		</isNotEmpty>
+		<isNotEmpty property="assGbn">
+			AND UAR_ASS_GBN = #assGbn#
+		</isNotEmpty>
+		<isNotEmpty property="assLvl">
+		    AND UAR_ASS_LVL = #assLvl#
+		</isNotEmpty>
+		<isNotEmpty property="worker">
+			AND UAG_MNG_ID = #worker#
+		</isNotEmpty>
+ 		group by A.UAR_GRP_COD,
+      		 B.UAG_ASS_CAT,
+      		 B.UAG_SVR_NAM,
+      		 B.UAG_SUB_NAM,
+      		 B.UAG_DEP_NAM,
+      		 B.UAG_CAT_NAM,
+     		 B.UAG_DEP_COD,
+     		 B.UAG_GRP_COD,
+     		 B.UAG_GRP_NAM,
+      		 B.UAG_GRP_DES,
+      		 B.UAG_GRP_LVL,
+      		 B.UAG_USE_YN,
+     		 B.UAG_UPT_ID,
+     		 B.UAG_UPT_MDH,
+     		 B.UAG_GRP_KEY,
+     		 B.uag_adm_id,
+     		 B.uag_adm_nam
+	</select>
+
+	<!-- 그룹 소속 자산 리스트 -->
+	<!-- <select id="QR_ASSET002_B" parameterClass="searchVO" resultClass="egovMap">
+		SELECT UAR_ASS_KEY
+		       , F_GET_COMMON_NAME(UAR_DEP_COD,'DEPT') DEP_NAM
+		       , UAR_GRP_KEY
+		       , UAG_GRP_NAM
+		       , UAC_CAT_NAM
+		       , UAR_ASS_COD
+		       , UAR_EQP_NAM
+		  FROM UWO_ASS_MTR, UWO_ASS_GRP,UWO_ASS_CAT
+		 WHERE UAR_GRP_KEY = UAG_GRP_KEY
+			AND UAR_ASS_CAT = UAC_CAT_KEY
+			AND UAR_USE_YN = 'Y'
+			AND UAG_GRP_KEY = #code#
+	</select> -->
+
+	<!-- 그룹 소속 자산 리스트 -->
+	<select id="QR_ASSET002_B" parameterClass="searchVO" resultClass="egovMap">
+		SELECT UAR_ASS_KEY
+		       , UAR_GRP_COD
+		       , UAR_GRP_NAM
+		       , UAR_ASS_CAT
+		       , B.UAG_CAT_NAM AS UAR_CAT_NAM
+		       , UAR_SVR_COD
+               , UAR_SVR_NAM
+               , UAR_SUB_COD
+               , UAR_SUB_NAM
+		       , UAR_DEP_COD
+		       , UAR_DEP_NAM
+		       , UAR_ASS_GBN
+               , UAR_ASS_NAM
+               , UAR_EQP_NAM
+               , UAR_DTL_EXP
+               , UAR_ADM_POS
+               , UAR_ASS_LVL
+		  FROM UWO_ASS_MTR A, UWO_ASS_GRP B,UWO_ASS_CAT C
+		 WHERE A.UAR_GRP_COD = B.UAG_GRP_COD
+		 	AND A.UAR_BCY_COD = #manCyl#
+			AND A.UAR_ASS_CAT = C.UAC_CAT_KEY
+			AND A.UAR_USE_YN = 'Y'
+			AND B.UAG_GRP_COD = #code#
+	</select>
+
+
+	<!-- 그룹 미소속 자산 리스트 -->
+	<select id="QR_ASSET002_C" parameterClass="searchVO" resultClass="egovMap">
+		SELECT UAR_ASS_KEY
+		       , F_GET_COMMON_NAME(UAR_DEP_COD,'DEPT') DEP_NAM
+		       , UAR_GRP_KEY
+		       , UAG_GRP_NAM
+		       , UAC_CAT_NAM
+		       , UAR_ASS_COD
+		       , UAR_EQP_NAM
+		  FROM UWO_ASS_MTR, UWO_ASS_GRP ,UWO_ASS_CAT
+		 WHERE UAR_GRP_KEY = UAG_GRP_KEY(+)
+		 	AND UAR_ASS_CAT = UAC_CAT_KEY
+		   AND UAR_USE_YN = 'Y'
+		   AND UAC_CAT_KEY = #catKey#
+		   AND UAR_GRP_KEY IS NULL
+	</select>
+
+	<!-- 자산그룹 팝업화면 -->
+	<!-- <select id="QR_ASSET002_D" parameterClass="String" resultClass="riskVO">
+		SELECT UAG_GRP_KEY
+		       , UAG_CAT_KEY
+		       , UAG_GRP_COD
+		       , UAG_GRP_NAM
+		       , UAG_USE_YN
+		       , UAG_SVC_COD
+		       , UAG_DEP_COD
+		       , UAG_GRP_DES
+		       , UAG_GRP_LVL
+		       , UAG_MNG_ID
+		       , (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_KEY = UAG_MNG_ID) UAG_MNG_NAM
+		       , DECODE(URM_DEL_YN, 'Y', '', URM_RSK_KEY) URM_RSK_KEY
+		       , DECODE(URM_DEL_YN, NULL, 'Y', 'N') URM_DEL_YN
+		       , DECODE(URM_DEL_YN, 'Y', '', URM_GRP_CON) URM_GRP_CON
+		       , DECODE(URM_DEL_YN, 'Y', '', URM_GRP_ITG) URM_GRP_ITG
+		       , DECODE(URM_DEL_YN, 'Y', '', URM_GRP_AVT) URM_GRP_AVT
+		       , DECODE(URM_DEL_YN, 'Y', '', URM_GRP_TOT) URM_GRP_TOT
+		       , DECODE(URM_DEL_YN, 'Y', '', URM_GRP_LVL) URM_GRP_LVL
+		  FROM UWO_ASS_GRP
+		  	   ,(SELECT *
+				   FROM UWO_RSK_MTR
+				  WHERE (URM_RSK_KEY, URM_GRP_KEY) = (SELECT MAX(URM_RSK_KEY), URM_GRP_KEY
+				                                       FROM UWO_RSK_MTR
+				                                      WHERE URM_GRP_KEY = #groupKey#
+				                                        AND URM_DEL_YN = 'N'
+				                                      GROUP BY URM_GRP_KEY)
+				)RSK
+		 WHERE UAG_GRP_KEY = RSK.URM_GRP_KEY(+)
+		   AND UAG_GRP_KEY = #groupKey#
+	</select> -->
+
+	<select id="QR_ASSET002_D" parameterClass="String" resultClass="riskVO">
+		SELECT UAG_GRP_KEY
+		       , UAG_ASS_CAT
+		       , (select uac_cat_nam from UWO_ASS_CAT where UAC_CAT_KEY = UAG_ASS_CAT) AS UAG_CAT_NAM
+		       , UAG_GRP_COD
+		       , UAG_GRP_NAM
+		       , UAG_USE_YN
+		       , UAG_SVR_COD
+		       , UAG_SVR_NAM
+		       , UAG_SUB_COD
+		       , UAG_SUB_NAM
+		       , UAG_DEP_COD
+		       , UAG_DEP_NAM
+		       , UAG_GRP_DES
+		       , UAG_GRP_LVL
+		       <!-- , UAG_ADM_ID -->
+		       , (SELECT UUM_USR_KEY FROM UWO_USR_MTR WHERE UUM_USR_ID = UAG_ADM_ID) UAG_ADM_ID
+		       , (SELECT UUM_USR_NAM FROM UWO_USR_MTR WHERE UUM_USR_ID = UAG_ADM_ID) UAG_ADM_NAM
+		       , DECODE(URM_DEL_YN, 'Y', '', URM_RSK_KEY) URM_RSK_KEY
+		       , DECODE(URM_DEL_YN, NULL, 'Y', 'N') URM_DEL_YN
+		  FROM UWO_ASS_GRP
+		  	   ,(SELECT *
+				   FROM UWO_RSK_MTR
+				  WHERE (URM_RSK_KEY, URM_GRP_KEY) = (SELECT MAX(URM_RSK_KEY), URM_GRP_KEY
+				                                       FROM UWO_RSK_MTR
+				                                      WHERE URM_GRP_KEY = #groupKey#
+				                                        AND URM_DEL_YN = 'N'
+				                                      GROUP BY URM_GRP_KEY)
+				)RSK
+		 WHERE UAG_GRP_KEY = RSK.URM_GRP_KEY(+)
+		   AND UAG_GRP_KEY = #groupKey#
+	</select>
+
+	<!-- 자산그룹 체크 -->
+	<select id="QR_ASSET001_GROUP_COUNT" parameterClass="String" resultClass="int">
+		SELECT COUNT(*)
+		FROM UWO_ASS_GRP
+		WHERE UAG_GRP_COD = #groupKey#
+	</select>
+
+	<!-- 자산그룹 등록 -->
+	<insert id="QR_ASSET002_E" parameterClass="riskVO">
+		INSERT INTO UWO_ASS_GRP
+		(
+		  UAG_GRP_KEY
+		  , UAG_BCY_COD
+		  , UAG_SVR_COD
+		  , UAG_SVR_NAM
+		  , UAG_DEP_COD
+		  , UAG_DEP_NAM
+		  , UAG_ADM_ID
+		  , UAG_ADM_NAM
+		  , UAG_ASS_CAT
+		  , UAG_CAT_NAM
+		  , UAG_GRP_COD
+		  , UAG_GRP_NAM
+		  , UAG_GRP_DES
+		  , UAG_GRP_LVL
+		  , UAG_USE_YN
+		  , UAG_RGT_ID
+		  , UAG_RGT_MDH
+		  , UAG_UPT_ID
+		  , UAG_UPT_MDH
+		)
+		VALUES
+		(
+		  SEQ_UAG_GRP_KEY.NEXTVAL
+		  , #uag_bcy_cod#
+		  , #uag_svr_cod#
+		  , #uag_svr_nam#
+		  , #uag_dep_cod#
+		  , (select UDM_DEP_NAM from UWO_DEP_MTR where UDM_DEP_COD = #uag_dep_cod#)
+		  , #uag_adm_id#
+		  , (select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uag_adm_id#)
+		  , (select UAC_CAT_KEY from UWO_ASS_CAT where uac_cat_cod = #uag_ass_cat#)
+		  , (select UAC_CAT_NAM from UWO_ASS_CAT where uac_cat_cod = #uag_ass_cat#)
+		  , #uag_grp_cod#
+		  , #uag_grp_nam#
+		  , #uag_grp_des#
+		  , #uag_grp_lvl#
+		  , 'Y'
+		  , #uag_rgt_id#
+		  , SYSDATE
+		  , #uag_upt_id#
+		  , SYSDATE
+		)
+	</insert>
+
+	<insert id="QR_ASSET001_H" parameterClass="Map">
+		INSERT INTO UWO_ASS_GRP
+		(
+		  UAG_GRP_KEY
+		  , UAG_BCY_COD
+		  , UAG_SVR_COD
+		  , UAG_SVR_NAM
+		  , UAG_SUB_COD
+		  , UAG_SUB_NAM
+		  , UAG_DEP_COD
+		  , UAG_DEP_NAM
+		  , UAG_ADM_ID
+		  , UAG_ADM_NAM
+		  , UAG_ASS_CAT
+		  , UAG_CAT_NAM
+		  , UAG_GRP_COD
+		  , UAG_GRP_NAM
+		  , UAG_GRP_DES
+		  , UAG_GRP_LVL
+		  , UAG_USE_YN
+		  , UAG_RGT_ID
+		  , UAG_RGT_MDH
+		  , UAG_UPT_ID
+		  , UAG_UPT_MDH
+		)
+		VALUES
+		(
+		  #uag_grp_key#
+		  , #uag_bcy_cod#
+		  , (SELECT svc_cod FROM uwo_svc_sub WHERE svc_sub_cod = #uarSubCod#)
+		  , (SELECT svc_nam FROM uwo_svc_mtr c1 INNER JOIN uwo_svc_sub c2 ON c1.svc_cod = c2.svc_cod WHERE c2.svc_sub_cod = #uarSubCod#)
+		  , #uag_sub_cod#
+		  , #uag_sub_nam#
+		  , #uag_dep_cod#
+		  , (select UDM_DEP_NAM from UWO_DEP_MTR where UDM_DEP_COD = #uag_dep_cod#)
+		  , #uag_adm_id#
+		  , (select UUM_USR_NAM from UWO_USR_MTR where UUM_USR_ID = #uag_adm_id#)
+		  , (select UAC_CAT_KEY from UWO_ASS_CAT where uac_cat_cod = #uag_ass_cat#)
+		  , (select UAC_CAT_NAM from UWO_ASS_CAT where uac_cat_cod = #uag_ass_cat#)
+		  , #uag_grp_cod#
+		  , #uag_grp_nam#
+		  , #uag_grp_des#
+		  , #uag_grp_lvl#
+		  , 'Y'
+		  , #uag_rgt_id#
+		  , SYSDATE
+		  , #uag_upt_id#
+		  , SYSDATE
+		)
+	</insert>
+
+	<!-- 자산그룹 수정 -->
+	<update id="QR_ASSET002_F" parameterClass="riskVO">
+		UPDATE UWO_ASS_GRP
+		   SET UAG_USE_YN = #uag_use_yn#
+		       , UAG_UPT_ID = #uag_upt_id#
+		       , UAG_UPT_MDH = SYSDATE
+		       , UAG_GRP_DES = #uag_grp_des#
+		       , UAG_ADM_ID = (select UUM_USR_ID from UWO_USR_MTR where UUM_USR_KEY = #uag_adm_id#)
+		 WHERE UAG_GRP_KEY = #uag_grp_key#
+	</update>
+
+	<!-- 자산테이블에 그룹 수정 -->
+	<!-- <update id="QR_ASSET002_G" parameterClass="searchVO">
+		UPDATE UWO_ASS_MTR
+		   SET UAR_GRP_KEY = #code#
+				, UAR_UPT_ID = #worker#
+				, UAR_UPT_MDH = SYSDATE
+		 WHERE UAR_ASS_KEY = #searchKeyword#
+	</update> -->
+
+	<!-- 위험마스터 테이블에 그룹 등록 -->
+	<insert id="QR_ASSET002_H" parameterClass="riskVO">
+		INSERT INTO UWO_RSK_MTR
+		(
+			URM_RSK_KEY
+			, URM_GRP_KEY
+			, URM_GRP_CON
+			, URM_GRP_ITG
+			, URM_GRP_AVT
+			, URM_GRP_TOT
+			, URM_GRP_LVL
+			, URM_DEL_YN
+			, URM_RGT_ID
+			, URM_RGT_MDH
+		)
+		VALUES
+		(
+			(SELECT NVL(MAX(URM_RSK_KEY), 0)+1 FROM UWO_RSK_MTR)
+			, #urm_grp_key#
+			, #urm_grp_con#
+			, #urm_grp_itg#
+			, #urm_grp_avt#
+			, #urm_grp_tot#
+			, #urm_grp_lvl#
+			, 'N'
+			, #urm_rgt_id#
+			, SYSDATE
+		)
+	</insert>
+
+	<!-- 위험마스터 테이블에 그룹 등록 -->
+	<update id="QR_ASSET002_I"  parameterClass="riskVO">
+		UPDATE UWO_RSK_MTR
+		   SET URM_GRP_CON = #urm_grp_con#
+		       , URM_GRP_ITG = #urm_grp_itg#
+		       , URM_GRP_AVT = #urm_grp_avt#
+		       , URM_GRP_TOT = #urm_grp_tot#
+		       , URM_GRP_LVL =  #urm_grp_lvl#
+		       , URM_DEL_YN =  #urm_del_yn#
+		       , URM_UPT_ID = #urm_upt_id#
+		       , URM_UPT_MDH = SYSDATE
+		WHERE URM_RSK_KEY = #urm_rsk_key#
+	</update>
+
+	<select id="QR_ASSET006_A" parameterClass="searchVO" resultClass="egovMap">
+		SELECT
+			UAO_ASS_KEY
+			,UAO_SVR_COD
+			,UAC_CAT_NAM
+			,F_GET_COMMON_NAME(UAO_SVR_COD, 'SERVICE') AS UAO_SVR_NAM
+			,UAO_DEP_COD
+			,F_GET_COMMON_NAME(UAO_DEP_COD, 'DEPT') AS UAO_DEP_NAM
+			,UAO_BCY_COD
+			,UAC_CAT_KEY
+			,UAC_CAT_NAM
+			,UAO_ASS_GBN
+			,UAO_ASS_SEQ
+			,UAO_GRP_KEY
+			,UAG_GRP_COD
+			,UAO_MNG_COD
+			,UAO_ASS_COD
+			,UAO_AOS_COD
+			,F_GET_COMMON_NAME(UAO_AOS_COD, 'CAT_SV') AS UAO_AOS_NAM
+			,UAO_EQP_NAM
+			,UAO_MAK_NAM
+			,UAO_DTL_NUM
+			,UAO_DTL_NAM
+			,UAO_DEP_NAM
+			,UAO_DTL_EXP
+			,F_GET_USR_NAME(UAO_OWN_NAM) AS UAO_OWN_NAM
+			,F_GET_USR_NAME(UAO_ADM_NAM) AS UAO_ADM_NAM
+			,UAO_ADM_POS
+			,F_GET_USR_NAME(UAO_USE_NAM) AS UAO_USE_NAM
+			,UAO_USE_YN
+			,UAO_APP_CON
+			,UAO_APP_ITG
+			,UAO_APP_AVT
+			,UAO_APP_TOT
+			,UAO_ASS_LVL
+			,DECODE(UAO_SMP_YN, 'Y', '대상', '비대상') AS UAO_SMP_YN
+			,UAO_ETC
+			,DECODE(UAO_AUD_YN, 'Y', '대상', '비대상') AS UAO_AUD_YN
+			,UAO_VAL_CL0
+			,UAO_VAL_CL1
+			,UAO_VAL_CL2
+			,UAO_VAL_CL3
+			,UAO_VAL_CL4
+			,UAO_VAL_CL5
+			,UAO_VAL_CL6
+			,UAO_VAL_CL7
+			,UAO_VAL_CL8
+			,UAO_VAL_CL9
+			,UUM_USR_NAM AS UAO_RGT_ID
+			,TO_CHAR(UAO_RGT_MDH, 'YYYY.MM.DD') AS UAO_RGT_MDH
+		  FROM
+		  	UWO_ASS_LOG,
+		  	UWO_ASS_GRP,
+		  	UWO_ASS_CAT,
+		  	UWO_USR_MTR
+		 WHERE
+			UAO_ASS_CAT = UAC_CAT_KEY
+			AND UAO_RGT_ID = UUM_USR_KEY
+		 	AND UAO_ASS_KEY = UAG_GRP_KEY(+)
+		<isNotEmpty property="service">
+			AND UAO_SVR_COD = #service#
+		 </isNotEmpty>
+		 <isNotEmpty property="dept">
+			AND UAO_DEP_COD = #dept#
+		 </isNotEmpty>
+		  <isNotEmpty property="worker">
+			AND UAO_OWN_NAM = #worker#
+		 </isNotEmpty>
+		 <isNotEmpty property="assGbn">
+			AND UAO_ASS_GBN = #assGbn#
+		 </isNotEmpty>
+		 <isNotEmpty property="rgtNam">
+			AND UUM_USR_NAM LIKE '%' || #rgtNam# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="assGbn">
+			AND UAO_ASS_GBN = #assGbn#
+		 </isNotEmpty>
+		 <isNotEmpty property="aosCod">
+			AND UAO_AOS_COD = #aosCod#
+		 </isNotEmpty>
+		 <isNotEmpty property="assCod">
+			AND UAO_ASS_COD LIKE '%'|| #assCod# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="assNam">
+			AND UAO_EQP_NAM LIKE '%'|| #assNam# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="assLvl">
+			AND UAO_ASS_LVL LIKE '%'|| #assLvl# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="groupName">
+		    AND UAG_GRP_NAM LIKE '%'|| #groupName# || '%'
+		 </isNotEmpty>
+		  <isNotEmpty property="strDat">
+			<![CDATA[AND UAO_RGT_MDH >= TO_DATE(#strDat#, 'YYYY-MM-DD')]]>
+		 </isNotEmpty>
+		 <isNotEmpty property="endDat">
+		 	<![CDATA[AND UAO_RGT_MDH <= TO_DATE(#endDat#, 'YYYY-MM-DD')]]>
+		 </isNotEmpty>
+	</select>
+
+	<select id="QR_ASSET006_B" parameterClass="searchVO" resultClass="int">
+		SELECT COUNT(*)
+		   FROM
+		  	UWO_ASS_LOG,
+		  	UWO_ASS_GRP,
+		  	UWO_ASS_CAT,
+		  	UWO_USR_MTR
+		 WHERE
+			UAO_ASS_CAT = UAC_CAT_KEY
+			AND UAO_RGT_ID = UUM_USR_KEY
+		 	AND UAO_ASS_KEY = UAG_GRP_KEY(+)
+		<isNotEmpty property="service">
+			AND UAO_SVR_COD = #service#
+		 </isNotEmpty>
+		 <isNotEmpty property="dept">
+			AND UAO_DEP_COD = #dept#
+		 </isNotEmpty>
+		  <isNotEmpty property="worker">
+			AND UAO_USE_NAM = #worker#
+		 </isNotEmpty>
+		 <isNotEmpty property="assGbn">
+			AND UAO_ASS_GBN = #assGbn#
+		 </isNotEmpty>
+		 <isNotEmpty property="rgtNam">
+			AND UUM_USR_NAM LIKE '%' || #rgtNam# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="rgtMdh">
+			AND TO_CHAR(UAO_RGT_MDH, 'YYYY-MM-DD') = #rgtMdh#
+		 </isNotEmpty>
+		 <isNotEmpty property="assGbn">
+			AND UAO_ASS_GBN = #assGbn#
+		 </isNotEmpty>
+		 <isNotEmpty property="aosCod">
+			AND UAO_AOS_COD = #aosCod#
+		 </isNotEmpty>
+		 <isNotEmpty property="assCod">
+			AND UAO_ASS_COD LIKE '%'|| #assCod# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="assNam">
+			AND UAO_EQP_NAM LIKE '%'|| #assNam# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="assLvl">
+			AND UAO_ASS_LVL LIKE '%'|| #assLvl# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="groupName">
+		    AND UAG_GRP_NAM LIKE '%'|| #groupName# || '%'
+		 </isNotEmpty>
+	</select>
+
+	<select id="QR_ASSET008_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			UAC_CAT_KEY
+			,UAC_CAT_NAM
+			,UAC_CAT_DES
+			,UAC_CAT_COD
+			,UAC_VAL_CL0
+			,UAC_VAL_CL1
+			,UAC_VAL_CL2
+			,UAC_VAL_CL3
+			,UAC_VAL_CL4
+			,UAC_VAL_CL5
+			,UAC_VAL_CL6
+			,UAC_VAL_CL7
+			,UAC_VAL_CL8
+			,UAC_VAL_CL9
+			,UAC_USE_YN
+			<!-- ,F_GET_USR_NAME(UAC_RGT_ID) UAC_RGT_NAM
+			,TO_CHAR(UAC_UPT_MDH, 'YYYY.MM.DD') UAC_UPT_MDH
+			,F_GET_USR_NAME(UAC_UPT_ID) UAC_UPT_NAM
+			,TO_CHAR(UAC_RGT_MDH, 'YYYY.MM.DD') UAC_RGT_MDH -->
+			, F_GET_COMMON_NAME(UAC_CAT_TYP, 'RISKTYPE') AS UAC_CAT_TYP
+		FROM
+			UWO_ASS_CAT
+		WHERE 1 = 1
+		<isNotEmpty property="searchCondition">
+			AND UAC_CAT_NAM LIKE '%' || #searchCondition# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="uacUseYn">
+			AND UAC_USE_YN = #uacUseYn#
+		</isNotEmpty>
+		<isNotEmpty property="uacCatTyp">
+			AND UAC_CAT_TYP = #uacCatTyp#
+		</isNotEmpty>
+		<isNotEmpty property="uacCatKey">
+			AND UAC_CAT_KEY = #uacCatKey#
+		</isNotEmpty>
+		ORDER BY UAC_CAT_KEY
+	</select>
+
+	<select id="QR_ASSET008_INFO" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			UAC_CAT_KEY
+			,UAC_CAT_NAM
+			,UAC_CAT_DES
+			,UAC_CAT_COD
+			,UAC_VAL_CL0
+			,UAC_VAL_CL1
+			,UAC_VAL_CL2
+			,UAC_VAL_CL3
+			,UAC_VAL_CL4
+			,UAC_VAL_CL5
+			,UAC_VAL_CL6
+			,UAC_VAL_CL7
+			,UAC_VAL_CL8
+			,UAC_VAL_CL9
+			,UAC_USE_YN
+			,UAC_CAT_TYP
+		FROM
+			UWO_ASS_CAT
+		WHERE UAC_CAT_KEY = #uacCatKey#
+	</select>
+
+	<insert id="QR_ASSET008_INSERT" parameterClass="Map">
+		INSERT
+			INTO UWO_ASS_CAT (
+				UAC_CAT_KEY
+				,UAC_CAT_NAM
+				,UAC_CAT_DES
+				,UAC_CAT_COD
+				,UAC_VAL_CL0
+				,UAC_VAL_CL1
+				,UAC_VAL_CL2
+				,UAC_VAL_CL3
+				,UAC_VAL_CL4
+				,UAC_VAL_CL5
+				,UAC_VAL_CL6
+				,UAC_VAL_CL7
+				,UAC_VAL_CL8
+				,UAC_VAL_CL9
+				,UAC_USE_YN
+				,UAC_RGT_ID
+				,UAC_UPT_MDH
+				,UAC_UPT_ID
+				,UAC_RGT_MDH
+			) VALUES (
+				SEQ_UWO_ASS_CAT.NEXTVAL
+				,#uacCatNam#
+				,#uacCatDes#
+				,#uacCatCod#
+				,#uacValCl0#
+				,#uacValCl1#
+				,#uacValCl2#
+				,#uacValCl3#
+				,#uacValCl4#
+				,#uacValCl5#
+				,#uacValCl6#
+				,#uacValCl7#
+				,#uacValCl8#
+				,#uacValCl9#
+				,#uacUseYn#
+				,#uacRgtId#
+				,SYSDATE
+				,#uacRgtId#
+				,SYSDATE
+			)
+	</insert>
+
+	<update id="QR_ASSET008_UPDATE" parameterClass="Map">
+		UPDATE UWO_ASS_CAT
+		   SET UAC_CAT_NAM = #uacCatNam#
+		   		,UAC_CAT_COD = #uacCatCod#
+				,UAC_CAT_DES = #uacCatDes#
+				,UAC_VAL_CL0 = #uacValCl0#
+				,UAC_VAL_CL1 = #uacValCl1#
+				,UAC_VAL_CL2 = #uacValCl2#
+				,UAC_VAL_CL3 = #uacValCl3#
+				,UAC_VAL_CL4 = #uacValCl4#
+				,UAC_VAL_CL5 = #uacValCl5#
+				,UAC_VAL_CL6 = #uacValCl6#
+				,UAC_VAL_CL7 = #uacValCl7#
+				,UAC_VAL_CL8 = #uacValCl8#
+				,UAC_VAL_CL9 = #uacValCl9#
+				,UAC_USE_YN = #uacUseYn#
+				,UAC_UPT_MDH = SYSDATE
+				,UAC_UPT_ID = #uacUptId#
+		 WHERE UAC_CAT_KEY = #uacCatKey#
+	</update>
+
+	<!-- <select id="QR_ASSET002_REPORT" parameterClass="searchVO" resultClass="egovMap">
+		SELECT UAR_ASS_KEY
+		       , F_GET_COMMON_NAME(UAR_DEP_COD,'DEPT') DEP_NAM
+		       , UAR_GRP_KEY
+		       , UAG_GRP_NAM
+		       , UAC_CAT_COD
+		       , UAC_CAT_NAM
+		       , UAR_ASS_COD
+		       , UAR_EQP_NAM
+		       , UAG_SVC_COD
+		       , F_GET_COMMON_NAME(UAG_SVC_COD,'SERVICE') SERVICE_NAM
+		       , UAR_AOS_COD
+		       , F_GET_COMMON_NAME(UAR_AOS_COD, 'CAT_SV') UAR_AOS_NAM
+		       , UAR_MAK_NAM
+		       , UAR_ASS_LVL
+		       , UAR_VAL_CL2
+		  FROM UWO_ASS_MTR, UWO_ASS_GRP,UWO_ASS_CAT
+		 WHERE UAR_GRP_KEY = UAG_GRP_KEY
+			AND UAR_ASS_CAT = UAC_CAT_KEY
+			AND UAR_USE_YN = 'Y'
+			AND UAG_GRP_KEY = #code#
+	</select> -->
+
+	<select id="QR_ASSET002_REPORT" parameterClass="searchVO" resultClass="egovMap">
+		SELECT UAR_ASS_KEY
+		       , UAR_OPR_NAM AS DEP_NAM
+		       , UAG_GRP_KEY
+		       , UAG_GRP_NAM
+		       , UAC_CAT_COD
+		       , UAC_CAT_NAM
+		       , UAR_ASS_COD
+		       , UAR_EQP_NAM
+		       , UAG_SUB_COD
+		       , UAR_ASS_LVL
+		       , UAR_VAL_CL2
+		  FROM UWO_ASS_MTR UAR
+    	 INNER JOIN UWO_ASS_GRP UAG ON UAR.UAR_GRP_COD = UAG.UAG_GRP_COD
+   	  	 INNER JOIN UWO_ASS_CAT UAC ON UAR.UAR_ASS_CAT = UAC.UAC_CAT_KEY
+		 WHERE UAR_USE_YN = 'Y'
+		   AND UAG_GRP_KEY = #code#
+	</select>
+
+	<select id="QR_ASSET001_RSK_COD" parameterClass="String" resultClass="String">
+		select UCC_SND_COD as UAR_RSK_GRP
+			from UWO_COM_COD
+			where
+				ucc_fir_cod = 'VLBTYPE'
+				AND UCC_SND_COD = (select DISTINCT UCC_ETC from UWO_COM_COD where UCC_SND_COD = #uarRskGrp#)
+	</select>
+
+	<select id="QR_ASSET001_RSK_COD_EXT" parameterClass="String" resultClass="String">
+		select UCC_SND_COD as UAR_RSK_GRP
+			from UWO_COM_COD
+			where
+				ucc_fir_cod = 'VLBTYPE'
+				AND UCC_SND_COD = (select DISTINCT UCC_ETC from UWO_COM_COD where UCC_FIR_COD = 'CAT_SV' AND UCC_SND_NAM = UPPER(#uarRskGrp#))
+	</select>
+
+	<select id="QR_ASSET001_RSK_NAM" parameterClass="String" resultClass="String">
+		select UCC_SND_NAM as UAR_RSK_NAM
+			from UWO_COM_COD
+			where
+				ucc_fir_cod = 'VLBTYPE'
+				AND UCC_SND_COD = (select DISTINCT UCC_ETC from UWO_COM_COD where UCC_SND_COD = #uarRskGrp#)
+	</select>
+
+	<select id="QR_ASSET001_RSK_NAM_EXT" parameterClass="String" resultClass="String">
+		select UCC_SND_NAM as UAR_RSK_NAM
+			from UWO_COM_COD
+			where
+				ucc_fir_cod = 'VLBTYPE'
+				AND UCC_SND_COD = (select DISTINCT UCC_ETC from UWO_COM_COD where UCC_FIR_COD = 'CAT_SV' AND UCC_SND_NAM = UPPER(#uarRskGrp#))
+	</select>
+
+	<select id="QR_ASSET001_RSK_CODE_INFO" parameterClass="String" resultClass="EgovMap">
+		select
+			UCC_SND_COD as UAR_RSK_GRP,
+			UCC_SND_NAM as UAR_RSK_NAM
+		from UWO_COM_COD
+		where
+			ucc_fir_cod = 'VLBTYPE'
+			AND UCC_SND_COD = (select DISTINCT UCC_ETC from UWO_COM_COD where UCC_SND_COD = #uarRskGrp#)
+	</select>
+
+	<select id="QR_ASSET001_RSK_OS_INFO" parameterClass="String" resultClass="EgovMap">
+		select
+			UCC_SND_COD as UAR_RSK_GRP,
+			UCC_SND_NAM as UAR_RSK_NAM
+		from UWO_COM_COD
+		where
+			ucc_fir_cod = 'VLBTYPE'
+			AND UCC_SND_COD = (select DISTINCT UCC_ETC from UWO_COM_COD where UCC_FIR_COD = 'CAT_SV' AND UCC_SND_NAM = UPPER(#uarRskGrp#))
+	</select>
+
+	<delete id="deleteAssetFinally" parameterClass="Map">
+		DELETE FROM uwo_ass_mtr
+		WHERE uar_bcy_cod = #uarBcyCod#
+	</delete>
+
+	<!-- 2017-06-23, 검색조건에서 checkbox 로 반영되도록 수정 -->
+	<insert id="assetAddFinal" parameterClass="Map">
+		MERGE INTO uwo_ass_mtr uar
+		USING
+		(SELECT
+		  u.uar_ass_cod,
+		  u.uar_grp_cod,
+		  u.uar_rsk_nam,
+		  u.uar_sub_nam,
+		  u.uar_sub_cod,
+		  u.uar_rsk_grp,
+		  u.uar_dep_lv2,
+		  u.uar_opr_lv1,
+		  u.uar_opr_lv2,
+		  u.uar_grp_nam,
+		  u.uar_dep_lv1,
+		  u.uar_ass_nam,
+		  u.uar_svr_nam,
+		  u.uar_use_nam,
+		  u.uar_rgt_id,
+		  u.uar_rgt_mdh,
+		  u.uar_upt_id,
+		  u.uar_upt_mdh,
+		  u.uar_val_cl9,
+		  u.uar_val_cl8,
+		  u.uar_val_cl7,
+		  u.uar_val_cl6,
+		  u.uar_val_cl5,
+		  u.uar_val_cl4,
+		  u.uar_val_cl3,
+		  u.uar_val_cl2,
+		  u.uar_val_cl1,
+		  u.uar_val_cl0,
+		  u.uar_use_yn,
+		  u.uar_prv_yn,
+		  u.uar_inf_yn,
+		  u.uar_smp_yn,
+		  u.uar_aud_yn,
+		  u.uar_ass_lvl,
+		  u.uar_app_tot,
+		  u.uar_app_avt,
+		  u.uar_app_itg,
+		  u.uar_app_con,
+		  u.uar_adm_pos,
+		  u.uar_dtl_exp,
+		  u.uar_ass_gbn,
+		  u.uar_eqp_nam,
+		  u.uar_pic_nam,
+		  u.uar_pic_id,
+		  u.uar_use_id,
+		  u.uar_opr_nam,
+		  u.uar_opr_cod,
+		  u.uar_adm_nam,
+		  u.uar_adm_id,
+		  u.uar_own_id,
+		  u.uar_own_nam,
+		  u.uar_dep_nam,
+		  u.uar_svr_etc,
+		  u.uar_dep_cod,
+		  u.uar_svr_cod,
+		  u.uar_ass_cat,
+		  u.uar_ip,
+		  u.uar_host,
+		  u.uar_os
+      FROM uwo_ass_mtr u
+      WHERE
+		<!-- <include refid="QR_ASSET001_WHERE" /> -->
+		<iterate prepend="uar_ass_key IN " property="assKeys" open="(" close=")" conjunction=",">
+        	#assKeys[]#
+		</iterate>
+	) u ON (uar.uar_ass_cod = u.uar_ass_cod AND uar.uar_bcy_cod = #manCyl#)
+    WHEN MATCHED THEN
+        UPDATE SET
+		  uar_grp_cod = u.uar_grp_cod,
+		  uar_rsk_nam = u.uar_rsk_nam,
+		  uar_sub_nam = u.uar_sub_nam,
+		  uar_sub_cod = u.uar_sub_cod,
+		  uar_rsk_grp = u.uar_rsk_grp,
+		  uar_dep_lv2 = u.uar_dep_lv2,
+		  uar_opr_lv1 = u.uar_opr_lv1,
+		  uar_opr_lv2 = u.uar_opr_lv2,
+		  uar_grp_nam = u.uar_grp_nam,
+		  uar_dep_lv1 = u.uar_dep_lv1,
+		  uar_ass_nam = u.uar_ass_nam,
+		  uar_svr_nam = u.uar_svr_nam,
+		  uar_use_nam = u.uar_use_nam,
+		  uar_rgt_id = u.uar_rgt_id,
+		  uar_rgt_mdh = u.uar_rgt_mdh,
+		  uar_upt_id = #rgtId#,
+ 		  uar_upt_mdh = SYSDATE,
+		  uar_val_cl9 = u.uar_val_cl9,
+		  uar_val_cl8 = u.uar_val_cl8,
+		  uar_val_cl7 = u.uar_val_cl7,
+		  uar_val_cl6 = u.uar_val_cl6,
+		  uar_val_cl5 = u.uar_val_cl5,
+		  uar_val_cl4 = u.uar_val_cl4,
+		  uar_val_cl3 = u.uar_val_cl3,
+		  uar_val_cl2 = u.uar_val_cl2,
+		  uar_val_cl1 = u.uar_val_cl1,
+		  uar_val_cl0 = u.uar_val_cl0,
+		  uar_use_yn = u.uar_use_yn,
+		  uar_prv_yn = u.uar_prv_yn,
+		  uar_inf_yn = u.uar_inf_yn,
+		  uar_smp_yn = u.uar_smp_yn,
+		  uar_aud_yn = 'Y',
+		  uar_ass_lvl = u.uar_ass_lvl,
+		  uar_app_tot = u.uar_app_tot,
+		  uar_app_avt = u.uar_app_avt,
+		  uar_app_itg = u.uar_app_itg,
+		  uar_app_con = u.uar_app_con,
+		  uar_adm_pos = u.uar_adm_pos,
+		  uar_dtl_exp = u.uar_dtl_exp,
+		  uar_ass_gbn = u.uar_ass_gbn,
+		  uar_eqp_nam = u.uar_eqp_nam,
+		  uar_pic_nam = u.uar_pic_nam,
+		  uar_pic_id = u.uar_pic_id,
+		  uar_use_id = u.uar_use_id,
+		  uar_opr_nam = u.uar_opr_nam,
+		  uar_opr_cod = u.uar_opr_cod,
+		  uar_adm_nam = u.uar_adm_nam,
+		  uar_adm_id = u.uar_adm_id,
+		  uar_own_id = u.uar_own_id,
+		  uar_own_nam = u.uar_own_nam,
+		  uar_dep_nam = u.uar_dep_nam,
+		  uar_svr_etc = u.uar_svr_etc,
+		  uar_dep_cod = u.uar_dep_cod,
+		  uar_svr_cod = u.uar_svr_cod,
+		  uar_ass_cat = u.uar_ass_cat,
+		  uar_ip = u.uar_ip,
+		  uar_host = u.uar_host,
+		  uar_os = u.uar_os
+    WHEN NOT MATCHED THEN
+        INSERT
+		(
+		  uar_ass_key,
+		  uar_bcy_cod,
+		  uar_ass_cod,
+		  uar_grp_cod,
+		  uar_rsk_nam,
+		  uar_sub_nam,
+		  uar_sub_cod,
+		  uar_rsk_grp,
+		  uar_dep_lv2,
+		  uar_opr_lv1,
+		  uar_opr_lv2,
+		  uar_grp_nam,
+		  uar_dep_lv1,
+		  uar_ass_nam,
+		  uar_svr_nam,
+		  uar_use_nam,
+		  uar_rgt_id,
+		  uar_rgt_mdh,
+		  uar_upt_id,
+		  uar_upt_mdh,
+		  uar_val_cl9,
+		  uar_val_cl8,
+		  uar_val_cl7,
+		  uar_val_cl6,
+		  uar_val_cl5,
+		  uar_val_cl4,
+		  uar_val_cl3,
+		  uar_val_cl2,
+		  uar_val_cl1,
+		  uar_val_cl0,
+		  uar_use_yn,
+		  uar_prv_yn,
+		  uar_inf_yn,
+		  uar_smp_yn,
+		  uar_aud_yn,
+		  uar_ass_lvl,
+		  uar_app_tot,
+		  uar_app_avt,
+		  uar_app_itg,
+		  uar_app_con,
+		  uar_adm_pos,
+		  uar_dtl_exp,
+		  uar_ass_gbn,
+		  uar_eqp_nam,
+		  uar_pic_nam,
+		  uar_pic_id,
+		  uar_use_id,
+		  uar_opr_nam,
+		  uar_opr_cod,
+		  uar_adm_nam,
+		  uar_adm_id,
+		  uar_own_id,
+		  uar_own_nam,
+		  uar_dep_nam,
+		  uar_svr_etc,
+		  uar_dep_cod,
+		  uar_svr_cod,
+		  uar_ass_cat,
+		  uar_ip,
+		  uar_host,
+		  uar_os
+		)
+		VALUES
+		(
+		  SEQ_UWO_ASS_MTR.NEXTVAL,
+		  #manCyl#,
+		  u.uar_ass_cod,
+		  u.uar_grp_cod,
+		  u.uar_rsk_nam,
+		  u.uar_sub_nam,
+		  u.uar_sub_cod,
+		  u.uar_rsk_grp,
+		  u.uar_dep_lv2,
+		  u.uar_opr_lv1,
+		  u.uar_opr_lv2,
+		  u.uar_grp_nam,
+		  u.uar_dep_lv1,
+		  u.uar_ass_nam,
+		  u.uar_svr_nam,
+		  u.uar_use_nam,
+		  u.uar_rgt_id,
+		  u.uar_rgt_mdh,
+		  #rgtId#,
+ 		  SYSDATE,
+		  u.uar_val_cl9,
+		  u.uar_val_cl8,
+		  u.uar_val_cl7,
+		  u.uar_val_cl6,
+		  u.uar_val_cl5,
+		  u.uar_val_cl4,
+		  u.uar_val_cl3,
+		  u.uar_val_cl2,
+		  u.uar_val_cl1,
+		  u.uar_val_cl0,
+		  u.uar_use_yn,
+		  u.uar_prv_yn,
+		  u.uar_inf_yn,
+		  u.uar_smp_yn,
+		  'Y',
+		  u.uar_ass_lvl,
+		  u.uar_app_tot,
+		  u.uar_app_avt,
+		  u.uar_app_itg,
+		  u.uar_app_con,
+		  u.uar_adm_pos,
+		  u.uar_dtl_exp,
+		  u.uar_ass_gbn,
+		  u.uar_eqp_nam,
+		  u.uar_pic_nam,
+		  u.uar_pic_id,
+		  u.uar_use_id,
+		  u.uar_opr_nam,
+		  u.uar_opr_cod,
+		  u.uar_adm_nam,
+		  u.uar_adm_id,
+		  u.uar_own_id,
+		  u.uar_own_nam,
+		  u.uar_dep_nam,
+		  u.uar_svr_etc,
+		  u.uar_dep_cod,
+		  u.uar_svr_cod,
+		  u.uar_ass_cat,
+		  u.uar_ip,
+		  u.uar_host,
+		  u.uar_os
+      )
+	</insert>
+
+	<!-- 2017-06-27, 심사자산 확정 제외 -->
+	<delete id="assetRemoveFinal" parameterClass="Map">
+		DELETE FROM uwo_ass_mtr
+		WHERE
+		<iterate prepend="uar_ass_key IN " property="assKeys" open="(" close=")" conjunction=",">
+        	#assKeys[]#
+		</iterate>
+	</delete>
+
+	<!-- 2017-06-230, Table LOCK 유발로 SELECT key 후 UPDATE 처리 -->
+	<update id="assetUpdateAudN" parameterClass="Map">
+		UPDATE uwo_ass_mtr uar
+		SET uar_aud_yn = 'N'
+		WHERE
+			uar_bcy_cod = '0'
+			AND uar_aud_yn = 'Y'
+	</update>
+	<select id="assetSelectAud" parameterClass="Map" resultClass="String">
+		SELECT uar_ass_key
+		FROM uwo_ass_mtr uar
+		WHERE
+			uar_bcy_cod = '0'
+			AND EXISTS (SELECT * FROM uwo_ass_mtr uar2 WHERE uar2.uar_ass_cod = uar.uar_ass_cod AND uar2.uar_bcy_cod = #manCyl#)
+	</select>
+
+	<!-- 2017-06-27, 심사자산 Flag 추가/제외 -->
+	<update id="assetUpdateAudY" parameterClass="Map">
+		UPDATE uwo_ass_mtr uar
+		SET uar_aud_yn = 'Y'
+		WHERE
+			uar_bcy_cod = '0'
+		<iterate prepend="AND uar_ass_key IN " property="assKeys" open="(" close=")" conjunction=",">
+        	#assKeys[]#
+		</iterate>
+	</update>
+
+	<!-- 2017-06-27, 샘플링 대상 추가/제외 -->
+	<update id="assetUpdateSample" parameterClass="Map">
+		UPDATE uwo_ass_mtr
+		SET uar_smp_yn = #smpYn#
+		WHERE
+		<iterate prepend="uar_ass_key IN " property="assKeys" open="(" close=")" conjunction=",">
+        	#assKeys[]#
+		</iterate>
+	</update>
+
+</sqlMap>

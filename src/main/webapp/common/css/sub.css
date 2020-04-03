@@ -1,0 +1,150 @@
+@charset "utf-8";
+/* *  통합 구조  * */
+/* ** 셀렉터 Area  ** */
+#wrap article .contents .treeBinder{min-height:153px}
+#wrap article .contents .treeBinder .treeMovingArea{width:1020px;height:153px}
+#wrap article .contents .treeBinder .treeMovingArea.movingTop{position:fixed;top:0;z-index:1000;padding:10px 0;border-bottom:2px solid #bbb;background:#fff}
+
+/* *** 셀렉터  *** */
+#wrap article .contents .contentsSelector{height:26px;padding-bottom:5px;text-align:right}
+#wrap article .contents .contentsSelector .selectBox{width:178px}
+
+/* *** 트리영역  *** */
+#wrap article .contents .treeBox{display:inline-block;overflow:auto;width:100%;height:120px;border:1px solid #ddd}
+
+/* ***  컨텐츠 상세  *** */
+#wrap article .contents .selectDetail{}
+#wrap article .contents .selectDetail .detailArea{border-left:1px solid #bbb;border-top:2px solid #bbb}
+#wrap article .contents .selectDetail .detailArea li{}
+#wrap article .contents .selectDetail .detailArea li > dl{min-height:40px;border-right:1px solid #bbb;border-bottom:1px solid #bbb;background:#fff}
+
+#wrap article .contents .selectDetail .detailArea li > dl > dt,#wrap article .contents .selectDetail .detailArea li > dl > dd{min-height:20px;padding:10px;line-height:20px;color:#666}
+#wrap article .contents .selectDetail .detailArea li > dl > dt{border-bottom:1px solid #bbb;background:#ede9e7;font-weight:bold}
+#wrap article .contents .selectDetail .detailArea li > dd{background:#fff;color:0}
+#wrap article .contents .selectDetail .detailArea .statusDivisionThree{min-height:60px;border-top:2px solid #bbb;border-left:1px solid #bbb}
+#wrap article .contents .selectDetail .detailArea .statusDivisionThree > li{float:left;width:33.3%}
+
+#wrap article .contents .selectDetail .detailArea .statusDivisionThree > li dt,#wrap article .contents .selectDetail .detailArea .statusDivisionThree > li dd{padding:5px;text-align:center}
+#wrap article .contents .selectDetail .detailArea li.floatList:first-child{*margin-left:0}
+#wrap article .contents .selectDetail .detailArea li.floatList:first-child > dl > dt{*border-left:none}
+#wrap article .contents > .selectDetail .detailArea li.floatList{float:left;*float:inherit;width:50%;*width:auto;min-height:50px;*min-height:41px}
+
+#wrap article .contents .selectDetail .detailArea li.floatList > dl > dt,#wrap article .contents .selectDetail .detailArea li.floatList > dl > dd{float:left;*float:inherit;min-height:20px}
+#wrap article .contents .selectDetail .detailArea li.floatList > dl > dt{width:25%;*width:auto;border-right:1px solid #bbb;*border:none;border-bottom:none;*border-bottom:1px solid #bbb}
+#wrap article .contents .selectDetail .detailArea li.floatList > dl > dd{border:none}
+#wrap article .contents .selectDetail .detailArea li .relatedWork{border:1px solid #bbb;border-top-width:2px}
+
+#wrap article .contents .selectDetail .detailArea li .relatedWork dt,#wrap article .contents .selectDetail .detailArea li .relatedWork dd{padding:5px;border-bottom:1px solid #bbb;font-size:11px}
+#wrap article .contents .selectDetail .detailArea li .relatedWork dt{background:#ede9e7;font-weight:bold}
+
+#wrap article .contents .selectDetail .detailArea li .relatedWork dt > span,#wrap article .contents .selectDetail .detailArea li .relatedWork dd > span{float:left;width:35px;font-size:11px;text-align:center}
+
+#wrap article .contents .selectDetail .detailArea li .relatedWork dt .centets,#wrap article .contents .selectDetail .detailArea li .relatedWork dd .centets{padding-left:40px;font-size:11px}
+
+#wrap article .contents .selectDetail .detailArea li .relatedWork dd .centets .sortType01,#wrap article .contents .selectDetail .detailArea li .relatedWork dd .centets .sortType02{margin-top:-1px;border:1px solid #bbb;line-height:20px;line-height:15px}
+#wrap article .contents .selectDetail .detailArea li .relatedWork dd .centets .sortType01{min-height:30px}
+#wrap article .contents .selectDetail .detailArea li .relatedWork dd .centets .sortType01 strong{display:inline-block;float:left;width:70px;padding:5px 5px 6px;background:#929292;color:#fff}
+#wrap article .contents .selectDetail .detailArea li .relatedWork dd .centets .sortType02 strong{display:block;padding:5px 5px 6px;border-bottom:1px solid #bbb;background:#929292;color:#fff}
+
+#wrap article .contents .selectDetail .detailArea li .relatedWork dd .centets .sortType01 p,#wrap article .contents .selectDetail .detailArea li .relatedWork dd .centets .sortType02 p{overflow-y:auto;max-height:50px;padding:5px 5px 6px}
+#wrap article .contents .selectDetail .detailArea li .relatedWork dd .centets .sortType01 p{float:left}
+
+#wrap article .contents .selectDetail .detailArea li .relatedWork dd .centets .statusDivisionThree.sort{min-height:30px;border:none;border-right:1px solid #bbb;border-bottom:1px solid #bbb}
+#wrap article .contents .selectDetail .detailArea li .relatedWork dd .centets .statusDivisionThree.sort > li{float:left;width:33.3%}
+#wrap article .contents .selectDetail .detailArea li .relatedWork dd .centets .statusDivisionThree.sort > li .sortType01{border-right:none;border-bottom:none}
+
+#wrap article .contents .selectDetail .detailArea li .relatedWork dd .centets .uplidFileList{margin-top:20px}
+#wrap article .contents .selectDetail .detailArea li .relatedWork dd .centets .uplidFileList > .listArea{width:100%;height:70px}
+
+/* *  좌우 분할 구조  * */
+#wrap article .contents.listForDivide{position:relative}
+
+/* **  왼쪽 영역  ** */
+#wrap article .contents.listForDivide .sideOne{position:absolute;padding-top:15px;width:270px}
+/* #wrap article .contents.listForDivide .sideOne.movingTop{position:fixed;top:0;left:50%;margin-left:-400px;padding:10px 0}
+#wrap article .contents.listForDivide .sideOne.movingTop.leftStop{position:fixed;top:0;left:495px;padding:10px 0} */
+
+/* *** 셀렉터  *** */
+#wrap article .contents.listForDivide .sideOne .contentsSelector{height:26px;padding-bottom:5px}
+#wrap article .contents.listForDivide .sideOne .contentsSelector .selectBox{float:left;width:178px;*width:170px}
+#wrap article .contents.listForDivide .sideOne .contentsSelector button{float:right}
+
+/* *** 트리영역  *** */
+#wrap article .contents.listForDivide .sideOne .treeBox{display:inline-block;overflow:auto;width:258px;height:500px;padding:5px;border:1px solid #ddd}
+
+/* **  오른쪽 영역  ** */
+#wrap article .contents.listForDivide .sideTwo{float:left;*position:absolute;width:735px;margin:15px 0 0 285px}
+
+/* ***  타이틀  *** */
+#wrap article .contents.listForDivide .sideTwo .title{padding-top:0}
+
+/* ***  컨텐츠 상세  *** */
+#wrap article .contents.listForDivide .sideTwo .selectDetail{*margin-bottom:40px}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea{border-left:1px solid #bbb;border-top:2px solid #bbb}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li{}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li > dl{min-height:40px;border-right:1px solid #bbb;border-bottom:1px solid #bbb;background:#fff}
+
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li > dl > dt,#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li > dl > dd{min-height:20px;padding:10px;line-height:20px;color:#666}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li > dl > dt{border-bottom:1px solid #bbb;background:#ede9e7;font-weight:bold}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li > dd{background:#fff;color:0}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea .statusDivisionThree{min-height:60px;border-top:2px solid #bbb;border-left:1px solid #bbb}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea .statusDivisionThree > li{float:left;width:33.3%}
+
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea .statusDivisionThree > li dt,#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea .statusDivisionThree > li dd{padding:5px;text-align:center}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li.floatList{float:left;width:50%;min-height:50px;*min-height:30px}
+
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li.floatList > dl > dt,#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li.floatList > dl > dd{float:left}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li.floatList > dl > dt{width:25%;border-right:1px solid #bbb;border-bottom:none}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li.floatList > dl > dd{border:none}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork{border:1px solid #bbb;border-top-width:2px}
+
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dt,#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dd{padding:5px;border-bottom:1px solid #bbb}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dt{background:#ede9e7;font-weight:bold;font-size:11px}
+
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dt > span,#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dd > span{float:left;width:35px;font-size:11px;text-align:center}
+
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dt .centets,#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dd .centets{padding-left:40px;font-size:11px}
+
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dd .centets .sortType01,#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dd .centets .sortType02{margin-top:-1px;border:1px solid #bbb;line-height:20px;line-height:15px}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dd .centets .sortType01{min-height:30px}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dd .centets .sortType01 strong{display:inline-block;float:left;width:70px;padding:5px 5px 6px;background:#929292;color:#fff}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dd .centets .sortType02 strong{display:block;padding:5px 5px 6px;border-bottom:1px solid #bbb;background:#929292;color:#fff}
+
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dd .centets .sortType01 p,#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dd .centets .sortType02 p{overflow-y:auto;max-height:30px;padding:5px 5px 6px}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dd .centets .sortType01 p{float:left}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dd .centets .uplidFileList{margin-top:20px}
+#wrap article .contents.listForDivide .sideTwo .selectDetail .detailArea li .relatedWork dd .centets .uplidFileList > .listArea{width:100%;height:50px}
+
+/* *  좌우 분할 구조 삭제버튼 구조  * */
+#wrap article .contents.listForDivide.forBtnDel .sideTwo .selectDetail .detailArea li .relatedWork dt,#wrap article .contents.listForDivide.forBtnDel .sideTwo .selectDetail .detailArea li .relatedWork dd{position:relative}
+#wrap article .contents.listForDivide.forBtnDel .sideTwo .selectDetail .detailArea li .relatedWork dt > span{position:absolute;right:5px;bottom:5px}
+#wrap article .contents.listForDivide.forBtnDel .sideTwo .selectDetail .detailArea li .relatedWork dd > span{position:absolute;top:10px;right:5px;font-size:11px}
+#wrap article .contents.listForDivide.forBtnDel .sideTwo .selectDetail .detailArea li .relatedWork dd > span{*top:15px}
+#wrap article .contents.listForDivide.forBtnDel .sideTwo .selectDetail .detailArea li .relatedWork dd > span a{padding:2px;*padding:1px 2px;border:1px solid #ef8009;border-radius:2px;color:#ef8009}
+#wrap article .contents .btnSmDelete { padding:2px;*padding:1px 2px;border:1px solid #ef8009;border-radius:2px;color:#ef8009; }
+#wrap article .contents.listForDivide.forBtnDel .sideTwo .selectDetail .detailArea li .relatedWork dt .centets,#wrap article .contents.listForDivide.forBtnDel .sideTwo .selectDetail .detailArea li .relatedWork dd .centets{padding:0 40px 0 0;font-size:11px}
+
+/* chart */
+.chartContainer .canvasChart { margin-bottom: 40px; border:1px solid #ddd; }
+.chartContainer .talbeArea tbody td.link a { color: #0083e7 !important; }
+.chartContainer .comment { margin: 5px 0 50px 0; text-align: right; }
+
+/* Image style */
+#scrollUp { background-image: url("../images/common/btn/top.png"); bottom: 20px; right: 20px; width: 38px; height: 38px; }
+
+.mapping { position: relative; padding-right: 0px;}
+.mapping input[type=checkbox] { position: absolute; top:0; }
+
+.expData {text-align: left}
+.expData li span {margin-right: 5px}
+.expData li dl dd {margin-left: 15px}
+.expData span.seq {margin: 0 5px;}
+.expData span.seq:after {margin-right:2px; content:'.'; }
+.expData span.point {margin: 0 5px;}
+.expData span.point:before {margin: 0 2px;content:'-';}
+
+.expData.G li dl dt {font-weight: bold}
+
+.alignUL_LR li:first-child{float:left;}
+.alignUL_LR li:nth-child(2){float:right;}
+.alignUL_LR li:last-child{clear: both;}

@@ -1,0 +1,1757 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="fmInspt">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="com.uwo.isms.domain.SearchVO"/>
+	<resultMap id="inspt003" class="com.uwo.isms.domain.DocVO">
+		<result  property="ucmCtrGbn" column="UCM_CTR_GBN"/>
+		<result  property="utwSvcCod" column="UTW_SVC_COD"/>
+		<result  property="utwDepCod" column="UTW_DEP_COD"/>
+		<result  property="ucmCtrKey" column="UCM_CTR_KEY"/>
+		<result  property="ucm3lvCod" column="UCM_3LV_COD"/>
+		<result  property="ucm3lvNam" column="UCM_3LV_NAM"/>
+		<result  property="utdDocNam" column="UTD_DOC_NAM"/>
+		<result  property="worker" column="UTM_WRK_ID"/>
+		<result  property="termGbn" column="TRM_GBN"/>
+		<result  property="utwWrkKey" column="UTW_WRK_KEY"/>
+		<result  property="fileList"  column="UTW_WRK_KEY" select="fmInspt.QR_INSPT003_FILE"/>
+	</resultMap>
+
+	<!-- 2018-03-22 s, 서비스별 조건
+		SC001: ISP, SC005: IDC, SC007: 공통
+		K: 기반시설
+	-->
+	<sql id="QR_INSPT_SERVICE_WHERE">
+		AND (ucm_svc_cod = #service#
+		<isEqual property="service" compareValue="SC007">
+			<isEqual property="standardD" compareValue="K">
+			OR ucm_svc_cod IN ('SC007','SC001','SC005')
+			</isEqual>
+		</isEqual>
+		<isEqual property="service" compareValue="SC001">
+			OR ucm_svc_cod IN ('SC007',#service#)
+		</isEqual>
+		<isEqual property="service" compareValue="SC005">
+			OR ucm_svc_cod IN ('SC007',#service#)
+		</isEqual>
+		)
+	</sql>
+
+	<sql id="QR_INSPT_WRK_SERVICE_WHERE">
+		AND (utw_svc_cod = #service#
+		<isEqual property="service" compareValue="SC007">
+			<isEqual property="standardD" compareValue="K">
+			OR utw_svc_cod IN ('SC007','SC001','SC005')
+			</isEqual>
+		</isEqual>
+		<isEqual property="service" compareValue="SC001">
+			OR utw_svc_cod IN ('SC007',#service#)
+		</isEqual>
+		<isEqual property="service" compareValue="SC005">
+			OR utw_svc_cod IN ('SC007',#service#)
+		</isEqual>
+		)
+	</sql>
+
+	<select id="QR_INSPT001_A" resultClass="egovMap" parameterClass="map">
+ 		SELECT
+		  (SELECT UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_FIR_COD = 'STND' AND UCC_SND_COD = UCM.UCM_CTR_GBN) AS UCM_CTR_GBN,
+		  UCM.UCM_CTR_KEY,
+		  UCM.UCM_1LV_COD,
+		  UCM.UCM_1LV_NAM,
+		  UCM.UCM_2LV_COD,
+		  UCM.UCM_2LV_NAM,
+		  UCM.UCM_3LV_NAM,
+		  ucm.ucm_gol_no,
+		  T2.*
+		FROM
+			uwo_ctr_mtr ucm
+			INNER JOIN uwo_ctr_map ucp ON ucm.ucm_ctr_key = ucp.ucm_ctr_key
+			LEFT OUTER JOIN
+			  (
+			    SELECT
+			      UTC.UTC_CTR_KEY,
+			      utd.utd_trc_key,
+			      (SELECT UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_SND_COD = UTW.UTW_SVC_COD) AS UTW_SVC_COD,
+			      (SELECT UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_SND_COD = UTW.UTW_DEP_COD) AS UTW_DEP_COD,
+			      UTD.UTD_DOC_NAM,
+			      F_GET_COMMON_NAME(UTD.UTD_TRM_GBN, 'TERM') TERM_GBN,
+			      (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UTW.UTW_DEP_COD) AS UTW_DEP_NAM,
+			      F_GET_USR_NAME(UTW.UTW_WRK_ID) WORKER,
+			      UTW.UTW_WRK_KEY,
+			      utw_wrk_sta
+			     FROM  UWO_TRC_WRK UTW
+	            INNER JOIN UWO_TRC_DOC UTD ON UTW.UTW_TRC_KEY = UTD.UTD_TRC_KEY
+	            INNER JOIN UWO_TRC_CTR UTC ON UTD.UTD_TRC_KEY = UTC.UTC_TRC_KEY
+	            INNER JOIN UWO_CTR_MTR UCM ON UTC.UTC_CTR_KEY = UCM.UCM_CTR_KEY
+			    WHERE
+				 <!-- 2017-05-19 -->
+				 utw.utw_del_yn = 'N'
+				 AND utd.utd_del_yn = 'N'
+			     AND utc.utc_del_yn = 'N'
+	  			 AND ucm.ucm_2ld_yn = 'N'
+	  			 <!-- 2018-10-05 s, 담당자 요청으로 주석처리
+	  			 AND utw.utw_wrk_sta = '90' -->
+	  			 <!-- //2017-05-19 -->
+			    <!-- 2018-03-22 s, <isNotEmpty property="service">
+			     AND UTW.UTW_SVC_COD IN ('SC007',#service#)
+			    </isNotEmpty> -->
+			    <include refid="QR_INSPT_WRK_SERVICE_WHERE" />
+			  ) T2 ON UCM.UCM_CTR_KEY = T2.UTC_CTR_KEY
+		WHERE 1=1
+		  AND UCM.UCM_BCY_COD = #manCyl#
+ 		<isNotEmpty property="standard">
+		  AND UCM.UCM_CTR_GBN = #standard#
+		</isNotEmpty>
+		<isNotEmpty property="ucm1lvCod">
+		  AND UCM.UCM_1LV_COD = #ucm1lvCod#
+		</isNotEmpty>
+		<!-- 2018-03-22 s, <isNotEmpty property="service">
+		  AND EXISTS (SELECT * FROM UWO_CTR_MAP UCP
+		    		 	 WHERE UCP.UCM_CTR_KEY = UCM.UCM_CTR_KEY
+		    		 	   AND UCM_SVC_COD IN ('SC007',#service#)
+   			)
+		</isNotEmpty> -->
+			AND ucp.ucm_svc_cod = #service#
+ 		<!-- 2018-06-09 s, ORDER BY LPAD(REGEXP_REPLACE(UCM_3LV_COD, '^[A-Za-z]*',''), 8, '0') -->
+ 		ORDER BY
+ 			LENGTH(ucm_2lv_cod) - LENGTH(REPLACE(ucm_2lv_cod, '.')),
+	 		REGEXP_REPLACE(ucm_3lv_cod || '.', '(.)\.', LPAD('\1', 3, '0')),
+			T2.UTD_TRC_KEY
+	</select>
+
+	<select id="QR_INSPT001_A2" resultClass="egovMap" parameterClass="map">
+ 		SELECT
+		  (SELECT UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_FIR_COD = 'STND' AND UCC_SND_COD = UCM.UCM_CTR_GBN) AS UCM_CTR_GBN,
+			UCM.UCM_CTR_KEY,
+			UCM.UCM_1LV_COD,
+			UCM.UCM_1LV_NAM,
+			UCM.UCM_2LV_COD,
+			UCM.UCM_2LV_NAM,
+			UCM.UCM_3LV_NAM,
+			ucm.ucm_gol_no,
+			T2.UTC_CTR_KEY,
+			T2.UTD_TRC_KEY,
+			T2.UTW_SVC_COD,
+			T2.UTW_DEP_COD,
+			T2.UTD_DOC_NAM,
+			T2.TERM_GBN,
+			T2.UTW_DEP_NAM,
+			T2.WORKER_ID,
+			T2.WORKER,
+			T2.UTW_WRK_KEY,
+			T2.UTW_WRK_STA,
+			NVL(T2.UTW_WRK_PRG, 0) AS WRK_PRG,
+		    T2.UTW_WRK_DTL AS WRK_DTL,
+			T2.UDM_DEP_LVL,
+			T2.UDM_DEP_1LV,
+			T2.UDM_DEP_2LV,
+			T2.UDM_DEP_3LV
+		FROM
+			uwo_ctr_mtr ucm
+			INNER JOIN uwo_ctr_map ucp ON ucm.ucm_ctr_key = ucp.ucm_ctr_key
+			LEFT OUTER JOIN
+			  (
+			    SELECT
+			      UTC.UTC_CTR_KEY,
+			      utd.utd_trc_key,
+			      (SELECT UCC_SND_COD FROM UWO_COM_COD WHERE UCC_SND_COD = UTW.UTW_SVC_COD) AS UTW_SVC_COD,
+				  UTW.UTW_DEP_COD AS UTW_DEP_COD,
+			      UTD.UTD_DOC_NAM,
+			      F_GET_COMMON_NAME(UTD.UTD_TRM_GBN, 'TERM') TERM_GBN,
+			      (SELECT UDM_DEP_NAM FROM UWO_DEP_MTR WHERE UDM_DEP_COD = UTW.UTW_DEP_COD) AS UTW_DEP_NAM,
+		          UTW.UTW_WRK_ID AS WORKER_ID,
+			      F_GET_USR_NAME(UTW.UTW_WRK_ID) WORKER,
+			      UTW.UTW_WRK_KEY,
+			      utw_wrk_sta,
+		          UTW.UTW_WRK_DTL,
+				  UTW.UTW_WRK_PRG,
+				dep_mtr.UDM_DEP_LVL,
+				dep_mtr.UDM_DEP_1LV,
+				dep_mtr.UDM_DEP_2LV,
+				dep_mtr.UDM_DEP_3LV
+			     FROM  UWO_TRC_WRK UTW
+	            INNER JOIN UWO_TRC_DOC UTD ON UTW.UTW_TRC_KEY = UTD.UTD_TRC_KEY
+	            INNER JOIN UWO_TRC_CTR UTC ON UTD.UTD_TRC_KEY = UTC.UTC_TRC_KEY
+	            INNER JOIN UWO_CTR_MTR UCM ON UTC.UTC_CTR_KEY = UCM.UCM_CTR_KEY
+				left join UWO_DEP_MTR dep_mtr on utw.UTW_DEP_COD = dep_mtr.UDM_DEP_COD
+			    WHERE
+				 <!-- 2017-05-19 -->
+				 utw.utw_del_yn = 'N'
+				 AND utd.utd_del_yn = 'N'
+			     AND utc.utc_del_yn = 'N'
+	  			 AND ucm.ucm_2ld_yn = 'N'
+	  			 <!-- 2018-10-05 s, 담당자 요청으로 주석처리
+	  			 AND utw.utw_wrk_sta = '90' -->
+	  			 <!-- //2017-05-19 -->
+			    <!-- 2018-03-22 s, <isNotEmpty property="service">
+			     AND UTW.UTW_SVC_COD IN ('SC007',#service#)
+			    </isNotEmpty> -->
+			    <include refid="QR_INSPT_WRK_SERVICE_WHERE" />
+				<isNotEmpty property="ucm1lvCod">
+					AND dep_mtr.UDM_DEP_1LV = #ucm1lvCod#
+				</isNotEmpty>
+				<isNotEmpty property="ucm2lvCod">
+					AND dep_mtr.UDM_DEP_2LV = #ucm2lvCod#
+				</isNotEmpty>
+				<isNotEmpty property="ucm3lvCod">
+					AND dep_mtr.UDM_DEP_3LV = #ucm3lvCod#
+				</isNotEmpty>
+			  ) T2 ON UCM.UCM_CTR_KEY = T2.UTC_CTR_KEY
+		WHERE 1=1
+		  AND UCM.UCM_BCY_COD = #manCyl#
+ 		<isNotEmpty property="standard">
+		  AND UCM.UCM_CTR_GBN = #standard#
+		</isNotEmpty>
+		<!-- 2018-03-22 s, <isNotEmpty property="service">
+		  AND EXISTS (SELECT * FROM UWO_CTR_MAP UCP
+		    		 	 WHERE UCP.UCM_CTR_KEY = UCM.UCM_CTR_KEY
+		    		 	   AND UCM_SVC_COD IN ('SC007',#service#)
+   			)
+		</isNotEmpty> -->
+			AND ucp.ucm_svc_cod = #service#
+ 		<!-- 2018-06-09 s, ORDER BY LPAD(REGEXP_REPLACE(UCM_3LV_COD, '^[A-Za-z]*',''), 8, '0') -->
+ 		ORDER BY
+ 			LENGTH(ucm_2lv_cod) - LENGTH(REPLACE(ucm_2lv_cod, '.')),
+	 		REGEXP_REPLACE(ucm_3lv_cod || '.', '(.)\.', LPAD('\1', 3, '0')),
+			T2.UTD_TRC_KEY
+	</select>
+
+	<select id="QR_INSPT001_GETFILELIST" parameterClass="Map"  resultClass="egovMap">
+		SELECT UMF_FLE_KEY, UMF_CON_KEY, UMF_BCY_COD, UMF_CON_FNM, UMF_MSR_YN
+		FROM UWO_MNG_FLE
+		WHERE UMF_TBL_GBN = 'WRK'
+		AND UMF_DEL_YN = 'N'
+		AND UMF_BCY_COD = #manCyl#
+		AND umf_con_key IS NOT NULL
+		<isNotEmpty property="msrYn">
+		AND umf_msr_yn = #msrYn#
+		</isNotEmpty>
+	</select>
+
+    <select id="QR_INSPT001_GETFILELIST_2" parameterClass="Map"  resultClass="egovMap">
+        SELECT UMF_FLE_KEY, UMF_CON_KEY, UMF_BCY_COD, UMF_CON_FNM, UMF_MSR_YN
+        FROM UWO_MNG_FLE
+        WHERE UMF_TBL_GBN = 'WRK'
+        AND UMF_DEL_YN = 'N'
+        AND umf_con_key IS NOT NULL
+        <isNotEmpty property="msrYn">
+            AND umf_msr_yn = #msrYn#
+        </isNotEmpty>
+    </select>
+
+	<select id="QR_INSPT001_GETSAFILELIST" parameterClass="Map" resultClass="egovMap">
+		SELECT MSR_FLE.UMF_SVC_COD AS SVC_COD, MNG_FLE.*, MSR_FLE.UMF_CTR_KEY AS CTR_KEY, MSR_FLE.UMF_FLE_KEY AS FLE_KEY
+			FROM UWO_MSR_FLE MSR_FLE
+				LEFT JOIN UWO_MNG_FLE MNG_FLE ON MSR_FLE.UMF_FLE_KEY = MNG_FLE.UMF_FLE_KEY
+		<dynamic prepend="WHERE">
+			<isNotNull property="service" prepend="AND">
+				MSR_FLE.UMF_SVC_COD = #service#
+			</isNotNull>
+		</dynamic>
+	</select>
+
+	<select id="QR_INSPT001_GETFILELIST_BY_DEPARTMENT_OF_SERVICE" parameterClass="Map"  resultClass="egovMap">
+		SELECT FLE.UMF_FLE_KEY,
+			FLE.UMF_CON_KEY,
+			FLE.UMF_BCY_COD,
+			FLE.UMF_CON_FNM,
+			FLE.UMF_MSR_YN,
+			WRK.UTW_SVC_COD,
+			WRK.UTW_DEP_COD,
+			(SELECT UDM_DEP_NAM FROM UWO_DEP_MTR WHERE UDM_DEP_COD = WRK.UTW_DEP_COD) AS DEP_NAME
+		FROM UWO_MNG_FLE FLE
+			LEFT JOIN UWO_TRC_WRK WRK ON FLE.UMF_CON_KEY = WRK.UTW_WRK_KEY
+		WHERE FLE.UMF_TBL_GBN = 'WRK'
+			AND FLE.UMF_DEL_YN = 'N'
+			AND FLE.UMF_BCY_COD = #manCyl#
+			AND FLE.UMF_CON_KEY IS NOT NULL
+			AND WRK.UTW_DEP_COD IN
+			(SELECT UOM_DEP_COD FROM UWO_ORG_MTR WHERE UOM_USE_YN = 'Y' AND UOM_SVC_COD = #service# AND UOM_BCY_COD = #manCyl#)
+		<isNotEmpty property="msrYn">
+			AND FLE.UMF_MSR_YN = #msrYn#
+		</isNotEmpty>
+	</select>
+
+	<update id="QR_INSPT001_SETMSRFILE" parameterClass="Map">
+		UPDATE UWO_MNG_FLE
+		SET
+			UMF_MSR_YN = #msrYn#
+		WHERE
+			UMF_FLE_KEY = #fleKey#
+	</update>
+
+	<select id="QR_INSPT001_VIEW" parameterClass="String" resultClass="String">
+		SELECT UTW_VEW_LVL FROM UWO_TRC_WRK WHERE UTW_WRK_KEY = #wKey#
+	</select>
+
+	<update id="QR_INSPT001_VIEW_UPDATE" parameterClass="searchVO">
+		UPDATE
+			UWO_TRC_WRK
+		SET
+			UTW_VEW_LVL = #code#
+		WHERE
+			UTW_WRK_KEY = #workCode#
+	</update>
+
+		<select id="QR_INSPT001_TREE" parameterClass="searchVO" resultClass="egovMap">
+		SELECT
+			UCC_SND_COD AS UCM_CTR_GBN,
+			UCC_SND_NAM AS UCM_CTR_NAM
+		FROM
+			UWO_COM_COD
+		WHERE
+			UCC_SND_COD IN ( SELECT DISTINCT UCM_CTR_GBN
+		  					FROM UWO_CTR_MTR A
+		 					WHERE UCM_BCY_COD = #manCyl#
+		 					<isNotEmpty property="service">
+		   						AND EXISTS (SELECT * FROM UWO_CTR_MAP WHERE UCM_CTR_KEY = A.UCM_CTR_KEY AND UCM_SVC_COD = #service#)
+		   					</isNotEmpty>
+		   						)
+		ORDER BY UCC_SND_COD
+	</select>
+
+		<!-- 시스템설정 - 통제항목설정 - 트리 - cntr1 -->
+	<select id="QR_INSPT001_B" parameterClass="searchVO" resultClass="egovMap">
+		SELECT UCM_CTR_GBN, UCM_CTR_COD,
+		       UCM_1LV_COD,
+		       UCM_1LV_NAM,
+		       UCM_1LD_YN UCM_USE_YN,
+		       UCM_1LD_YN UCM_DEL_YN
+		  FROM UWO_CTR_MTR A
+		 WHERE UCM_BCY_COD = #manCyl#
+			<isNotEmpty property="service">
+				AND (SELECT COUNT(UCM_SVC_COD) FROM UWO_CTR_MAP WHERE UCM_CTR_KEY = A.UCM_CTR_KEY AND UCM_SVC_COD = #service#) > 0
+			</isNotEmpty>
+			AND UCM_CTR_GBN = #standard#
+		 GROUP BY UCM_CTR_GBN, UCM_CTR_COD,
+		          UCM_1LV_COD,
+		          UCM_1LV_NAM,
+		          UCM_1LD_YN
+		 ORDER BY LPAD(REGEXP_REPLACE(UCM_1LV_COD, '^[A-Za-z]*',''), 8, '0')
+	</select>
+
+	<!-- 시스템설정 - 통제항목설정 - 트리 - cntr2 -->
+	<select id="QR_INSPT001_C" parameterClass="searchVO" resultClass="egovMap">
+		SELECT UCM_CTR_GBN, UCM_CTR_COD,
+		       UCM_2LV_COD,
+		       UCM_2LV_NAM,
+		       UCM_2LV_DTL,
+		       UCM_2LD_YN UCM_USE_YN,
+		       UCM_2LD_YN UCM_DEL_YN
+		  FROM UWO_CTR_MTR A
+		 WHERE UCM_BCY_COD = #manCyl#
+		   AND UCM_1LV_COD = #searchKeyword#
+			<isNotEmpty property="service">
+				AND (SELECT COUNT(UCM_SVC_COD) FROM UWO_CTR_MAP WHERE UCM_CTR_KEY = A.UCM_CTR_KEY AND UCM_SVC_COD = #service#) > 0
+			</isNotEmpty>
+			AND UCM_CTR_GBN = #standard#
+		 GROUP BY UCM_CTR_GBN, UCM_CTR_COD,
+		 		  UCM_1LV_COD,
+		          UCM_2LV_COD,
+		          UCM_2LV_NAM,
+		          UCM_2LV_DTL,
+		          UCM_2LD_YN
+		 ORDER BY UCM_2LV_COD
+	</select>
+
+	<!-- 시스템설정 - 통제항목설정 - 트리 - cntr3 -->
+	<select id="QR_INSPT001_D" parameterClass="searchVO" resultClass="egovMap">
+		 SELECT UCM_CTR_GBN, UCM_CTR_COD,
+		 		UCM_3LV_COD,
+		        UCM_3LV_NAM,
+		        UCM_3LV_DTL,
+		        UCM_3LD_YN UCM_USE_YN,
+		        UCM_3LD_YN UCM_DEL_YN
+		   FROM UWO_CTR_MTR A
+		  WHERE UCM_BCY_COD = #manCyl#
+		    AND UCM_2LV_COD = #searchKeyword#
+		    <isNotEmpty property="service">
+				AND (SELECT COUNT(UCM_SVC_COD) FROM UWO_CTR_MAP WHERE UCM_CTR_KEY = A.UCM_CTR_KEY AND UCM_SVC_COD = #service#) > 0
+			</isNotEmpty>
+			AND UCM_CTR_GBN = #standard#
+	   ORDER BY UCM_3LV_COD
+	</select>
+
+	<!-- 시스템설정 - 통제항목설정 - 트리 - cntr4 -->
+	<select id="QR_INSPT001_E" parameterClass="searchVO" resultClass="egovMap">
+		 SELECT UCM_CTR_COD,
+		 		UCM_4LV_COD,
+		        UCM_4LV_NAM,
+		        UCM_4LV_DTL,
+		        UCM_4LD_YN UCM_USE_YN,
+		        UCM_4LD_YN UCM_DEL_YN
+		   FROM UWO_CTR_MTR A
+		  WHERE UCM_BCY_COD = #manCyl#
+		    AND UCM_3LV_COD = #searchKeyword#
+	   ORDER BY UCM_4LV_COD
+	</select>
+
+	<!-- 시스템설정 - 통제항목설정 - 트리 - cntr5 -->
+	<select id="QR_INSPT001_F" parameterClass="searchVO" resultClass="egovMap">
+		 SELECT UCM_CTR_COD,
+		 		UCM_5LV_COD,
+		        UCM_5LV_NAM,
+		        UCM_5LV_DTL,
+		        UCM_5LD_YN UCM_USE_YN,
+		        UCM_5LD_YN UCM_DEL_YN
+		   FROM UWO_CTR_MTR A
+		  WHERE UCM_BCY_COD = #manCyl#
+		    AND UCM_4LV_COD = #searchKeyword#
+	   ORDER BY UCM_5LV_COD
+	</select>
+
+
+
+	<select id="QR_INSPT002_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			UFM_FLT_KEY
+			,UFM_BCY_COD
+			,UFM_CTR_COD
+			,UCC_SND_NAM AS UFM_CTR_NAM
+			,UFM_CTR_KEY
+			,UFM_CTR_DES
+			,DECODE(UFM_FLT_LVL, 1, '결함', '중결함') AS UFM_FLT_LVL
+			,UFM_FLT_NAM
+			,UFM_FLT_DES
+			,UFM_FLT_MDH
+			,F_GET_COMMON_NAME(UFM_RST_STA, 'FLTRST') AS UFM_RST_STA
+			,F_GET_USR_NAME(UFM_RGT_ID) AS UFM_RGT_NAM
+			,TO_CHAR(UFM_RGT_MDH, 'YYYY.MM.DD') AS UFM_RGT_MDH
+			,UCM.UCM_3LV_COD
+		FROM
+			UWO_FLT_MTR UFM
+			INNER JOIN (
+				SELECT
+					UCC_SND_COD
+					,UCC_SND_NAM
+				FROM UWO_COM_COD
+				WHERE UCC_FIR_COD = 'STND'
+			) UCC ON UFM.UFM_CTR_COD =  UCC.UCC_SND_COD
+			INNER JOIN UWO_CTR_MTR UCM ON UFM.UFM_CTR_KEY = UCM.UCM_CTR_KEY
+		WHERE
+			UFM_BCY_COD = #ufmBcyCod#
+		<isNotEmpty property="standard">
+			AND UFM_CTR_COD = #standard#
+		</isNotEmpty>
+		<isNotEmpty property="ufmCtrDes">
+			AND UFM_CTR_DES LIKE '%' || #ufmCtrDes# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="ufmFltNam">
+			AND UFM_FLT_NAM LIKE '%' || #ufmFltNam# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="ufmRstSta">
+			AND UFM_RST_STA = #ufmRstSta#
+		</isNotEmpty>
+		<isNotEmpty property="ufmFltLvl">
+			AND UFM_FLT_LVL = #ufmFltLvl#
+		</isNotEmpty>
+		<isNotEqual property="authKey" compareValue="A">
+			AND EXISTS
+			(
+			  SELECT * FROM UWO_FLT_MAP UFP
+			  WHERE UFP.UFP_FLT_KEY = UFM.UFM_FLT_KEY
+			  AND UFP.UFP_WRK_ID = #usrKey#
+			)
+		</isNotEqual>
+		<isNotEmpty property="usrNam">
+			AND EXISTS
+			(
+			  SELECT *
+			  FROM UWO_FLT_MAP UFP
+			  INNER JOIN UWO_USR_MTR UUM ON UFP.UFP_WRK_ID = UUM.UUM_USR_KEY
+			  WHERE UFP.UFP_FLT_KEY = UFM.UFM_FLT_KEY
+			  AND UUM.UUM_USR_NAM LIKE '%' || #usrNam# || '%'
+			)
+		</isNotEmpty>
+	</select>
+
+	<select id="QR_INSPT002_INFO" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			UFM_FLT_KEY
+			,UFM_BCY_COD
+			,UFM_CTR_COD
+			,UFM_CTR_KEY
+			,UCM_3LV_COD AS UFM_CTR_NAM
+			,UFM_CTR_DES
+			,UFM_FLT_LVL
+			,UFM_FLT_NAM
+			,UFM_FLT_DES
+			,TO_CHAR(UFM_FLT_MDH, 'YYYY.MM.DD') UFM_FLT_MDH
+			,UFM_RST_STA
+			,UFM_RGT_ID
+			,UFM_RGT_MDH
+			,UFM_UPT_ID
+			,UFM_UPT_MDH
+			,F_GET_COMMON_NAME(ufm_rst_sta, 'FLTRST') AS ufm_rst_nam
+		FROM
+			UWO_FLT_MTR UFM
+			,UWO_CTR_MTR UCM
+		WHERE
+			UFM_CTR_KEY = UCM_CTR_KEY(+)
+			AND UFM_FLT_KEY = #ufmFltKey#
+		<isNotEqual property="authKey" compareValue="A">
+			AND EXISTS
+			(
+			  SELECT * FROM UWO_FLT_MAP UFP
+			  WHERE UFP.UFP_FLT_KEY = UFM.UFM_FLT_KEY
+			  AND UFP.UFP_WRK_ID = #usrKey#
+			)
+		</isNotEqual>
+	</select>
+
+	<insert id="QR_INSPT002_INSERT" parameterClass="Map">
+		<selectKey keyProperty="ufmFltKey" resultClass="String">
+			SELECT SEQ_UWO_FLT_MTR.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT
+			INTO UWO_FLT_MTR (
+				UFM_FLT_KEY
+				,UFM_BCY_COD
+				,UFM_CTR_COD
+				,UFM_CTR_KEY
+				,UFM_CTR_DES
+				,UFM_FLT_LVL
+				,UFM_FLT_NAM
+				,UFM_FLT_DES
+				,UFM_FLT_MDH
+				,UFM_RST_STA
+				,UFM_RGT_ID
+				,UFM_RGT_MDH
+				,UFM_UPT_ID
+				,UFM_UPT_MDH
+		) VALUES (
+			#ufmFltKey#
+			,#ufmBcyCod#
+			,#ufmCtrCod#
+			,#ufmCtrKey#
+			,#ufmCtrDes#
+			,#ufmFltLvl#
+			,#ufmFltNam#
+			,#ufmFltDes#
+			,SYSDATE
+			,#ufmRstSta#
+			,#rgtId#
+			,SYSDATE
+			,#rgtId#
+			,SYSDATE
+		)
+	</insert>
+
+	<update id="QR_INSPT002_UPDATE" parameterClass="Map">
+		UPDATE UWO_FLT_MTR
+			SET
+				UFM_CTR_KEY = #ufmCtrKey#
+				,UFM_CTR_DES = #ufmCtrDes#
+				,UFM_FLT_LVL = #ufmFltLvl#
+				,UFM_FLT_NAM = #ufmFltNam#
+				,UFM_FLT_DES = #ufmFltDes#
+				,UFM_RST_STA = #ufmRstSta#
+		WHERE UFM_FLT_KEY = #ufmFltKey#
+	</update>
+
+	<update id="QR_INSPT002_UPDATE_RST" parameterClass="Map">
+		UPDATE uwo_flt_mtr ufm
+		SET
+			ufm_rst_sta = 'Y',
+			ufm_upt_id = #uptId#,
+			ufm_upt_mdh = SYSDATE
+		WHERE
+  			ufm_flt_key = #ufmFltKey#
+  			AND NOT EXISTS (
+  				SELECT * FROM uwo_flt_map ufp
+  				WHERE
+  					ufm.ufm_flt_key = ufp.ufp_flt_key
+  					AND ufp.ufp_cof_yn = 'N')
+	</update>
+
+	<select id="QR_INSPT002_MNG_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			UFP_MAP_KEY
+			,UFP_FLT_KEY
+			,UFP_SVC_COD
+      		,F_GET_COMMON_NAME(UFP_SVC_COD,'SERVICE') AS UFP_SVC_NAM
+			,UFP_DEP_COD
+      		,(SELECT UDM_DEP_NAM FROM UWO_DEP_MTR UDM WHERE UDM.UDM_DEP_COD = UFP_DEP_COD) AS UFP_DEP_NAM
+			,UFP_WRK_ID
+			,F_GET_USR_NAME(UFP_WRK_ID) AS UFP_WRK_NAM
+			,UFP_IMP_DES
+			,TO_CHAR(UFP_IMP_MDH, 'YYYY.MM.DD') UFP_IMP_MDH
+			,UFP_IMP_YN
+			,DECODE(UFP_COF_YN, 'Y', '조치','미조치') AS UFP_COF_YN
+			,F_GET_USR_NAME(UFP_COF_ID) AS UFP_COF_NAM
+			,TO_CHAR(UFP_COF_MDH, 'YYYY.MM.DD') AS UFP_COF_MDH
+			,UFP_STA_COD
+			,F_GET_COMMON_NAME(ufp_sta_cod, 'FLTSTATE') AS UFP_STA_NAM
+			,UFP_DEL_YN
+			,UFP_RGT_ID
+			,TO_CHAR(UFP_RGT_MDH, 'YYYY.MM.DD') UFP_RGT_MDH
+			,UFP_UPT_ID
+			,TO_CHAR(UFP_UPT_MDH, 'YYYY.MM.DD') UFP_UPT_MDH
+			,UUM_USE_YN
+			,UUM_USR_NAM
+			,UUM_USR_ID
+			,F_GET_USR_INFO('04', UUM_USR_KEY) UUM_POS_NAM
+		FROM
+			UWO_FLT_MAP UFP
+      	INNER JOIN UWO_USR_MTR UUM ON UFP.UFP_WRK_ID = UUM.UUM_USR_KEY
+		WHERE UFP.UFP_FLT_KEY = #ufmFltKey#
+		<isEqual property="authKey" compareValue="P">
+			AND ufp.ufp_wrk_id = #usrKey#
+		</isEqual>
+		<isNotEmpty property="usrNam">
+			AND EXISTS
+			(
+			  SELECT *
+			  FROM UWO_USR_MTR UUM
+			  WHERE UFP.UFP_WRK_ID = UUM.UUM_USR_KEY
+			  AND UUM.UUM_USR_NAM LIKE '%' || #usrNam# || '%'
+			)
+		</isNotEmpty>
+	</select>
+
+	<select id="QR_INSPT002_MNG_INFO" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			UFP_MAP_KEY
+			,UFP_FLT_KEY
+			,UFP_DIV_COD
+			,UFP_SVC_COD
+			,UFP_DEP_COD
+			,UFP_WRK_ID
+			,UFP_IMP_DES
+			,TO_CHAR(UFP_IMP_MDH, 'YYYY.MM.DD') AS UFP_IMP_MDH
+			,UFP_IMP_YN
+			,UFP_COF_YN
+			,UFP_COF_ID
+			,F_GET_USR_NAME(UFP_COF_ID) UFP_COF_NAM
+			,TO_CHAR(UFP_COF_MDH, 'YYYY.MM.DD') AS UFP_COF_MDH
+			,UFP_STA_COD
+			,UFP_DEL_YN
+			,UFP_RGT_ID
+			,TO_CHAR(UFP_RGT_MDH, 'YYYY.MM.DD') AS UFP_RGT_MDH
+			,UFP_UPT_ID
+			,UFP_UPT_MDH
+			,UCC_SND_NAM AS UFM_CTR_COD
+			,UFM_CTR_DES
+			,DECODE(UFM_FLT_LVL, '1', '결함', '중결함') AS UFM_FLT_LVL
+			,UFM_FLT_NAM
+			,TO_CHAR(UFM_FLT_MDH, 'YYYY.MM.DD') AS UFM_FLT_MDH
+			,UFM_FLT_DES
+			,UUM_USE_YN
+			,UUM_USR_NAM
+			,UUM_USR_ID
+			,F_GET_USR_INFO('04', UUM_USR_KEY) UUM_POS_NAM
+			,F_GET_COMMON_NAME(ufp_sta_cod, 'FLTSTATE') AS ufp_sta_nam
+		FROM
+			UWO_FLT_MTR
+			,UWO_FLT_MAP
+			,UWO_USR_MTR
+			,(
+				SELECT
+					UCC_SND_COD
+					,UCC_SND_NAM
+				FROM UWO_COM_COD
+				WHERE UCC_FIR_COD = 'STND'
+			) S
+		WHERE UFP_FLT_KEY = UFM_FLT_KEY
+			AND UCC_SND_COD = UFM_CTR_COD
+			AND UFP_WRK_ID = UUM_USR_KEY
+			AND UFP_MAP_KEY = #ufpMapKey#
+	</select>
+
+	<insert id="QR_INSPT002_MNG_INSERT" parameterClass="Map">
+		INSERT
+			INTO UWO_FLT_MAP (
+				UFP_MAP_KEY
+				,UFP_FLT_KEY
+				,UFP_DIV_COD
+				,UFP_SVC_COD
+				,UFP_DEP_COD
+				,UFP_WRK_ID
+				,UFP_COF_YN
+				,UFP_STA_COD
+				,UFP_DEL_YN
+				,UFP_RGT_ID
+				,UFP_RGT_MDH
+				,UFP_UPT_ID
+				,UFP_UPT_MDH
+		)
+		SELECT
+			SEQ_UWO_FLT_MAP.NEXTVAL
+			,#ufpFltKey#
+			,UUM_DIV_COD
+			,UUM_SVC_COD
+			,UUM_DEP_COD
+			,UUM_USR_KEY
+			,'N'
+			,'0'
+			,'N'
+			,#rgtId#
+			,SYSDATE
+			,#rgtId#
+			,SYSDATE
+		FROM UWO_USR_MTR
+		WHERE UUM_USR_KEY = #ufpWrkId#
+	</insert>
+
+	<update id="QR_INSPT002_MNG_UPDATE" parameterClass="Map">
+		UPDATE UWO_FLT_MAP
+			SET
+				UFP_IMP_DES = #ufpImpDes#
+				,UFP_IMP_MDH = SYSDATE
+				,UFP_IMP_YN = #ufpImpYn#
+				,UFP_STA_COD = #ufpStaCod#
+				,UFP_UPT_ID = #uptId#
+				,UFP_UPT_MDH = SYSDATE
+			<isNotEmpty property="ufpCofYn">
+				,UFP_COF_YN = #ufpCofYn#
+			</isNotEmpty>
+			<isNotEqual property="ufpCofYn" compareValue="Y">
+				,UFP_COF_ID = #uptId#
+				,UFP_COF_MDH = SYSDATE
+			</isNotEqual>
+		WHERE UFP_MAP_KEY = #ufpMapKey#
+	</update>
+
+	<update id="QR_INSPT002_MNG_DELETE" parameterClass="Map">
+		UPDATE UWO_FLT_MAP
+			SET UFP_DEL_YN = 'Y'
+				,UFP_UPT_ID = #uptId#
+				,UFP_UPT_MDH = SYSDATE
+		WHERE
+			UFP_FLT_KEY = #ufpFltKey#
+			AND UFP_WRK_ID = #ufpWrkId#
+	</update>
+
+	<select id="QR_INSPT002_REPORT" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			(SELECT
+				COUNT(*)
+			FROM UWO_FLT_MTR
+			WHERE
+			UFM_BCY_COD = #ufmBcyCod#
+			<isNotEmpty property="standard">
+				AND UFM_CTR_COD = #standard#
+			</isNotEmpty>
+			<isNotEmpty property="ufmCtrDes">
+				AND UFM_CTR_DES LIKE '%' || #ufmCtrDes# || '%'
+			</isNotEmpty>
+			<isNotEmpty property="ufmFltNam">
+				AND UFM_FLT_NAM = '%' || #ufmFltNam# || '%'
+			</isNotEmpty>
+			) TOTCNT
+			,(SELECT
+				COUNT(*)
+			FROM UWO_FLT_MTR
+			WHERE
+			UFM_BCY_COD = #ufmBcyCod#
+			<isNotEmpty property="standard">
+				AND UFM_CTR_COD = #standard#
+			</isNotEmpty>
+			<isNotEmpty property="ufmCtrDes">
+				AND UFM_CTR_DES LIKE '%' || #ufmCtrDes# || '%'
+			</isNotEmpty>
+			<isNotEmpty property="ufmFltNam">
+				AND UFM_FLT_NAM = '%' || #ufmFltNam# || '%'
+			</isNotEmpty>
+				AND UFM_RST_STA = 'N'
+			) TOTCNT_I
+			,(SELECT
+				COUNT(*)
+			FROM UWO_FLT_MTR
+			WHERE
+			UFM_BCY_COD = #ufmBcyCod#
+			<isNotEmpty property="standard">
+				AND UFM_CTR_COD = #standard#
+			</isNotEmpty>
+			<isNotEmpty property="ufmCtrDes">
+				AND UFM_CTR_DES LIKE '%' || #ufmCtrDes# || '%'
+			</isNotEmpty>
+			<isNotEmpty property="ufmFltNam">
+				AND UFM_FLT_NAM = '%' || #ufmFltNam# || '%'
+			</isNotEmpty>
+				AND UFM_RST_STA = 'Y'
+			) TOTCNT_C
+			,UFM_FLT_KEY
+			,UFM_BCY_COD
+			,UFM_CTR_COD
+			,UCC_SND_NAM AS UFM_CTR_NAM
+			,UFM_CTR_KEY
+			,UFM_CTR_DES
+			,DECODE(UFM_FLT_LVL, 1, '결함', '중결함') AS UFM_FLT_LVL
+			,UFM_FLT_NAM
+			,UFM_FLT_DES
+			,UFM_FLT_MDH
+			,F_GET_COMMON_NAME(UFM_RST_STA, 'FLTRST') AS UFM_RST_STA
+			,F_GET_USR_NAME(UFM_RGT_ID) AS UFM_RGT_NAM
+			,TO_CHAR(UFM_RGT_MDH, 'YYYY.MM.DD') AS UFM_RGT_MDH
+			,B.UCM_GOL_NO
+       		,B.UCM_1LV_NAM
+		FROM
+			 UWO_FLT_MTR A LEFT JOIN UWO_CTR_MTR B ON A.UFM_CTR_KEY = B.UCM_CTR_KEY,
+			(
+				SELECT
+					UCC_SND_COD
+					,UCC_SND_NAM
+				FROM UWO_COM_COD
+				WHERE UCC_FIR_COD = 'STND'
+			) C
+		WHERE UFM_CTR_COD = C.UCC_SND_COD
+			AND UFM_BCY_COD = #ufmBcyCod#
+		<isNotEmpty property="standard">
+			AND UFM_CTR_COD = #standard#
+		</isNotEmpty>
+		<isNotEmpty property="ufmCtrDes">
+			AND UFM_CTR_DES LIKE '%' || #ufmCtrDes# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="ufmFltNam">
+			AND UFM_FLT_NAM LIKE '%' || #ufmFltNam# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="ufmRstSta">
+			AND UFM_RST_STA = #ufmRstSta#
+		</isNotEmpty>
+	</select>
+
+	<select id="QR_INSPT002_REPORT_MNG" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			UFP_MAP_KEY
+			,UFP_FLT_KEY
+			,UFP_DIV_COD
+			,UFP_SVC_COD
+			,UFP_DEP_COD
+			,UFP_WRK_ID
+			,UFP_IMP_DES
+			,TO_CHAR(UFP_IMP_MDH, 'YYYY.MM.DD') AS UFP_IMP_MDH
+			,UFP_IMP_YN
+			,UFP_COF_YN
+			,UFP_COF_ID
+			,F_GET_USR_NAME(UFP_COF_ID) UFP_COF_NAM
+			,TO_CHAR(UFP_COF_MDH, 'YYYY.MM.DD') AS UFP_COF_MDH
+			,UFP_STA_COD
+			,UFP_DEL_YN
+			,UFP_RGT_ID
+			,TO_CHAR(UFP_RGT_MDH, 'YYYY.MM.DD') AS UFP_RGT_MDH
+			,UFP_UPT_ID
+			,TO_CHAR(UFP_UPT_MDH, 'YYYY.MM.DD') AS UFP_UPT_MDH
+			,UCC_SND_NAM AS UFM_CTR_COD
+			,UFM_CTR_DES
+			,UFM_FLT_LVL
+			,UFM_FLT_NAM
+			,TO_CHAR(UFM_FLT_MDH, 'YYYY.MM.DD') AS UFM_FLT_MDH
+			,UFM_FLT_DES
+			,UUM_USE_YN
+			,UUM_USR_NAM
+			,UUM_USR_ID
+			,F_GET_USR_INFO('04', UUM_USR_KEY) UUM_POS_NAM
+			,UCM_3LV_COD
+            ,UCM_3LV_NAM
+		FROM
+			UWO_FLT_MTR
+			,UWO_FLT_MAP
+			,UWO_USR_MTR
+			,(
+				SELECT
+					UCC_SND_COD
+					,UCC_SND_NAM
+				FROM UWO_COM_COD
+				WHERE UCC_FIR_COD = 'STND'
+			) S
+			,UWO_CTR_MTR
+		WHERE UFP_FLT_KEY = UFM_FLT_KEY
+			AND UCC_SND_COD = UFM_CTR_COD
+			AND UFP_WRK_ID = UUM_USR_KEY
+			AND UUM_USE_YN = 'Y'
+			AND UFP_COF_YN = 'Y'
+		<isNotEmpty property="ufmFltKey">
+			AND UFM_FLT_KEY = #ufmFltKey#
+		</isNotEmpty>
+			AND UFM_CTR_KEY = UCM_CTR_KEY(+)
+	</select>
+	<select id="QR_INSPT003_A" resultMap="inspt003" parameterClass="searchVO">
+		SELECT
+			(SELECT UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_SND_COD = UCM_CTR_GBN) UCM_CTR_GBN,
+        	F_GET_COMMON_NAME(UTW_SVC_COD, 'SERVICE') AS UTW_SVC_COD,
+        	F_GET_COMMON_NAME(UTW_DEP_COD, 'DEPT') AS UTW_DEP_COD,
+			C.UCM_CTR_KEY,
+			C.UCM_3LV_COD,
+			C.UCM_3LV_NAM,
+			A.UTD_DOC_NAM,
+			F_GET_USR_NAME(B.UTM_WRK_ID) AS UTM_WRK_ID,
+			F_GET_COMMON_NAME(A.UTD_TRM_GBN, 'TERM') AS TRM_GBN,
+			E.UTW_WRK_KEY
+		  FROM UWO_TRC_DOC A,
+		       UWO_TRC_MAP B,
+		       UWO_CTR_MTR C,
+		       UWO_TRC_CTR D,
+		       UWO_TRC_WRK E,
+		       UWO_USR_MTR G,
+		       (
+					SELECT UTD_TRC_KEY,
+		               UTW_WRK_ID,
+		               SUM(CASE WHEN UTW_WRK_STA = '90' THEN '1'
+		                   ELSE '0' END) CNTCNT
+          			FROM UWO_TRC_WRK, UWO_TRC_DOC
+         			WHERE
+         				UTW_TRC_KEY = UTD_TRC_KEY
+         				AND UTW_DEL_YN = 'N'
+	           			AND UTW_PRD_COD = #manCyl#
+					<isNotEmpty property="service">
+						AND UTW_SVC_COD = #service#
+					</isNotEmpty>
+					<isNotEmpty property="worker">
+						AND (UTW_WRK_ID = #worker#)
+					</isNotEmpty>
+         			GROUP BY UTD_TRC_KEY, UTW_WRK_ID
+         		) CNT
+		 WHERE
+		 	UTM_WRK_ID = G.UUM_USR_KEY
+		 	AND A.UTD_TRC_KEY = B.UTM_TRC_KEY
+			AND A.UTD_TRC_KEY = D.UTC_TRC_KEY(+)
+			AND D.UTC_CTR_KEY = C.UCM_CTR_KEY(+)
+			AND A.UTD_TRC_KEY = CNT.UTD_TRC_KEY(+)
+			AND E.UTW_WRK_ID = B.UTM_WRK_ID(+)
+			AND A.UTD_DEL_YN = 'N'
+			AND B.UTM_DEL_YN = 'N'
+			AND A.UTD_TRC_KEY = E.UTW_TRC_KEY
+			AND CNT.CNTCNT > 0
+			AND UCM_BCY_COD = #manCyl#
+			AND UTW_VEW_LVL != '0'
+		<isNotEmpty property="dept">
+			AND UTW_DEP_COD = #dept#
+		</isNotEmpty>
+		<isNotEmpty property="worker">
+			AND UTM_WRK_ID = #worker#
+		</isNotEmpty>
+		<isNotEmpty property="service">
+		   	AND UTW_SVC_COD = #service#
+		</isNotEmpty>
+		<isEqual property="workTerm" compareValue="Y">
+			<isEmpty property="workCycleTerm">
+				AND A.UTD_TRM_GBN IN ('D','W','M','T','Q','H','Y')
+			</isEmpty>
+			<isNotEmpty property="workCycleTerm">
+				AND A.UTD_TRM_GBN LIKE #workCycleTerm# || '%'
+			</isNotEmpty>
+		</isEqual>
+		<isEqual property="workTerm" compareValue="N">
+			<isEmpty property="workCycleTerm">
+				AND A.UTD_TRM_GBN NOT IN ('D','W','M','T','Q','H','Y')
+			</isEmpty>
+			<isNotEmpty property="workCycleTerm">
+				AND A.UTD_TRM_GBN LIKE #workCycleTerm# || '%'
+			</isNotEmpty>
+		</isEqual>
+		<isNotEmpty property="workName">
+			AND UTD_DOC_NAM LIKE #workName# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="goalNum">
+			AND UCM_GOL_NO LIKE #goalNum# || '%'
+		</isNotEmpty>
+		<isNotEmpty property="standard">
+			AND UCM_CTR_GBN = #standard#
+		</isNotEmpty>
+			 GROUP BY A.UTD_TRC_KEY,
+			          A.UTD_DOC_NAM,
+			          C.UCM_CTR_KEY,
+			          C.UCM_CTR_GBN,
+			          C.UCM_3LV_COD,
+			          C.UCM_3LV_NAM,
+			          B.UTM_WRK_ID,
+			          A.UTD_TRM_GBN,
+			          CNT.CNTCNT
+			          ,UTW_SVC_COD
+			          ,UTW_DEP_COD
+			          ,E.UTW_WRK_KEY
+			 ORDER BY A.UTD_TRC_KEY,
+			          B.UTM_WRK_ID,
+			          C.UCM_CTR_KEY,
+			          E.UTW_WRK_KEY
+	</select>
+
+	<select id="QR_INSPT003_FILE" resultClass="egovMap">
+		SELECT
+			UMF_FLE_KEY
+			,UMF_CON_KEY
+			,UMF_CON_FNM
+		FROM
+			UWO_MNG_FLE
+		WHERE
+			UMF_TBL_GBN = 'WRK'
+			AND UMF_CON_KEY = #utwWrkKey#
+			AND UMF_DEL_YN = 'N'
+	</select>
+
+	<select id="QR_INSPT004_A" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			ucm.ucm_ctr_key,
+			UCM_3LV_COD,
+			UCM_3LV_NAM,
+			UCM_3LV_DTL,
+			UCM_3LD_YN,
+			UCM_2LV_COD,
+			UCM_2LV_NAM,
+			UCM_1LV_COD,
+			UCM_1LV_NAM,
+			ucp.ucm_msr_dtl,
+			(
+				SELECT
+					LISTAGG(utw_wrk_key, ',') WITHIN GROUP(ORDER BY utw_wrk_key)
+				FROM
+					uwo_trc_ctr utc
+  					INNER JOIN uwo_trc_wrk utw ON utc.utc_trc_key = utw.utw_trc_key
+  				WHERE
+  					utc.utc_ctr_key = ucm.ucm_ctr_key
+					AND utw.utw_del_yn = 'N'
+					AND utc.utc_del_yn = 'N'
+		  			<!-- 2018-03-22 s, AND UTW.UTW_SVC_COD IN ('SC007',#service#) -->
+		  	<include refid="QR_INSPT_WRK_SERVICE_WHERE" />
+			<isNotEmpty property="utwWrkSta">
+					AND utw_wrk_sta = #utwWrkSta#
+			</isNotEmpty>
+			) AS wrk_keys,
+			<!-- 2017-07-26, 관련문서 누락으로 추가 -->
+			<!-- 수정 전 확인 -->
+			<![CDATA[
+			   (
+			   SELECT LISTAGG(REGEXP_REPLACE(UBM_BRD_CTS,'<[^>]*>','') || '^*^') WITHIN GROUP(ORDER BY ubm_brd_cts)
+			]]>
+			     FROM uwo_ctr_brd ucb
+			    INNER JOIN uwo_brd_mtr ubm ON ucb.ucb_brd_key = ubm.ubm_brd_key
+			    WHERE ucm.ucm_ctr_key = ucb_ctr_key
+			      AND ubm_brd_gbn  = '2'
+			      AND ucb_del_yn = 'N'
+			      AND ubm_brd_cts IS NOT NULL
+  			   ) AS utd_doc_nam
+		FROM
+			uwo_ctr_mtr ucm
+			INNER JOIN uwo_ctr_map ucp ON ucm.ucm_ctr_key = ucp.ucm_ctr_key
+		WHERE 1=1
+			AND UCM_BCY_COD = #ucmBcyCod#
+			AND UCM_3LV_COD IS NOT NULL
+			AND UCM_CTR_GBN = #standard#
+			AND ucm.ucm_2ld_yn = 'N'
+		<isNotEmpty property="ucm1lvCod">
+			AND UCM_1LV_COD = #ucm1lvCod#
+		</isNotEmpty>
+			AND ucp.ucm_svc_cod = #service#
+		<!-- 2018-06-09 s, ORDER BY LPAD(REGEXP_REPLACE(UCM_3LV_COD, '^[A-Za-z]*',''), 8, '0') -->
+ 		ORDER BY
+ 			LENGTH(ucm_2lv_cod) - LENGTH(REPLACE(ucm_2lv_cod, '.')),
+ 			REGEXP_REPLACE(ucm_3lv_cod || '.', '(.)\.', LPAD('\1', 3, '0'))
+	</select>
+
+	<select id="QR_INSPT004_CTRCODE" resultClass="egovMap">
+		SELECT DISTINCT UCM_CTR_COD, UCM_1LV_COD, TO_CHAR(UCM_1LV_COD || ' ' || UCM_1LV_NAM) AS UCM_1LV_NAM
+		FROM UWO_CTR_MTR
+ 		WHERE 1=1
+		<isNotEmpty property="ucmBcyCod">
+			AND UCM_BCY_COD = #ucmBcyCod#
+		</isNotEmpty>
+		<isNotEmpty property="standard">
+			AND UCM_CTR_GBN = #standard#
+		</isNotEmpty>
+		ORDER BY LPAD(REGEXP_REPLACE(UCM_1LV_COD, '^[A-Za-z]*',''), 4, '0')
+	</select>
+
+
+	<select id="QR_INSPT004_U" resultClass="egovMap">
+		SELECT UBM_BRD_TLE , UCB_MAP_KEY , UBM_BRD_KEY, UCB_CTR_KEY
+		FROM UWO_CTR_BRD A, UWO_BRD_MTR B
+		WHERE UCB_BRD_KEY = UBM_BRD_KEY
+		AND UBM_BRD_GBN = '2'
+		AND A.UCB_DEL_YN = 'N'
+	</select>
+
+	<select id="QR_INSPT004_SERVICE_M" parameterClass="Map" resultClass="egovMap">
+		SELECT UCM_CTR_KEY, UCM_SVC_COD, UCM_2LV_COD
+		FROM (SELECT UCM_CTR_KEY,
+					UCM_SVC_COD,
+					(SELECT UCM_2LV_COD
+					FROM UWO_CTR_MTR
+					WHERE UCM_CTR_KEY = A.UCM_CTR_KEY) AS UCM_2LV_COD
+			FROM UWO_CTR_MAP A)
+		WHERE UCM_2LV_COD = #ucm2lvCod#
+	</select>
+
+	<select id="QR_INSPT004_R" parameterClass="Map" resultClass="egovMap">
+		SELECT
+       		UBM.UBM_BRD_TLE,
+			UBM.UBM_BRD_KEY,
+			F_GET_COMMON_NAME(UBM_CAT_COD,'CATEGORY') AS UBM_CAT_COD
+  		FROM
+  			UWO_BRD_MTR UBM,
+  			( SELECT UCC_SND_COD,UCC_SND_NAM FROM UWO_COM_COD WHERE UCC_FIR_COD = 'CATEGORY') C
+ 		WHERE
+ 			UBM.UBM_BRD_KEY NOT IN (
+ 									SELECT
+         								UBM_BRD_KEY
+									FROM
+										UWO_CTR_BRD A,
+ 										UWO_BRD_MTR B
+ 									WHERE
+ 										A.UCB_BRD_KEY = B.UBM_BRD_KEY
+ 										AND A.UCB_MAP_KEY = #mapKey#
+ 									)
+     		AND UBM_BRD_GBN = '2'
+     		AND UBM_DEL_YN = 'N'
+     		AND C.UCC_SND_COD = UBM_CAT_COD
+			GROUP BY UBM_BRD_KEY, UBM_BRD_TLE, UBM_CAT_COD
+			ORDER BY UBM_BRD_KEY
+	</select>
+
+	<insert id="QR_INSPT004_T" parameterClass="Map">
+		INSERT INTO UWO_CTR_BRD(UCB_MAP_KEY,UCB_CTR_KEY,UCB_BRD_KEY,UCB_DEL_YN,UCB_RGT_ID,UCB_RGT_MDH)
+		VALUES(
+			(SELECT NVL(MAX(UCB_MAP_KEY),0)+1 FROM UWO_CTR_BRD)
+			,#mapKey#
+			,#brdKey#
+			,'N'
+			,#rgt_id#
+			,SYSDATE
+			)
+	</insert>
+
+	<!-- 2018-03-22 s, uwo_ctr_mtr -> uwo_ctr_map -->
+	<update id="QR_INSPT004_M" parameterClass="Map">
+		UPDATE uwo_ctr_map
+		SET
+			ucm_msr_dtl = #ucmMsrDtl#
+		WHERE
+			ucm_ctr_key = #ucmCtrKey#
+			AND ucm_svc_cod = #ucmSvcCod#
+	</update>
+
+	<select id="QR_INSPT004_FILE" parameterClass="Map" resultClass="egovMap">
+		SELECT
+		  UMF.UMF_SVR_PTH,
+		  UMF.UMF_SVR_FNM,
+		  UMF.UMF_CON_FNM
+		FROM UWO_MNG_FLE UMF
+		WHERE 1=1
+		  AND UMF.UMF_TBL_GBN = 'WRK'
+		  AND UMF.UMF_DEL_YN = 'N'
+		  AND UMF.UMF_FLE_KEY = #umfFleKey#
+	</select>
+
+	<select id="QR_INSPT004_FILES" parameterClass="Map" resultClass="egovMap">
+		SELECT
+		  UCM.UCM_CTR_KEY,
+		  UCM.UCM_1LV_COD,
+		  REPLACE(REPLACE(UCM.UCM_1LV_NAM, CHR(13), ''), CHR(10), ' ') UCM_1LV_NAM,
+		  UCM.UCM_2LV_COD,
+		  REPLACE(REPLACE(UCM.UCM_2LV_NAM, CHR(13), ''), CHR(10), ' ') UCM_2LV_NAM,
+		  UCM.UCM_3LV_COD,
+		  UMF.UMF_SVR_PTH,
+		  UMF.UMF_SVR_FNM,
+		  UMF.UMF_CON_FNM
+		FROM UWO_CTR_MTR UCM
+		INNER JOIN uwo_ctr_map ucp ON ucm.ucm_ctr_key = ucp.ucm_ctr_key
+		LEFT OUTER JOIN UWO_TRC_CTR UTC ON UCM.UCM_CTR_KEY = UTC.UTC_CTR_KEY
+		LEFT OUTER JOIN UWO_TRC_WRK UTW ON UTC.UTC_TRC_KEY = UTW.UTW_TRC_KEY AND utw_wrk_sta = '90'
+		<!-- 2018-03-22 s, <isNotEmpty property="service">
+			     AND UTW.UTW_SVC_COD IN ('SC007',#service#)
+	    </isNotEmpty> -->
+	    <include refid="QR_INSPT_WRK_SERVICE_WHERE" />
+		LEFT OUTER JOIN UWO_MNG_FLE UMF ON UTW.UTW_WRK_KEY = UMF.UMF_CON_KEY
+			AND UMF.UMF_TBL_GBN = 'WRK'
+			AND UMF.UMF_DEL_YN = 'N'
+			AND UMF.UMF_MSR_YN = 'Y'
+		WHERE 1=1
+		  AND UCM.UCM_3LV_COD IS NOT NULL
+		  AND UCM.UCM_BCY_COD = #ucmBcyCod#
+		<isNotEmpty property="standard">
+		  AND UCM.UCM_CTR_GBN = #standard#
+		</isNotEmpty>
+		<!-- 2018-03-22 s, <isNotEmpty property="service">
+		  AND EXISTS (SELECT * FROM UWO_CTR_MAP UCP
+		    		 	 WHERE UCP.UCM_CTR_KEY = UCM.UCM_CTR_KEY
+		    		 	   AND UCM_SVC_COD IN ('SC007',#service#)
+   			)
+		</isNotEmpty> -->
+		<include refid="QR_INSPT_SERVICE_WHERE" />
+		<isNotEmpty property="ucm1lvCod">
+		  AND UCM.UCM_1LV_COD = #ucm1lvCod#
+		</isNotEmpty>
+		GROUP BY
+		  UCM.UCM_CTR_KEY,
+		  UCM.UCM_1LV_COD,
+		  UCM.UCM_1LV_NAM,
+		  UCM.UCM_2LV_COD,
+		  UCM.UCM_2LV_NAM,
+		  UCM.UCM_3LV_COD,
+		  UMF.UMF_SVR_PTH,
+		  UMF.UMF_SVR_FNM,
+		  UMF.UMF_CON_FNM
+    	ORDER BY UCM.UCM_1LV_COD, UCM.UCM_2LV_COD, UCM.UCM_3LV_COD
+	</select>
+
+	<select id="QR_INSPT004_01_FILES" parameterClass="Map" resultClass="egovMap">
+		SELECT
+		UCM.UCM_CTR_KEY,
+		UCM.UCM_1LV_COD,
+		REPLACE(REPLACE(UCM.UCM_1LV_NAM, CHR(13), ''), CHR(10), ' ') UCM_1LV_NAM,
+		UCM.UCM_2LV_COD,
+		REPLACE(REPLACE(UCM.UCM_2LV_NAM, CHR(13), ''), CHR(10), ' ') UCM_2LV_NAM,
+		UCM.UCM_3LV_COD,
+		UMF.UMF_FLE_KEY,
+		UMF.UMF_SVR_PTH,
+		UMF.UMF_SVR_FNM,
+		UMF.UMF_CON_FNM
+		FROM UWO_CTR_MTR UCM
+		INNER JOIN uwo_ctr_map ucp ON ucm.ucm_ctr_key = ucp.ucm_ctr_key
+		LEFT OUTER JOIN UWO_TRC_CTR UTC ON UCM.UCM_CTR_KEY = UTC.UTC_CTR_KEY
+		LEFT OUTER JOIN UWO_TRC_WRK UTW ON UTC.UTC_TRC_KEY = UTW.UTW_TRC_KEY AND utw_wrk_sta = '90'
+		<include refid="QR_INSPT_WRK_SERVICE_WHERE" />
+		LEFT JOIN UWO_MSR_FLE MSR_FLE ON UCM.UCM_CTR_KEY = MSR_FLE.UMF_CTR_KEY
+			AND MSR_FLE.UMF_SVC_COD = #service#
+        LEFT JOIN UWO_MNG_FLE UMF ON MSR_FLE.UMF_FLE_KEY = UMF.UMF_FLE_KEY
+		AND UMF.UMF_DEL_YN = 'N'
+		WHERE 1=1
+		AND UCM.UCM_3LV_COD IS NOT NULL
+		AND UCM.UCM_BCY_COD = #ucmBcyCod#
+		<isNotEmpty property="standard">
+			AND UCM.UCM_CTR_GBN = #standard#
+		</isNotEmpty>
+		<include refid="QR_INSPT_SERVICE_WHERE" />
+		<isNotEmpty property="ucm1lvCod">
+			AND UCM.UCM_1LV_COD = #ucm1lvCod#
+		</isNotEmpty>
+		GROUP BY
+		UCM.UCM_CTR_KEY,
+		UCM.UCM_1LV_COD,
+		UCM.UCM_1LV_NAM,
+		UCM.UCM_2LV_COD,
+		UCM.UCM_2LV_NAM,
+		UCM.UCM_3LV_COD,
+		UMF.UMF_FLE_KEY,
+		UMF.UMF_SVR_PTH,
+		UMF.UMF_SVR_FNM,
+		UMF.UMF_CON_FNM
+		ORDER BY UCM.UCM_1LV_COD, UCM.UCM_2LV_COD, UCM.UCM_3LV_COD
+	</select>
+
+	<!-- 결함관리 메인 -->
+	<select id="QR_INSPT002_MAIN_LIST" parameterClass="Map" resultClass="egovMap">
+		SELECT
+			ufp_map_key,
+			ufm_flt_key,
+			ufm_flt_des,
+			TO_CHAR(ufp_rgt_mdh, 'YYYY.MM.DD') ufp_rgt_mdh,
+			ufp_sta_cod,
+			uum_usr_nam,
+			F_GET_COMMON_NAME(ufp_sta_cod, 'FLTSTATE') AS ufp_sta_nam
+		  FROM (
+				SELECT
+				  ufp_map_key,
+				  ufm_flt_key,
+				  ufm_flt_des,
+				  ufp_rgt_mdh,
+				  ufp_sta_cod,
+				  uum_usr_nam
+				FROM uwo_flt_mtr ufm
+				INNER JOIN uwo_flt_map ufp ON ufm.ufm_flt_key = ufp.ufp_flt_key
+				INNER JOIN uwo_usr_mtr uum ON ufp.ufp_wrk_id = uum.uum_usr_key
+				WHERE ufp.ufp_wrk_id = #usrKey#
+					AND ufp.ufp_sta_cod IN (0,2)
+				 <isEqual property="authKey" compareValue="A">
+			 UNION
+				 SELECT
+				  ufp_map_key,
+				  ufm_flt_key,
+				  ufm_flt_des,
+				  ufp_rgt_mdh,
+				  ufp_sta_cod,
+				  uum_usr_nam
+				FROM uwo_flt_mtr ufm
+				INNER JOIN uwo_flt_map ufp ON ufm.ufm_flt_key = ufp.ufp_flt_key
+				INNER JOIN uwo_usr_mtr uum ON ufp.ufp_wrk_id = uum.uum_usr_key
+				WHERE ufp.ufp_sta_cod IN (1)
+					AND ufp_cof_yn = 'N'
+				 </isEqual>
+		 	)
+		 WHERE ROWNUM <![CDATA[<]]>	 5
+		 ORDER BY ufp_rgt_mdh asc
+	</select>
+
+	<!-- bcyCod, service, standard -->
+	<select id="getSaWorkFileRelatedOtherServiceOld" parameterClass="Map" resultClass="egovMap">
+		SELECT *
+		FROM (
+			SELECT TRC_CTR1.UTC_TRC_KEY AS BASE_TRC_KEY,
+				TRC_CTR1.UTC_CTR_KEY AS BASE_CTR_KEY,
+				TRC_CTR2.UTC_CTR_KEY AS SA_CTR_KEY,
+				USR_MTR.UUM_USR_KEY  AS USR_KEY,
+				USR_MTR.UUM_DEP_COD  AS DEP_COD
+			FROM UWO_TRC_CTR TRC_CTR1
+				LEFT JOIN UWO_CTR_MTR CTR_MTR1 ON TRC_CTR1.UTC_CTR_KEY = CTR_MTR1.UCM_CTR_KEY
+				LEFT JOIN UWO_CTR_MAP CTR_MAP1 ON CTR_MTR1.UCM_CTR_KEY = CTR_MAP1.UCM_CTR_KEY
+				LEFT JOIN UWO_TRC_CTR TRC_CTR2 ON TRC_CTR1.UTC_TRC_KEY = TRC_CTR2.UTC_TRC_KEY
+				LEFT JOIN UWO_CTR_MTR CTR_MTR2 ON TRC_CTR2.UTC_CTR_KEY = CTR_MTR2.UCM_CTR_KEY
+				LEFT JOIN UWO_CTR_MAP CTR_MAP2 ON CTR_MTR2.UCM_CTR_KEY = CTR_MAP2.UCM_CTR_KEY
+				LEFT JOIN UWO_TRC_MAP TRC_MAP ON TRC_CTR1.UTC_TRC_KEY = TRC_MAP.UTM_TRC_KEY
+				LEFT JOIN UWO_TRC_WRK TRC_WRK
+				ON TRC_MAP.UTM_TRC_KEY = TRC_WRK.UTW_TRC_KEY AND TRC_MAP.UTM_WRK_ID = TRC_WRK.UTW_WRK_ID
+				LEFT JOIN UWO_USR_MTR USR_MTR ON TRC_MAP.UTM_WRK_ID = USR_MTR.UUM_USR_KEY
+			WHERE TRC_CTR1.UTC_CTR_KEY != TRC_CTR2.UTC_CTR_KEY
+				AND TRC_CTR1.UTC_DEL_YN = 'N'
+				AND TRC_CTR2.UTC_DEL_YN = 'N'
+				AND TRC_MAP.UTM_DEL_YN = 'N'
+				AND USR_MTR.UUM_USE_YN = 'Y'
+				AND CTR_MTR1.UCM_BCY_COD = #manCyl#
+				AND CTR_MAP1.UCM_SVC_COD = #service#
+				AND CTR_MAP2.UCM_SVC_COD = F_SA_SVC_COD()
+				AND CTR_MTR2.UCM_BCY_COD = #manCyl#
+				AND CTR_MTR1.UCM_CTR_GBN = #standard#
+				AND CTR_MTR2.UCM_CTR_GBN = F_SA_COMP_COD()
+				AND TRC_WRK.UTW_WRK_ID IS NULL
+				AND TRC_MAP.UTM_BCY_COD = #manCyl#
+				AND TRC_MAP.UTM_DEL_YN = 'N'
+			ORDER BY TRC_CTR1.UTC_TRC_KEY, TRC_CTR1.UTC_CTR_KEY, TRC_CTR2.UTC_CTR_KEY
+		) FREE_WORKER
+		LEFT JOIN (
+			SELECT T1.UCM_CTR_KEY AS CTR_KEY,
+				T1.UTC_TRC_KEY AS TRC_KEY,
+				T1.UTW_WRK_KEY AS WRK_KEY,
+				T1.UUM_USR_KEY AS USR_KEY,
+				T1.UUM_DEP_COD AS DEP_COD,
+				T1.UMF_FLE_KEY AS FLE_KEY,
+				T1.UMF_CON_FNM AS CON_FNM
+			FROM (
+				SELECT CTR_MTR.UCM_CTR_KEY,
+					TRC_CTR.UTC_TRC_KEY,
+					TRC_WRK.UTW_WRK_KEY,
+					USR_MTR.UUM_USR_KEY,
+					USR_MTR.UUM_DEP_COD,
+					MNG_FLE.*,
+					(SELECT COUNT(*)
+					FROM UWO_ORG_MTR ORG_MTR
+					WHERE ORG_MTR.UOM_BCY_COD = #manCyl#
+					AND (ORG_MTR.UOM_SVC_COD = #service# OR ORG_MTR.UOM_SVC_COD = F_SA_SVC_COD())
+					AND ORG_MTR.UOM_DEP_COD = USR_MTR.UUM_DEP_COD
+					AND ORG_MTR.UOM_USE_YN = 'Y') AS MATCH_DEPARTMENT_COUNT
+				FROM UWO_TRC_CTR TRC_CTR
+					LEFT JOIN UWO_TRC_DOC TRC_DOC ON TRC_CTR.UTC_TRC_KEY = TRC_DOC.UTD_TRC_KEY
+					LEFT JOIN UWO_CTR_MTR CTR_MTR ON TRC_CTR.UTC_CTR_KEY = CTR_MTR.UCM_CTR_KEY
+					LEFT JOIN UWO_CTR_MAP CTR_MAP ON CTR_MTR.UCM_CTR_KEY = CTR_MAP.UCM_CTR_KEY
+					LEFT JOIN UWO_TRC_WRK TRC_WRK ON TRC_DOC.UTD_TRC_KEY = TRC_WRK.UTW_TRC_KEY
+					LEFT JOIN UWO_USR_MTR USR_MTR ON TRC_WRK.UTW_WRK_ID = USR_MTR.UUM_USR_KEY
+					LEFT JOIN UWO_MNG_FLE MNG_FLE
+					ON TRC_WRK.UTW_WRK_KEY = MNG_FLE.UMF_CON_KEY AND MNG_FLE.UMF_TBL_GBN = 'WRK'
+				WHERE TRC_CTR.UTC_BCY_COD = #manCyl#
+					AND CTR_MTR.UCM_CTR_GBN = F_SA_COMP_COD()
+					AND CTR_MAP.UCM_SVC_COD = F_SA_SVC_COD()
+					AND TRC_CTR.UTC_DEL_YN = 'N'
+					AND TRC_DOC.UTD_DEL_YN = 'N'
+					AND TRC_WRK.UTW_DEL_YN = 'N'
+					AND MNG_FLE.UMF_DEL_YN = 'N'
+				ORDER BY CTR_MTR.UCM_CTR_KEY, TRC_CTR.UTC_TRC_KEY, TRC_WRK.UTW_WRK_KEY, MNG_FLE.UMF_FLE_KEY
+			) T1
+			WHERE T1.MATCH_DEPARTMENT_COUNT = 2
+		) SA_WORK_FILE ON FREE_WORKER.SA_CTR_KEY = SA_WORK_FILE.CTR_KEY AND FREE_WORKER.USR_KEY = SA_WORK_FILE.USR_KEY
+		WHERE SA_WORK_FILE.FLE_KEY IS NOT NULL
+	</select>
+
+	<select id="getSaWorkFileRelatedOtherService" parameterClass="Map" resultClass="egovMap">
+		SELECT TT.BASE_TRC_KEY,
+			TT.BASE_SVC_COD,
+			TT.BASE_CTR_KEY,
+			TT.SA_CTR_KEY,
+			TT.USR_KEY1,
+			TT.DEP_COD1,
+			TT.TRC_KEY,
+			TT.WRK_KEY,
+			TT.FLE_KEY,
+			TT.CON_FNM,
+			CASE WHEN MSR_FLE.UMF_FLE_KEY IS NOT NULL THEN 'Y' ELSE 'N' END IS_MSR_FLE
+		FROM (
+			SELECT *
+			FROM (
+				SELECT TRC_CTR1.UTC_TRC_KEY AS BASE_TRC_KEY,
+					CTR_MAP1.UCM_SVC_COD AS BASE_SVC_COD,
+					TRC_CTR1.UTC_CTR_KEY AS BASE_CTR_KEY,
+					TRC_CTR2.UTC_CTR_KEY AS SA_CTR_KEY,
+					USR_MTR.UUM_USR_KEY  AS USR_KEY1,
+					USR_MTR.UUM_DEP_COD  AS DEP_COD1
+				FROM UWO_TRC_CTR TRC_CTR1
+					LEFT JOIN UWO_CTR_MTR CTR_MTR1 ON TRC_CTR1.UTC_CTR_KEY = CTR_MTR1.UCM_CTR_KEY
+					LEFT JOIN UWO_CTR_MAP CTR_MAP1 ON CTR_MTR1.UCM_CTR_KEY = CTR_MAP1.UCM_CTR_KEY
+					LEFT JOIN UWO_TRC_CTR TRC_CTR2 ON TRC_CTR1.UTC_TRC_KEY = TRC_CTR2.UTC_TRC_KEY
+					LEFT JOIN UWO_CTR_MTR CTR_MTR2 ON TRC_CTR2.UTC_CTR_KEY = CTR_MTR2.UCM_CTR_KEY
+					LEFT JOIN UWO_CTR_MAP CTR_MAP2 ON CTR_MTR2.UCM_CTR_KEY = CTR_MAP2.UCM_CTR_KEY
+					LEFT JOIN UWO_TRC_MAP TRC_MAP ON TRC_CTR1.UTC_TRC_KEY = TRC_MAP.UTM_TRC_KEY
+					LEFT JOIN UWO_TRC_WRK TRC_WRK
+					ON TRC_MAP.UTM_TRC_KEY = TRC_WRK.UTW_TRC_KEY AND
+					TRC_MAP.UTM_WRK_ID = TRC_WRK.UTW_WRK_ID
+					LEFT JOIN UWO_USR_MTR USR_MTR ON TRC_MAP.UTM_WRK_ID = USR_MTR.UUM_USR_KEY
+				WHERE TRC_CTR1.UTC_CTR_KEY != TRC_CTR2.UTC_CTR_KEY
+					AND TRC_CTR1.UTC_DEL_YN = 'N'
+					AND TRC_CTR2.UTC_DEL_YN = 'N'
+					AND TRC_MAP.UTM_DEL_YN = 'N'
+					AND USR_MTR.UUM_USE_YN = 'Y'
+					AND CTR_MTR1.UCM_BCY_COD = #manCyl#
+					AND CTR_MAP1.UCM_SVC_COD = #service#
+					AND CTR_MAP2.UCM_SVC_COD = F_SA_SVC_COD()
+					AND CTR_MTR2.UCM_BCY_COD = #manCyl#
+					AND CTR_MTR1.UCM_CTR_GBN = #standard#
+					AND CTR_MTR2.UCM_CTR_GBN = F_SA_COMP_COD()
+					AND TRC_WRK.UTW_WRK_ID IS NULL
+					AND TRC_MAP.UTM_BCY_COD = #manCyl#
+					AND TRC_MAP.UTM_DEL_YN = 'N'
+				ORDER BY TRC_CTR1.UTC_TRC_KEY, TRC_CTR1.UTC_CTR_KEY, TRC_CTR2.UTC_CTR_KEY
+				) FREE_WORKER
+				LEFT JOIN (
+				SELECT T1.UCM_CTR_KEY AS CTR_KEY,
+					T1.UTC_TRC_KEY AS TRC_KEY,
+					T1.UTW_WRK_KEY AS WRK_KEY,
+					T1.UUM_USR_KEY AS USR_KEY2,
+					T1.UUM_DEP_COD AS DEP_COD2,
+					T1.UMF_FLE_KEY AS FLE_KEY,
+					T1.UMF_CON_FNM AS CON_FNM
+				FROM (
+				SELECT CTR_MTR.UCM_CTR_KEY,
+					TRC_CTR.UTC_TRC_KEY,
+					TRC_WRK.UTW_WRK_KEY,
+					USR_MTR.UUM_USR_KEY,
+					USR_MTR.UUM_DEP_COD,
+					MNG_FLE.*,
+					(SELECT COUNT(*)
+					FROM UWO_ORG_MTR ORG_MTR
+					WHERE ORG_MTR.UOM_BCY_COD = #manCyl#
+					AND (ORG_MTR.UOM_SVC_COD = #service# OR ORG_MTR.UOM_SVC_COD = F_SA_SVC_COD())
+					AND ORG_MTR.UOM_DEP_COD = USR_MTR.UUM_DEP_COD
+					AND ORG_MTR.UOM_USE_YN = 'Y') AS MATCH_DEPARTMENT_COUNT
+				FROM UWO_TRC_CTR TRC_CTR
+					LEFT JOIN UWO_TRC_DOC TRC_DOC ON TRC_CTR.UTC_TRC_KEY = TRC_DOC.UTD_TRC_KEY
+					LEFT JOIN UWO_CTR_MTR CTR_MTR ON TRC_CTR.UTC_CTR_KEY = CTR_MTR.UCM_CTR_KEY
+					LEFT JOIN UWO_CTR_MAP CTR_MAP ON CTR_MTR.UCM_CTR_KEY = CTR_MAP.UCM_CTR_KEY
+					LEFT JOIN UWO_TRC_WRK TRC_WRK ON TRC_DOC.UTD_TRC_KEY = TRC_WRK.UTW_TRC_KEY
+					LEFT JOIN UWO_USR_MTR USR_MTR ON TRC_WRK.UTW_WRK_ID = USR_MTR.UUM_USR_KEY
+					LEFT JOIN UWO_MNG_FLE MNG_FLE
+					ON TRC_WRK.UTW_WRK_KEY = MNG_FLE.UMF_CON_KEY AND
+					MNG_FLE.UMF_TBL_GBN = 'WRK'
+				WHERE TRC_CTR.UTC_BCY_COD = #manCyl#
+					AND CTR_MTR.UCM_CTR_GBN = F_SA_COMP_COD()
+					AND CTR_MAP.UCM_SVC_COD = F_SA_SVC_COD()
+					AND TRC_CTR.UTC_DEL_YN = 'N'
+					AND TRC_DOC.UTD_DEL_YN = 'N'
+					AND TRC_WRK.UTW_DEL_YN = 'N'
+					AND MNG_FLE.UMF_DEL_YN = 'N'
+				ORDER BY CTR_MTR.UCM_CTR_KEY, TRC_CTR.UTC_TRC_KEY, TRC_WRK.UTW_WRK_KEY,
+				MNG_FLE.UMF_FLE_KEY
+				) T1
+				WHERE T1.MATCH_DEPARTMENT_COUNT = 2
+			) SA_WORK_FILE ON FREE_WORKER.SA_CTR_KEY = SA_WORK_FILE.CTR_KEY AND
+				FREE_WORKER.USR_KEY1 = SA_WORK_FILE.USR_KEY2
+			WHERE SA_WORK_FILE.FLE_KEY IS NOT NULL
+			) TT
+		LEFT JOIN UWO_MSR_FLE MSR_FLE ON TT.FLE_KEY = MSR_FLE.UMF_FLE_KEY AND TT.BASE_CTR_KEY = MSR_FLE.UMF_CTR_KEY AND
+			TT.BASE_SVC_COD = MSR_FLE.UMF_SVC_COD
+	</select>
+
+	<insert id="QR_INSPT001_INSERTMSRSAFILE" parameterClass="Map">
+		INSERT INTO UWO_MSR_FLE (UMF_SVC_COD, UMF_CTR_KEY, UMF_FLE_KEY) VALUES (#service#, #ctrKey#, #fleKey#)
+	</insert>
+
+	<delete id="QR_INSPT001_DELETEMSRSAFILE" parameterClass="Map">
+		DELETE FROM UWO_MSR_FLE WHERE UMF_SVC_COD = #service# AND UMF_CTR_KEY = #ctrKey# AND UMF_FLE_KEY = #fleKey#
+	</delete>
+
+	<select id="getMeasureSaFile" parameterClass="Map" resultClass="egovMap">
+		SELECT MSR_FLE.UMF_SVC_COD AS SVC_COD,
+			MSR_FLE.UMF_CTR_KEY AS CTR_KEY,
+			MSR_FLE.UMF_FLE_KEY AS FLE_KEY,
+			MNG_FLE.UMF_CON_FNM AS CON_FNM,
+			MNG_FLE.UMF_SVR_PTH AS SVR_PTH,
+			MNG_FLE.UMF_SVR_FNM AS SVR_FNM,
+			MNG_FLE.UMF_FLE_EXT AS FLE_EXT,
+            MNG_FLE.UMF_CON_KEY,
+            TRC_WRK.UTW_SVC_COD,
+            CASE WHEN TRC_WRK.UTW_SVC_COD = F_SA_SVC_COD() THEN 'true' ELSE 'false' END IS_SA
+		FROM UWO_MSR_FLE MSR_FLE
+			LEFT JOIN UWO_CTR_MTR CTR_MTR ON MSR_FLE.UMF_CTR_KEY = CTR_MTR.UCM_CTR_KEY
+			LEFT JOIN UWO_CTR_MAP CTR_MAP ON MSR_FLE.UMF_CTR_KEY = CTR_MAP.UCM_CTR_KEY AND MSR_FLE.UMF_SVC_COD = CTR_MAP.UCM_SVC_COD
+			LEFT JOIN UWO_MNG_FLE MNG_FLE ON MSR_FLE.UMF_FLE_KEY = MNG_FLE.UMF_FLE_KEY
+			LEFT JOIN UWO_TRC_WRK TRC_WRK ON MNG_FLE.UMF_CON_KEY = TRC_WRK.UTW_WRK_KEY
+		WHERE MSR_FLE.UMF_SVC_COD = #service# AND TRC_WRK.UTW_COM_STA = 90
+	</select>
+
+    <select id="QR_INSPT001_A3" parameterClass="Map" resultClass="egovMap">
+
+        SELECT (SELECT UCC_SND_NAM
+			FROM UWO_COM_COD
+			WHERE UCC_FIR_COD = 'STND'
+			AND UCC_SND_COD = UCM.UCM_CTR_GBN) AS UCM_CTR_GBN,
+			UCM.UCM_CTR_KEY,
+			UCM.UCM_1LV_COD,
+			UCM.UCM_1LV_NAM,
+			UCM.UCM_2LV_COD,
+			UCM.UCM_2LV_NAM,
+			UCM.UCM_3LV_NAM,
+			ucm.ucm_gol_no,
+			T2.*
+        FROM uwo_ctr_mtr ucm
+        	INNER JOIN uwo_ctr_map ucp ON ucm.ucm_ctr_key = ucp.ucm_ctr_key
+        LEFT OUTER JOIN (
+
+			SELECT 'false'                               as   IS_SA,
+				UTC.UTC_CTR_KEY,
+				utd.utd_trc_key,
+				utw.UTW_SVC_COD                       AS   UTW_SVC_COD,
+				UTW.UTW_DEP_COD                       AS   UTW_DEP_COD,
+				UTD.UTD_DOC_NAM,
+				F_GET_COMMON_NAME(UTD.UTD_TRM_GBN, 'TERM') TERM_GBN,
+				(SELECT UDM_DEP_NAM
+				FROM UWO_DEP_MTR
+				WHERE UDM_DEP_COD = UTW.UTW_DEP_COD) AS   UTW_DEP_NAM,
+				UTW.UTW_WRK_ID,
+				F_GET_USR_NAME(UTW.UTW_WRK_ID)             WORKER,
+				UTW.UTW_WRK_KEY,
+				utw_wrk_sta
+			FROM UWO_TRC_WRK UTW
+				INNER JOIN UWO_TRC_DOC UTD ON UTW.UTW_TRC_KEY = UTD.UTD_TRC_KEY
+				INNER JOIN UWO_TRC_CTR UTC ON UTD.UTD_TRC_KEY = UTC.UTC_TRC_KEY
+				INNER JOIN UWO_CTR_MTR UCM ON UTC.UTC_CTR_KEY = UCM.UCM_CTR_KEY
+			WHERE utw.utw_del_yn = 'N'
+				AND utd.utd_del_yn = 'N'
+				AND utc.utc_del_yn = 'N'
+				AND ucm.ucm_2ld_yn = 'N'
+				AND (utw.utw_svc_cod = #service#)
+				AND ucm.UCM_CTR_GBN = #standard#
+
+			union
+
+			SELECT 'true' AS IS_SA,
+				UTC.UTC_CTR_KEY,
+				UTD.UTD_TRC_KEY,
+				UTW.UTW_SVC_COD AS UTW_SVC_COD,
+				UTW.UTW_DEP_COD AS UTW_DEP_COD,
+				UTD.UTD_DOC_NAM,
+				F_GET_COMMON_NAME(UTD.UTD_TRM_GBN, 'TERM') AS TERM_GBN,
+				(SELECT UDM_DEP_NAM
+				FROM UWO_DEP_MTR
+				WHERE UDM_DEP_COD = UTW.UTW_DEP_COD) AS UTW_DEP_NAM,
+				UTW.UTW_WRK_ID,
+				F_GET_USR_NAME(UTW.UTW_WRK_ID) AS WORKER,
+				UTW.UTW_WRK_KEY,
+				UTW_WRK_STA
+			FROM UWO_TRC_WRK UTW
+				INNER JOIN UWO_TRC_DOC UTD ON UTW.UTW_TRC_KEY = UTD.UTD_TRC_KEY
+				INNER JOIN UWO_TRC_CTR UTC ON UTD.UTD_TRC_KEY = UTC.UTC_TRC_KEY
+				INNER JOIN UWO_CTR_MTR UCM ON UTC.UTC_CTR_KEY = UCM.UCM_CTR_KEY
+			WHERE UTW.UTW_DEL_YN = 'N'
+				AND UTD.UTD_DEL_YN = 'N'
+				AND UTC.UTC_DEL_YN = 'N'
+				AND UCM.UCM_2LD_YN = 'N'
+				AND UTD.UTD_BCY_COD = #manCyl#
+				AND UTW.UTW_SVC_COD = F_SA_SVC_COD()
+				AND UCM.UCM_CTR_GBN = #standard#
+				AND UTW.UTW_DEP_COD IN (
+					SELECT BASE_ORG.UOM_DEP_COD
+					FROM UWO_ORG_MTR BASE_ORG
+					LEFT JOIN UWO_ORG_MTR COMPARE_ORG ON BASE_ORG.UOM_DEP_COD = COMPARE_ORG.UOM_DEP_COD
+					WHERE BASE_ORG.UOM_BCY_COD = #manCyl#
+					AND BASE_ORG.UOM_SVC_COD = #service#
+					AND COMPARE_ORG.UOM_BCY_COD = #manCyl#
+					AND COMPARE_ORG.UOM_SVC_COD = F_SA_SVC_COD()
+				)
+		        AND #service# != F_SA_SVC_COD()
+
+        ) T2 ON UCM.UCM_CTR_KEY = T2.UTC_CTR_KEY
+			WHERE 1 = 1
+			AND UCM.UCM_BCY_COD = #manCyl#
+			AND UCM.UCM_CTR_GBN = #standard#
+			AND ucp.ucm_svc_cod = #service#
+		<isNotEmpty property="ucm1lvCod">
+			AND UCM.UCM_1LV_COD = #ucm1lvCod#
+		</isNotEmpty>
+        ORDER BY LENGTH(ucm_2lv_cod) - LENGTH(REPLACE(ucm_2lv_cod, '.')),
+        	REGEXP_REPLACE(ucm_3lv_cod || '.', '(.)\.', LPAD('\1', 3, '0')), T2.UTD_TRC_KEY
+
+    </select>
+
+	<select id="getSaExcelData" parameterClass="Map" resultClass="egovMap">
+		SELECT CTR_MTR.UCM_CTR_KEY AS CTR_KEY,
+			CTR_MTR.UCM_2LV_COD AS LV2_COD,
+			CTR_MTR.UCM_2LV_NAM AS LV2_NAM,
+			CTR_MTR.UCM_3LV_COD AS LV3_COD,
+			CTR_MTR.UCM_3LV_NAM AS LV3_NAM,
+			WRK.TRC_KEY,
+			WRK.WRK_KEY,
+			WRK.DOC_NAM,
+			WRK.DEP_NAM,
+			WRK.USR_NAM,
+			WRK.WRK_PRG,
+			WRK.WRK_DTL
+		FROM UWO_CTR_MTR CTR_MTR
+			LEFT JOIN (
+			SELECT CTR_MTR.UCM_CTR_KEY AS CTR_KEY,
+				TRC_DOC.UTD_TRC_KEY AS TRC_KEY,
+				TRC_WRK.UTW_WRK_KEY AS WRK_KEY,
+				TRC_DOC.UTD_DOC_NAM AS DOC_NAM,
+				DEP_MTR.UDM_DEP_NAM AS DEP_NAM,
+				USR_MTR.UUM_USR_NAM AS USR_NAM,
+				TRC_WRK.UTW_WRK_PRG AS WRK_PRG,
+				TRC_WRK.UTW_WRK_DTL AS WRK_DTL
+			FROM UWO_TRC_DOC TRC_DOC
+				LEFT JOIN UWO_TRC_CTR TRC_CTR ON TRC_DOC.UTD_TRC_KEY = TRC_CTR.UTC_TRC_KEY
+				LEFT JOIN UWO_CTR_MTR CTR_MTR ON CTR_MTR.UCM_CTR_KEY = TRC_CTR.UTC_CTR_KEY
+				LEFT JOIN UWO_TRC_WRK TRC_WRK ON TRC_DOC.UTD_TRC_KEY = TRC_WRK.UTW_TRC_KEY
+				LEFT JOIN UWO_DEP_MTR DEP_MTR ON DEP_MTR.UDM_DEP_COD = TRC_WRK.UTW_DEP_COD
+				LEFT JOIN UWO_USR_MTR USR_MTR ON TRC_WRK.UTW_WRK_ID = USR_MTR.UUM_USR_KEY
+			WHERE TRC_DOC.UTD_SVC_COD = F_SA_SVC_COD()
+				AND TRC_WRK.UTW_DEL_YN = 'N'
+				AND TRC_DOC.UTD_BCY_COD = #bcyCode#
+				AND CTR_MTR.UCM_CTR_GBN = F_SA_COMP_COD()
+				AND DEP_MTR.UDM_DEP_PAT LIKE '%' || #depCode# || '%'
+			ORDER BY CTR_MTR.UCM_3LV_COD
+			) WRK ON CTR_MTR.UCM_CTR_KEY = WRK.CTR_KEY
+		WHERE CTR_MTR.UCM_BCY_COD = #bcyCode#
+			AND CTR_MTR.UCM_CTR_GBN = F_SA_COMP_COD()
+		ORDER BY CTR_MTR.UCM_3LV_COD
+	</select>
+
+	<update id="updateWrkPrg" parameterClass="Map">
+		UPDATE UWO_TRC_WRK
+		SET UTW_WRK_PRG = #wrkPrg#
+		WHERE UTW_WRK_KEY = #wrkKey#
+	</update>
+
+	<select id="getSaZipList" parameterClass="Map" resultClass="egovMap">
+		SELECT CTR_MTR.UCM_1LV_COD,
+			CTR_MTR.UCM_1LV_NAM,
+			CTR_MTR.UCM_2LV_COD,
+			CTR_MTR.UCM_2LV_NAM,
+			CTR_MTR.UCM_3LV_COD,
+			CTR_MTR.UCM_3LV_NAM,
+			WRK.*
+		FROM UWO_CTR_MTR CTR_MTR
+		LEFT JOIN (
+			SELECT CTR_MTR.UCM_CTR_KEY AS CTR_KEY,
+				MNG_FLE.UMF_CON_FNM,
+				MNG_FLE.UMF_SVR_PTH,
+				MNG_FLE.UMF_SVR_FNM
+			FROM UWO_TRC_DOC TRC_DOC
+				LEFT JOIN UWO_TRC_CTR TRC_CTR ON TRC_DOC.UTD_TRC_KEY = TRC_CTR.UTC_TRC_KEY
+				LEFT JOIN UWO_CTR_MTR CTR_MTR ON CTR_MTR.UCM_CTR_KEY = TRC_CTR.UTC_CTR_KEY
+				LEFT JOIN UWO_TRC_WRK TRC_WRK ON TRC_DOC.UTD_TRC_KEY = TRC_WRK.UTW_TRC_KEY
+				LEFT JOIN UWO_DEP_MTR DEP_MTR ON DEP_MTR.UDM_DEP_COD = TRC_WRK.UTW_DEP_COD
+				LEFT JOIN UWO_USR_MTR USR_MTR ON TRC_WRK.UTW_WRK_ID = USR_MTR.UUM_USR_KEY
+				LEFT JOIN UWO_MNG_FLE MNG_FLE ON TRC_WRK.UTW_WRK_KEY = MNG_FLE.UMF_CON_KEY
+				AND MNG_FLE.UMF_TBL_GBN = 'WRK' AND MNG_FLE.UMF_CON_GBN = 6
+			WHERE TRC_DOC.UTD_SVC_COD = F_SA_SVC_COD()
+				AND TRC_DOC.UTD_BCY_COD = #bcyCode#
+				AND CTR_MTR.UCM_CTR_GBN = F_SA_COMP_COD()
+				AND DEP_MTR.UDM_DEP_PAT LIKE '%' || #depCode# || '%'
+			ORDER BY CTR_MTR.UCM_3LV_COD
+		) WRK ON CTR_MTR.UCM_CTR_KEY = WRK.CTR_KEY
+		WHERE CTR_MTR.UCM_BCY_COD = #bcyCode#
+			AND CTR_MTR.UCM_CTR_GBN = F_SA_COMP_COD()
+		ORDER BY CTR_MTR.UCM_3LV_COD
+	</select>
+
+	<select id="getWorkByFile" parameterClass="Integer" resultClass="egovMap">
+		SELECT *
+			FROM UWO_MNG_FLE MNG_FLE
+		LEFT JOIN UWO_TRC_WRK TRC_WRK ON MNG_FLE.UMF_CON_KEY = TRC_WRK.UTW_WRK_KEY
+			WHERE MNG_FLE.UMF_FLE_KEY = #key#
+	</select>
+
+	<select id="QR_INSPT008_COMPLIANCE_LIST" parameterClass="searchVO" resultClass="egovMap">
+		SELECT
+			CTR_MAP.UCM_SVC_COD, CTR_MTR.*
+		FROM UWO_CTR_MTR CTR_MTR
+			LEFT JOIN UWO_CTR_MAP CTR_MAP ON CTR_MTR.UCM_CTR_KEY = CTR_MAP.UCM_CTR_KEY
+		WHERE CTR_MAP.UCM_SVC_COD = #service#
+			AND CTR_MTR.UCM_CTR_GBN = #standard#
+			AND CTR_MTR.UCM_BCY_COD = #manCyl#
+		ORDER BY INSTR(CTR_MTR.UCM_1LV_COD, '.'),
+			CASE
+			WHEN REGEXP_INSTR(REPLACE(SUBSTR(CTR_MTR.UCM_1LV_COD, 0, INSTR(CTR_MTR.UCM_1LV_COD, '.')), '.', ''),
+			'[^0-9]') = 0
+			THEN TO_NUMBER(REPLACE(SUBSTR(CTR_MTR.UCM_1LV_COD, 0, INSTR(CTR_MTR.UCM_1LV_COD, '.')), '.', ''))
+			ELSE ASCII(REPLACE(SUBSTR(CTR_MTR.UCM_1LV_COD, 0, INSTR(CTR_MTR.UCM_1LV_COD, '.')), '.', ''))
+			END,
+			CASE
+			WHEN REGEXP_INSTR(REPLACE(SUBSTR(CTR_MTR.UCM_1LV_COD, INSTR(CTR_MTR.UCM_1LV_COD, '.')), '.', ''),
+			'[^0-9]') = 0
+			THEN TO_NUMBER(REPLACE(SUBSTR(CTR_MTR.UCM_1LV_COD, INSTR(CTR_MTR.UCM_1LV_COD, '.')), '.', ''))
+			ELSE ASCII(REPLACE(SUBSTR(CTR_MTR.UCM_1LV_COD, INSTR(CTR_MTR.UCM_1LV_COD, '.')), '.', ''))
+			END,
+			CASE
+			WHEN REGEXP_INSTR(REPLACE(CTR_MTR.UCM_2LV_COD, CONCAT(CTR_MTR.UCM_1LV_COD, '.'), ''), '[^0-9]') = 0
+			THEN TO_NUMBER(REPLACE(CTR_MTR.UCM_2LV_COD, CONCAT(CTR_MTR.UCM_1LV_COD, '.'), ''))
+			ELSE ASCII(REPLACE(CTR_MTR.UCM_2LV_COD, CONCAT(CTR_MTR.UCM_1LV_COD, '.'), ''))
+			END,
+			CASE
+			WHEN REGEXP_INSTR(REPLACE(CTR_MTR.UCM_3LV_COD, CONCAT(CTR_MTR.UCM_2LV_COD, '.'), ''), '[^0-9]') = 0
+			THEN TO_NUMBER(REPLACE(CTR_MTR.UCM_3LV_COD, CONCAT(CTR_MTR.UCM_2LV_COD, '.'), ''))
+			ELSE ASCII(REPLACE(CTR_MTR.UCM_3LV_COD, CONCAT(CTR_MTR.UCM_2LV_COD, '.'), ''))
+			END ASC
+	</select>
+
+	<select id="QR_INSPT008_WORK_LIST" parameterClass="searchVO" resultClass="egovMap">
+		SELECT
+			CTR_MTR.UCM_3LV_COD,
+			TRC_DOC.UTD_SVC_COD,
+			TRC_DOC.UTD_TRC_KEY,
+			TRC_DOC.UTD_DOC_NAM,
+			F_GET_COMMON_NAME(TRC_WRK.UTW_TRM_COD, 'TERM') AS UTW_TRM_COD_FOR_HUMAN,
+			F_GET_USR_NAME(TRC_WRK.UTW_WRK_ID) AS UTW_WRK_ID_FOR_HUMAN,
+			DEP_MTR.UDM_DEP_NAM,
+			TRC_WRK.*
+		FROM UWO_CTR_MTR CTR_MTR
+			LEFT JOIN UWO_TRC_CTR TRC_CTR ON CTR_MTR.UCM_CTR_KEY = TRC_CTR.UTC_CTR_KEY
+			LEFT JOIN UWO_TRC_DOC TRC_DOC ON TRC_CTR.UTC_TRC_KEY = TRC_DOC.UTD_TRC_KEY
+			LEFT JOIN UWO_TRC_WRK TRC_WRK ON TRC_DOC.UTD_TRC_KEY = TRC_WRK.UTW_TRC_KEY
+			LEFT JOIN UWO_DEP_MTR DEP_MTR ON TRC_WRK.UTW_DEP_COD = DEP_MTR.UDM_DEP_COD
+		WHERE CTR_MTR.UCM_BCY_COD = #manCyl#
+			AND CTR_MTR.UCM_CTR_GBN = #standard#
+			AND TRC_CTR.UTC_DEL_YN = 'N'
+			AND
+			(
+				TRC_DOC.UTD_SVC_COD IN ('SC007', #service#)
+				OR
+				(TRC_DOC.UTD_SVC_COD = F_SA_SVC_COD() AND TRC_WRK.UTW_DEP_COD IN
+				(SELECT ORG_MTR1.UOM_DEP_COD
+				FROM UWO_ORG_MTR ORG_MTR1
+				INNER JOIN UWO_ORG_MTR ORG_MTR2 ON ORG_MTR1.UOM_DEP_COD = ORG_MTR2.UOM_DEP_COD
+				WHERE ORG_MTR1.UOM_BCY_COD = #manCyl#
+				AND ORG_MTR1.UOM_SVC_COD = #service#
+				AND ORG_MTR1.UOM_USE_YN = 'Y'
+				AND ORG_MTR2.UOM_BCY_COD = #manCyl#
+				AND ORG_MTR2.UOM_SVC_COD = F_SA_SVC_COD()
+				AND ORG_MTR2.UOM_USE_YN = 'Y'))
+			)
+			AND TRC_DOC.UTD_DEL_YN = 'N'
+			AND TRC_WRK.UTW_WRK_KEY IS NOT NULL
+			AND TRC_WRK.UTW_DEL_YN = 'N'
+		ORDER BY CTR_MTR.UCM_3LV_COD, TRC_DOC.UTD_TRC_KEY, TRC_WRK.UTW_WRK_ID
+	</select>
+
+	<select id="QR_INSPT008_FILE_LIST" parameterClass="searchVO" resultClass="egovMap">
+		SELECT
+			(
+				SELECT
+					LISTAGG(MSR_FLE.UMF_CTR_KEY, ',') WITHIN GROUP ( ORDER BY UMF_CTR_KEY)
+				FROM
+					UWO_MSR_FLE MSR_FLE
+				WHERE
+					MSR_FLE.UMF_FLE_KEY = MNG_FLE.UMF_FLE_KEY
+					AND MSR_FLE.UMF_SVC_COD = #service#
+			) AS CTR_LST,
+			MNG_FLE.*
+		FROM
+			UWO_MNG_FLE MNG_FLE
+		WHERE
+			MNG_FLE.UMF_TBL_GBN = 'WRK'
+			AND MNG_FLE.UMF_CON_GBN = 6
+			AND MNG_FLE.UMF_BCY_COD = #manCyl#
+			AND MNG_FLE.UMF_DEL_YN = 'N'
+			AND MNG_FLE.UMF_CON_KEY IS NOT NULL
+		ORDER BY
+			MNG_FLE.UMF_CON_KEY
+	</select>
+
+</sqlMap>

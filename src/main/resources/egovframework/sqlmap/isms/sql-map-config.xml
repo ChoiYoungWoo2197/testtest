@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMapConfig PUBLIC "-//iBATIS.com//DTD SQL Map Config 2.0//EN" "http://www.ibatis.com/dtd/sql-map-config-2.dtd">
+
+<sqlMapConfig>
+	<settings useStatementNamespaces="true"/>	
+	
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/FMBoard_SQL.xml"/>
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/FMBasic_SQL.xml"/>
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/FMMwork_SQL.xml"/>
+	<!-- 메뉴삭제 -->
+<!-- 	<sqlMap resource="egovframework/sqlmap/isms/queryxml/FMProof_SQL.xml"/> -->
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/FMSetup_SQL.xml"/>
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/FMState_SQL.xml"/>
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/FileUp_SQL.xml"/>
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/FMLog_SQL.xml"/>
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/Login_SQL.xml" />
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/CommonCode_SQL.xml" />
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/CommonUtil_SQL.xml" />
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/FMRiskm_SQL.xml"/>
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/FMMain_SQL.xml" />
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/FMComp_SQL.xml" />
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/FMAsset_SQL.xml" />
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/FMInspt_SQL.xml" />
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/JOB_SQL.xml" />
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/IsmsBatch_SQL.xml" />
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/FMCommon_SQL.xml" />
+
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/Popup_SQL.xml"/>
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/ExcelNew.xml"/>
+
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/ProtectionMeasure.xml"/>
+	<sqlMap resource="egovframework/sqlmap/isms/queryxml/InspectionManager.xml"/>
+
+</sqlMapConfig>
